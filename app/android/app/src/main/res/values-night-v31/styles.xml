@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+ 深色模式启动画面：深色背景 + 白色图标文字 -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowSplashScreenBackground">@color/launch_bg_dark</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/launch_logo_dark</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/launch_bg_dark</item>
+    </style>
+</resources>

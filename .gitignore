@@ -1,0 +1,40 @@
+# ===== 仓库根级忽略（D:\study_app） =====
+# 本文件覆盖整个仓库；app/ 子树的 Flutter 相关忽略见 app/.gitignore
+
+# 思源构建工具凭证（含明文 API Token，绝不入库）
+# 本地使用：复制 config.example.json 为 config.json 后填入自己的 Token
+/tools/seed-builder/config.json
+
+# seed-builder 构建中间产物（skeleton/materials/zip 等）
+/tools/seed-builder/out/
+
+# 开发期数据库快照（非交付物，真实题库在 app/assets/banks/）
+/docs/*.db
+
+# 未使用的素材（App 实际用 assets/branding/launcher_line.png）
+/resource/图标.png
+
+# 各类备份文件（含题库去重/合并前的 .zip.bak）
+*.bak
+
+# 助手工作目录与缓存（非项目源码）
+.workbuddy/
+.zcode/
+
+
+# 归档区（非源码，不入库）
+/logs/
+/screenshots/
+/archive/
+
+# Python 缓存（seed-builder）
+__pycache__/
+*.pyc
+
+
+# 敏感凭据（思源 MCP 桥配置，含明文 Token，绝不入库）
+/docs/siyuan-mcp-bridge-config.json
+
+# Android 构建产物（app/.gitignore 的 /build/ 不覆盖 android/build）
+app/android/build/
+app/app_analyze.txt

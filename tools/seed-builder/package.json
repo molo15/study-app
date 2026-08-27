@@ -1,0 +1,18 @@
+{
+  "name": "seed-builder",
+  "version": "0.1.0",
+  "description": "考研刷题 App 内容生产线：从思源笔记提取素材 → 规划题库结构 →（后续 AI 生成）→ 打包题库包",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "seed-builder": "src/index.js"
+  },
+  "scripts": {
+    "explore": "node src/index.js explore",
+    "plan": "node src/index.js plan",
+    "gen": "node src/index.js gen"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

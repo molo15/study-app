@@ -1,0 +1,164 @@
+{
+  "formatVersion": 2,
+  "bankId": "bank-demo-kaoyan",
+  "name": "考研示例题库（开发期）",
+  "version": "1.0.0",
+  "generatedAt": "2026-08-15T12:00:00+08:00",
+  "chapters": ["考研英语", "古代汉语", "现代汉语", "中国文学史"],
+  "mockPapers": [
+    {
+      "id": "bank-demo-kaoyan:mp_001",
+      "name": "示例模拟卷（10 分钟限时）",
+      "durationMin": 10,
+      "questionIds": [
+        "bank-demo-kaoyan:q_0001",
+        "bank-demo-kaoyan:q_0002",
+        "bank-demo-kaoyan:q_0003",
+        "bank-demo-kaoyan:q_0005",
+        "bank-demo-kaoyan:q_0007"
+      ]
+    }
+  ],
+  "questions": [
+    {
+      "id": "bank-demo-kaoyan:q_0001",
+      "type": "single_choice",
+      "stem": "在虚拟语气中，表示与过去事实相反的假设，从句谓语应使用：",
+      "options": [
+        { "key": "A", "text": "had + 过去分词" },
+        { "key": "B", "text": "have + 过去分词" },
+        { "key": "C", "text": "was + 现在分词" },
+        { "key": "D", "text": "has + 过去分词" }
+      ],
+      "answer": "A",
+      "explanation": "与过去事实相反的虚拟条件句：从句用 had + 过去分词，主句用 would/should/could/might + have + 过去分词。",
+      "tags": ["语法", "虚拟语气"],
+      "chapter": "考研英语",
+      "difficulty": "medium",
+      "source": { "blockId": "", "docPath": "/考研英语" }
+    },
+    {
+      "id": "bank-demo-kaoyan:q_0002",
+      "type": "single_choice",
+      "stem": "下列各组字中，全部属于象形字的是：",
+      "options": [
+        { "key": "A", "text": "日、月、山、水" },
+        { "key": "B", "text": "休、明、林、森" },
+        { "key": "C", "text": "江、河、湖、海" },
+        { "key": "D", "text": "上、下、本、末" }
+      ],
+      "answer": "A",
+      "explanation": "象形字描摹事物形状：日、月、山、水均为象形。B 为会意字，C 为形声字，D 为指事字。",
+      "tags": ["六书", "文字学"],
+      "chapter": "古代汉语",
+      "difficulty": "easy",
+      "source": { "blockId": "", "docPath": "/古代汉语" }
+    },
+    {
+      "id": "bank-demo-kaoyan:q_0003",
+      "type": "multi_choice",
+      "stem": "下列鲁迅作品中，属于小说集的有：",
+      "options": [
+        { "key": "A", "text": "《呐喊》" },
+        { "key": "B", "text": "《彷徨》" },
+        { "key": "C", "text": "《朝花夕拾》" },
+        { "key": "D", "text": "《故事新编》" }
+      ],
+      "answer": ["A", "B", "D"],
+      "explanation": "《呐喊》《彷徨》《故事新编》均为鲁迅小说集；《朝花夕拾》是回忆性散文集。",
+      "tags": ["鲁迅", "现当代文学"],
+      "chapter": "中国文学史",
+      "difficulty": "easy",
+      "source": { "blockId": "", "docPath": "/中国文学史" }
+    },
+    {
+      "id": "bank-demo-kaoyan:q_0004",
+      "type": "multi_choice",
+      "stem": "下列各组字中，属于古今字关系的有：",
+      "options": [
+        { "key": "A", "text": "莫—暮" },
+        { "key": "B", "text": "说—悦" },
+        { "key": "C", "text": "内—纳" },
+        { "key": "D", "text": "云—雲" }
+      ],
+      "answer": ["A", "B", "C"],
+      "explanation": "莫暮、说悦、内纳均为古今字（古字兼义后另造今字分化）。云—雲是繁简字关系，不是古今字。",
+      "tags": ["文字学", "古今字"],
+      "chapter": "古代汉语",
+      "difficulty": "hard",
+      "source": { "blockId": "", "docPath": "/古代汉语" }
+    },
+    {
+      "id": "bank-demo-kaoyan:q_0005",
+      "type": "blank",
+      "stem": "现代汉语普通话共有____个声母（不含零声母）。",
+      "options": [],
+      "answer": ["21"],
+      "explanation": "普通话辅音声母共 21 个，加上零声母共 22 个声母。",
+      "tags": ["语音", "声母"],
+      "chapter": "现代汉语",
+      "difficulty": "easy",
+      "source": { "blockId": "", "docPath": "/现代汉语" }
+    },
+    {
+      "id": "bank-demo-kaoyan:q_0006",
+      "type": "blank",
+      "stem": "六书中，\"日\"\"月\"属于____字。",
+      "options": [],
+      "answer": ["象形"],
+      "explanation": "象形字是对事物形状的描摹，日、月是最典型的象形字。",
+      "tags": ["六书"],
+      "chapter": "古代汉语",
+      "difficulty": "easy",
+      "source": { "blockId": "", "docPath": "/古代汉语" }
+    },
+    {
+      "id": "bank-demo-kaoyan:q_0007",
+      "type": "true_false",
+      "stem": "\"啊\"的读音会随前一音节末尾音素的不同而发生音变。",
+      "options": [],
+      "answer": "正确",
+      "explanation": "\"啊\"受前一音节收尾音素影响发生同化音变，如 n→na、ng→nga，是语流音变的典型例子。",
+      "tags": ["语音", "音变"],
+      "chapter": "现代汉语",
+      "difficulty": "medium",
+      "source": { "blockId": "", "docPath": "/现代汉语" }
+    },
+    {
+      "id": "bank-demo-kaoyan:q_0008",
+      "type": "true_false",
+      "stem": "《红楼梦》的作者是吴承恩。",
+      "options": [],
+      "answer": "错误",
+      "explanation": "《红楼梦》作者是曹雪芹；吴承恩是《西游记》的作者。",
+      "tags": ["古代文学", "四大名著"],
+      "chapter": "中国文学史",
+      "difficulty": "easy",
+      "source": { "blockId": "", "docPath": "/中国文学史" }
+    },
+    {
+      "id": "bank-demo-kaoyan:q_0009",
+      "type": "short_answer",
+      "stem": "简述英语\"主谓一致\"中就近原则的含义，并举一个例子。",
+      "options": [],
+      "answer": "就近原则指谓语动词的人称和数与最近的主语保持一致，常见于 there be 句型及 either...or、neither...nor、not only...but also 等并列结构。例如：There is a pen and two books on the desk.（谓语 is 与最近的名词 a pen 一致）",
+      "explanation": "就近原则（proximity principle）是主谓一致三大原则之一，另两个为语法一致与意义一致。",
+      "tags": ["语法", "主谓一致"],
+      "chapter": "考研英语",
+      "difficulty": "hard",
+      "source": { "blockId": "", "docPath": "/考研英语" }
+    },
+    {
+      "id": "bank-demo-kaoyan:q_0010",
+      "type": "short_answer",
+      "stem": "简述《呐喊》的创作背景及其在中国现代文学史上的地位。",
+      "options": [],
+      "answer": "《呐喊》是鲁迅的第一部小说集，收入 1918—1922 年间所作《狂人日记》《孔乙己》《药》《阿Q正传》等 14 篇作品，最初发表于《新青年》。它奠定了中国现代白话小说的基础，深刻批判了封建礼教与国民劣根性，是中国现代文学开山之作。",
+      "explanation": "《狂人日记》是中国第一篇现代白话小说，《阿Q正传》塑造了阿Q这一经典形象。",
+      "tags": ["鲁迅", "现当代文学"],
+      "chapter": "中国文学史",
+      "difficulty": "hard",
+      "source": { "blockId": "", "docPath": "/中国文学史" }
+    }
+  ]
+}

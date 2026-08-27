@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+（API 31+）系统启动画面接管冷启动显示：
+         背景用品牌浅青色，居中显示图标+名称，避免白屏。
+         低版本（<31）仍走 LaunchTheme 的 windowBackground（launch_background.xml）。 -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowSplashScreenBackground">@color/launch_bg_light</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/launch_logo_light</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/launch_bg_light</item>
+    </style>
+</resources>
