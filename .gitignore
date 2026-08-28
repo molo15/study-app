@@ -38,3 +38,15 @@ __pycache__/
 # Android 构建产物（app/.gitignore 的 /build/ 不覆盖 android/build）
 app/android/build/
 app/app_analyze.txt
+
+# 开发日志与临时产物（不入库）
+app/analyze_*.txt
+app/test_*.txt
+app/build_apk*.txt
+app/test_run.txt
+_shot*.png
+tmp_*.png
+/backup/
+
+# 一次性临时脚本
+tools/_tmp_*.py
