@@ -6,7 +6,6 @@ library;
 
 import 'dart:convert';
 
-import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -189,45 +188,16 @@ class AppThemeConfig {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
-      // 去安卓原生 Zoom 转场（UI 审查③）：统一淡入+上滑，200ms 曲线
+      // 覆盖式横滑（v1.1.3）：新页右滑入，下层完全静止，消除转场时背景浮现其他页面；
+      // 慢速由 app_routes.routeDuration 控制（400ms 正向 / 350ms 返回）
       pageTransitionsTheme: PageTransitionsTheme(
         builders: {
-          TargetPlatform.android: const _FadeUpPageTransitionsBuilder(),
-          TargetPlatform.iOS: const CupertinoPageTransitionsBuilder(),
-          TargetPlatform.windows: const _FadeUpPageTransitionsBuilder(),
-          TargetPlatform.macOS: const CupertinoPageTransitionsBuilder(),
-          TargetPlatform.linux: const _FadeUpPageTransitionsBuilder(),
+          TargetPlatform.android: const _CoverSlideTransitionsBuilder(),
+          TargetPlatform.iOS: const _CoverSlideTransitionsBuilder(),
+          TargetPlatform.windows: const _CoverSlideTransitionsBuilder(),
+          TargetPlatform.macOS: const _CoverSlideTransitionsBuilder(),
+          TargetPlatform.linux: const _CoverSlideTransitionsBuilder(),
         },
-      ),
-    );
-  }
-}
-
-/// 自定义转场：淡入 + 轻微上滑（去安卓 Zoom 转场的原生感）
-class _FadeUpPageTransitionsBuilder extends PageTransitionsBuilder {
-  const _FadeUpPageTransitionsBuilder();
-
-  @override
-  Widget buildTransitions<T>(
-    PageRoute<T> route,
-    BuildContext context,
-    Animation<double> animation,
-    Animation<double> secondaryAnimation,
-    Widget child,
-  ) {
-    final curved = CurvedAnimation(
-      parent: animation,
-      curve: Curves.easeOutCubic,
-      reverseCurve: Curves.easeInCubic,
-    );
-    return FadeTransition(
-      opacity: curved,
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 0.03),
-          end: Offset.zero,
-        ).animate(curved),
-        child: child,
       ),
     );
   }
@@ -298,5 +268,45 @@ class ThemeController extends AsyncNotifier<AppThemeConfig> {
     final repo = await ref.read(quizRepositoryProvider);
     await repo.setSetting('theme_config', jsonEncode(config.toJson()));
     state = AsyncData(config);
+  }
+}
+
+
+/// 覆盖式横滑转场（v1.1.3）：新页右滑入 + 下层淡出。
+///
+/// - 新页（incoming）：从右侧覆盖式滑入，下层不平移（区别于 iOS 下层平移 1/3）。
+/// - 下层（被覆盖方）：用 secondaryAnimation 驱动淡出（1→0），避免横滑过程中
+///   左侧清晰露出下层页面内容（"背景浮现别的界面"问题，v1.1.3 复检修复）。
+/// - 反向返回时：下层随之淡入回来，自然过渡。
+class _CoverSlideTransitionsBuilder extends PageTransitionsBuilder {
+  const _CoverSlideTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+    );
+    // 新页：覆盖式右滑入（下层静止不平移）
+    final slide = SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(1, 0),
+        end: Offset.zero,
+      ).animate(curved),
+      child: child,
+    );
+    // 下层：转场中被覆盖时淡出（新页 secondaryAnimation=0 → opacity=1，不受影响）
+    return FadeTransition(
+      opacity: Tween<double>(begin: 1, end: 0).animate(
+        CurvedAnimation(parent: secondaryAnimation, curve: Curves.easeOut),
+      ),
+      child: slide,
+    );
   }
 }

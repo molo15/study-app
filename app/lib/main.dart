@@ -68,7 +68,16 @@ class _BackgroundStack extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasImage = config.backgroundImagePath.isNotEmpty;
-    if (!hasImage) return child;
+    if (!hasImage) {
+      // 无背景图：垫一层不透明底色，保证转场淡出/透明处底色统一（不闪白/黑）
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          ColoredBox(color: config.background),
+          child,
+        ],
+      );
+    }
     // 渐变遮罩颜色：深色模式下使用深色遮罩（如 #0F1214）且 alpha 更高，
     // 避免用户配置的浅色背景把背景图冲淡（需求：深色模式背景图遮罩）
     final overlayColor = config.darkMode

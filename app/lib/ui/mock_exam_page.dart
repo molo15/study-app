@@ -13,13 +13,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/quiz_repository.dart';
 import '../models/models.dart';
 import '../services/app_log.dart';
+import 'app_routes.dart';
 import 'glass_app_bar.dart';
+import 'mock_review_page.dart';
 import 'practice_page.dart' show typeColor, typeLabel;
 
 class MockExamPage extends ConsumerStatefulWidget {
-  const MockExamPage({super.key, required this.paper});
+  const MockExamPage({
+    super.key,
+    required this.paper,
+    this.presetQuestions,
+    this.pointsByType,
+  });
 
   final MockPaper paper;
+
+  /// 综合卷：排题页已抽好的题目（非空时优先于 paper.questionIds）
+  final List<Question>? presetQuestions;
+
+  /// 综合卷：题型分值（150 分制加权计分；为空时保持百分制）
+  final Map<QuestionType, int>? pointsByType;
 
   @override
   ConsumerState<MockExamPage> createState() => _MockExamPageState();
@@ -55,7 +68,9 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
         '进入模拟卷: ${widget.paper.name} (${widget.paper.questionIds.length}题)',
       );
       final repo = await ref.read(quizRepositoryProvider);
-      final questions = await repo.questionsByIds(widget.paper.questionIds);
+      final questions = widget.presetQuestions != null
+          ? widget.presetQuestions!
+          : await repo.questionsByIds(widget.paper.questionIds);
       if (!mounted) return;
       setState(() {
         _questions = questions;
@@ -138,6 +153,7 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
         questions: _questions,
         answers: _answers,
         submittedAt: now,
+        pointsByType: widget.pointsByType,
       );
       // 会话已落库即置位：即使成绩弹窗被系统返回键关闭，也不允许再次交卷
       // 重复写 mock_sessions/answer_logs（审查修复）
@@ -164,6 +180,15 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
     int skipped,
     int score,
   ) {
+    // 满分：加权模式按题型分值求和（综合卷=150）；否则百分制（100）
+    final full =
+        widget.pointsByType == null || widget.pointsByType!.isEmpty
+        ? 100
+        : _questions.fold<int>(
+            0,
+            (acc, q) =>
+                acc + (widget.pointsByType![q.type] ?? 1),
+          );
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -174,7 +199,7 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '得分：$score 分',
+              '得分：$score / $full',
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
@@ -186,6 +211,20 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
           ],
         ),
         actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // 关结果弹窗
+              Navigator.of(context).push(
+                AppPageRoute(
+                  builder: (_) => MockReviewPage(
+                    questions: _questions,
+                    answers: _answers,
+                  ),
+                ),
+              );
+            },
+            child: const Text('查看逐题解析'),
+          ),
           FilledButton(
             onPressed: () {
               Navigator.of(context).pop();
@@ -274,7 +313,12 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  q.chapter,
+                  // 综合卷跨科标注：学科名 · 章节（P2-3）
+                  widget.pointsByType == null
+                      ? q.chapter
+                      : [mockBankLabel(q.bankId), q.chapter]
+                            .where((s) => s.isNotEmpty)
+                            .join(' · '),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).colorScheme.outline,
                   ),

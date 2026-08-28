@@ -67,9 +67,55 @@ class QuizRepository extends RepositoryMixinBase with
 
   // 与 UI 约定的静态常量/键（定义在 QuizRepository 上，供上层静态访问）
   static const practiceTimerVisibleKey = 'show_practice_timer';
+  static const reviewModeEnabledKey = 'review_mode_enabled';
   static String practiceProgressKey(String key) => 'practice_progress:$key';
   static String practiceResultsKey(String key) => 'practice_results:$key';
   static const wrongBookRetireThreshold = 2;
+
+  // ---------- 综合模拟卷（随机组卷，150 分制） ----------
+
+  /// 综合卷学科抽题模板：{bankId: {type: 题量}}
+  /// 无写作、无论述（论述并入简答）。分值：单选1×30、多选2×10、填空1×20、简答10×8=150。
+  static const Map<String, Map<String, int>> compositeTemplate = {
+    'bank-xiandai-hanyu': {
+      'single_choice': 11,
+      'multi_choice': 4,
+      'blank': 8,
+      'short_answer': 3,
+    },
+    'bank-gudai-hanyu': {
+      'single_choice': 11,
+      'multi_choice': 4,
+      'blank': 8,
+      'short_answer': 3,
+    },
+    'bank-zhongguo-xiandai-wenxue': {
+      'single_choice': 3,
+      'multi_choice': 1,
+      'blank': 2,
+      'short_answer': 1,
+    },
+    'bank-zhongguo-dangdai-wenxue': {
+      'single_choice': 3,
+      'multi_choice': 1,
+      'blank': 1,
+      'short_answer': 1,
+    },
+    'bank-zhongguo-gudai-wenxue': {
+      'single_choice': 2,
+      'multi_choice': 0,
+      'blank': 1,
+      'short_answer': 0,
+    },
+  };
+
+  /// 综合卷题型分值（150 分制）
+  static const Map<QuestionType, int> compositePoints = {
+    QuestionType.singleChoice: 1,
+    QuestionType.multiChoice: 2,
+    QuestionType.blank: 1,
+    QuestionType.shortAnswer: 10,
+  };
 
   /// 题库包导入（委托 SeedLoader）
   Future<ImportResult> importBank(BankPack pack) =>

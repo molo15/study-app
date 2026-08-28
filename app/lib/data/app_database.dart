@@ -6,7 +6,7 @@ import 'package:path/path.dart';
 
 class AppDatabase {
   static const _dbName = 'quiz_app.db';
-  static const _dbVersion = 9;
+  static const _dbVersion = 10;
 
   /// 用 Future 缓存而不是单个 Database，避免并发访问时重复 open
   static Future<Database>? _instance;
@@ -117,6 +117,13 @@ class AppDatabase {
       await db.execute(_chapterOverviewsDdl);
       await db.execute(
           'CREATE INDEX IF NOT EXISTS idx_questions_knowledge ON questions(knowledge_id)');
+    }
+    if (oldVersion < 10) {
+      // v10: 模拟卷逐题回顾 —— answer_logs 加 user_answer（存用户作答快照）
+      final acols = await db.rawQuery('PRAGMA table_info(answer_logs)');
+      if (!acols.any((c) => c['name'] == 'user_answer')) {
+        await db.execute('ALTER TABLE answer_logs ADD COLUMN user_answer TEXT');
+      }
     }
   }
 
@@ -253,7 +260,8 @@ class AppDatabase {
         rating INTEGER,
         time_ms INTEGER NOT NULL,
         answered_at INTEGER NOT NULL,
-        session_id INTEGER
+        session_id INTEGER,
+        user_answer TEXT
       )
     ''');
     await db.execute('CREATE INDEX idx_logs_qid ON answer_logs(question_id)');

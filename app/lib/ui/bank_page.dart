@@ -18,9 +18,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/quiz_repository.dart';
 import '../models/models.dart';
+import 'chapter_overview_list_page.dart';
 import 'chapter_overview_page.dart';
 import 'glass_app_bar.dart';
 import 'practice_page.dart';
+import 'app_routes.dart';
 
 class BankPage extends ConsumerStatefulWidget {
   const BankPage({super.key, required this.bankId});
@@ -114,11 +116,11 @@ class _BankPageState extends ConsumerState<BankPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Padding(
-              padding: EdgeInsets.all(16),
+            Padding(
+              padding: const EdgeInsets.all(16),
               child: Text(
                 '选择随机刷题量',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                style: Theme.of(ctx).textTheme.titleMedium,
               ),
             ),
             for (final n in [50, 100, 150])
@@ -137,7 +139,7 @@ class _BankPageState extends ConsumerState<BankPage> {
     );
     if (count == null || !mounted) return;
     Navigator.of(context).push(
-      MaterialPageRoute(
+      AppPageRoute(
         builder: (_) => PracticePage(bankId: widget.bankId, randomLimit: count),
       ),
     );
@@ -171,6 +173,10 @@ class _BankPageState extends ConsumerState<BankPage> {
                 ],
                 const SizedBox(height: 12),
                 _buildRandom(theme),
+                if (_hasKnowledge) ...[
+                  const SizedBox(height: 12),
+                  _buildOverviewEntry(theme),
+                ],
                 if ((_chapterCounts['论述题专题'] ?? 0) > 0) ...[
                   const SizedBox(height: 12),
                   _buildEssayTopic(theme),
@@ -267,7 +273,7 @@ class _BankPageState extends ConsumerState<BankPage> {
         subtitle: Text('$_keyQuestionCount 题 · 按考点热门章节抽取'),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(
+          AppPageRoute(
             builder: (_) => PracticePage(
               bankId: widget.bankId,
               questions: _keyQuestions,
@@ -309,9 +315,45 @@ class _BankPageState extends ConsumerState<BankPage> {
     );
   }
 
+  /// 章节知识概览入口（P2，v4 库独立成部分）：点击进入全库章节概览列表
+  Widget _buildOverviewEntry(ThemeData theme) {
+    return Card(
+      margin: EdgeInsets.zero,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            Icons.account_tree_outlined,
+            color: theme.colorScheme.primary,
+            size: 22,
+          ),
+        ),
+        title: const Text(
+          '章节知识概览',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        subtitle: const Text('按章节浏览知识点 · 直达刷题/背题'),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => Navigator.of(context).push(
+          AppPageRoute(
+            builder: (_) => ChapterOverviewListPage(
+              bankId: widget.bankId,
+              bankName: _bankName,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   /// 论述题专题：独立专题样式（左侧色条 + 浅色主题背景，避免与普通章节混淆）
-  Widget _buildEssayTopic(ThemeData theme) {
-    return Container(
+  Widget _buildEssayTopic(ThemeData theme) {    return Container(
       decoration: BoxDecoration(
         color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(16),
@@ -341,7 +383,7 @@ class _BankPageState extends ConsumerState<BankPage> {
         subtitle: Text('${_chapterCounts['论述题专题'] ?? 0} 题 · 历年真题论述题'),
         trailing: const Icon(Icons.chevron_right),
         onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(
+          AppPageRoute(
             builder: (_) => PracticePage(
               bankId: widget.bankId,
               chapter: '论述题专题',
@@ -495,20 +537,9 @@ class _ChapterTile extends StatelessWidget {
   final int otherCount;
 
   void _go(BuildContext context, {String? purpose}) {
-    // v4 库：整章入口先进知识概览页；基础/测试子分类保持直达刷题（快速通道）
-    if (purpose == null && hasKnowledge) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => ChapterOverviewPage(
-            bankId: bankId,
-            chapter: chapter,
-          ),
-        ),
-      );
-      return;
-    }
+    // 概览页已独立为题库页「章节知识概览」入口；章节行保持直达刷题（快速通道）
     Navigator.of(context).push(
-      MaterialPageRoute(
+      AppPageRoute(
         builder: (_) => PracticePage(
           bankId: bankId,
           chapter: chapter,
@@ -516,6 +547,18 @@ class _ChapterTile extends StatelessWidget {
           progressKey: purpose == null
               ? 'chapter:$bankId:$chapter'
               : 'chapter:$bankId:$chapter:$purpose',
+        ),
+      ),
+    );
+  }
+
+  /// 章节知识概览（单章）——章节行独立入口，与「全部」刷题分离
+  void _goOverview(BuildContext context) {
+    Navigator.of(context).push(
+      AppPageRoute(
+        builder: (_) => ChapterOverviewPage(
+          bankId: bankId,
+          chapter: chapter,
         ),
       ),
     );
@@ -565,6 +608,18 @@ class _ChapterTile extends StatelessWidget {
         ),
       ),
       children: [
+        if (hasKnowledge)
+          ListTile(
+            dense: true,
+            leading: const Icon(Icons.account_tree_outlined, size: 18),
+            title: const Text('本章知识概览'),
+            subtitle: Text(
+              '知识点树 · 直达刷题/背题',
+              style: theme.textTheme.bodySmall,
+            ),
+            trailing: const Icon(Icons.chevron_right, size: 18),
+            onTap: () => _goOverview(context),
+          ),
         if (basicCount > 0)
           ListTile(
             dense: true,

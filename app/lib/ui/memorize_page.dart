@@ -19,12 +19,16 @@ class MemorizePage extends ConsumerStatefulWidget {
     required this.chapter,
     required this.title,
     required this.questions,
+    this.embedded = false,
   });
 
   final String bankId;
   final String chapter;
   final String title;
   final List<Question> questions;
+
+  /// 嵌在 TabBar 容器内时不再自带 AppBar/Scaffold
+  final bool embedded;
 
   @override
   ConsumerState<MemorizePage> createState() => _MemorizePageState();
@@ -100,17 +104,21 @@ class _MemorizePageState extends ConsumerState<MemorizePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final body = _finished ? _buildSummary(theme) : _buildCard(theme);
+    if (widget.embedded) return body;
     return Scaffold(
       appBar: GlassAppBar(
         title: Text(widget.title),
         centerTitle: true,
       ),
-      body: _finished ? _buildSummary(theme) : _buildCard(theme),
+      body: body,
     );
   }
 
   Widget _buildCard(ThemeData theme) {
-    final q = _current!;
+    final q = _current;
+    // 队列为空（极端边界）时回到总结视图，避免强解包崩溃（UI 审查 P2-6）
+    if (q == null) return _buildSummary(theme);
     final total = widget.questions.length;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
@@ -140,7 +148,7 @@ class _MemorizePageState extends ConsumerState<MemorizePage> {
         const SizedBox(height: 6),
         if (_pending.isNotEmpty)
           Text(
-            '待回背 ${_pending.length} 张（不背单词式，稍后再推）',
+            '还有 ${_pending.length} 张没记住，稍后会再推给你',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.tertiary,
             ),
@@ -348,6 +356,28 @@ class _AnswerCard extends StatelessWidget {
 
   final Question question;
 
+
+  /// 正确项选项（防脏数据）：单选最多返回 1 项（优先 key 精确匹配，无则按文本取第一个）；
+  /// 多选按选项顺序取 answer 命中的 key（去重），key 全不命中时按文本兜底。
+  static List<QuestionOption> _matchedOptions(Question q) {
+    if (q.type == QuestionType.singleChoice) {
+      for (final o in q.options) {
+        if (q.answer.contains(o.key)) return [o];
+      }
+      for (final o in q.options) {
+        if (q.answer.contains(o.text)) return [o];
+      }
+      return const [];
+    }
+    final byKey = <QuestionOption>[];
+    final seen = <String>{};
+    for (final o in q.options) {
+      if (q.answer.contains(o.key) && seen.add(o.key)) byKey.add(o);
+    }
+    if (byKey.isNotEmpty) return byKey;
+    return q.options.where((o) => q.answer.contains(o.text)).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -376,9 +406,8 @@ class _AnswerCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           if (isChoice)
-            for (final o in q.options)
-              if (q.answer.contains(o.key))
-                Padding(
+            for (final o in _matchedOptions(q))
+              Padding(
                   padding: const EdgeInsets.symmetric(vertical: 2),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,

@@ -7,7 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/quiz_repository.dart';
 import '../models/models.dart';
 import 'mock_exam_page.dart';
+import 'mock_history_page.dart';
+import 'composite_loading_page.dart';
 import 'glass_app_bar.dart';
+import 'app_routes.dart';
 
 class MockExamListPage extends ConsumerStatefulWidget {
   const MockExamListPage({super.key, this.bankId});
@@ -24,6 +27,15 @@ class _MockExamListPageState extends ConsumerState<MockExamListPage> {
   List<MockPaper> _papers = const [];
   Map<String, List<MockSession>> _history = const {};
 
+  /// 综合模拟卷（随机组卷，150 分制；不落 mock_papers 表，列表页恒置顶）
+  static const _composite = MockPaper(
+    id: 'composite',
+    bankId: 'composite',
+    name: '综合模拟卷',
+    durationMin: 180,
+    questionIds: [],
+  );
+
   @override
   void initState() {
     super.initState();
@@ -35,6 +47,7 @@ class _MockExamListPageState extends ConsumerState<MockExamListPage> {
       final repo = await ref.read(quizRepositoryProvider);
       final papers = await repo.mockPapers(bankId: widget.bankId);
       final history = <String, List<MockSession>>{};
+      history['composite'] = await repo.mockSessions(paperId: 'composite');
       for (final p in papers) {
         history[p.id] = await repo.mockSessions(paperId: p.id);
       }
@@ -69,20 +82,60 @@ class _MockExamListPageState extends ConsumerState<MockExamListPage> {
               actionIcon: Icons.refresh,
               onAction: _load,
             )
-          : _papers.isEmpty
-          ? _MockExamStateView(
-              icon: Icons.assignment_outlined,
-              title: '当前题库暂无模拟卷',
-              message: '题库包可包含 mockPapers 字段，暂无可用试卷',
-              actionLabel: '重试',
-              actionIcon: Icons.refresh,
-              onAction: _load,
-            )
           : ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: _papers.length,
+              itemCount: _papers.length + 1,
               itemBuilder: (context, index) {
-                final p = _papers[index];
+                if (index == 0) {
+                  // 综合模拟卷：随机组卷入口（恒置顶）
+                  final sessions =
+                      _history['composite'] ?? const <MockSession>[];
+                  return Card(
+                    child: ListTile(
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary.withValues(
+                            alpha: 0.12,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.auto_awesome,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                      title: Text(
+                        _composite.name,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      subtitle: Text(
+                        '150 分 · 5 科随机组卷 · 限时 180 分钟'
+                        '${sessions.isNotEmpty ? ' · 最近 ${sessions.first.score} / 150' : ''}',
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.history),
+                            tooltip: '历史成绩',
+                            onPressed: () => Navigator.of(context).push(
+                              AppPageRoute(
+                                builder: (_) => MockHistoryPage(paper: _composite),
+                              ),
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right),
+                        ],
+                      ),
+                      onTap: () => Navigator.of(context).push(
+                        AppPageRoute(builder: (_) => const CompositeLoadingPage()),
+                      ),
+                    ),
+                  );
+                }
+                final p = _papers[index - 1];
                 final sessions = _history[p.id] ?? const <MockSession>[];
                 return Card(
                   child: ListTile(
@@ -105,9 +158,23 @@ class _MockExamListPageState extends ConsumerState<MockExamListPage> {
                       '${p.questionIds.length} 题 · 限时 ${p.durationMin} 分钟'
                       '${sessions.isNotEmpty ? ' · 最近 ${sessions.first.score} 分' : ''}',
                     ),
-                    trailing: const Icon(Icons.chevron_right),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.history),
+                          tooltip: '历史成绩',
+                          onPressed: () => Navigator.of(context).push(
+                            AppPageRoute(
+                              builder: (_) => MockHistoryPage(paper: p),
+                            ),
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right),
+                      ],
+                    ),
                     onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => MockExamPage(paper: p)),
+                      AppPageRoute(builder: (_) => MockExamPage(paper: p)),
                     ),
                   ),
                 );

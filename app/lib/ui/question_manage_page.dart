@@ -11,7 +11,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/quiz_repository.dart';
 import '../models/models.dart';
 import 'glass_app_bar.dart';
+import 'app_toast.dart';
 import 'practice_page.dart' show typeColor, typeLabel;
+import 'app_routes.dart';
 
 /// 题库包题目浏览器（入口：设置 → 题库包管理 → 编辑题目）
 class QuestionManagePage extends ConsumerStatefulWidget {
@@ -190,7 +192,7 @@ class _QuestionManagePageState extends ConsumerState<QuestionManagePage> {
 
   Future<void> _openEdit(String id) async {
     final changed = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
+      AppPageRoute(
         builder: (_) => QuestionEditPage(questionId: id),
       ),
     );
@@ -256,7 +258,7 @@ class _TypeBadge extends StatelessWidget {
       ),
       child: Text(
         typeLabel(type),
-        style: TextStyle(fontSize: 11, color: typeColor(context, type)),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: typeColor(context, type)),
       ),
     );
   }
@@ -427,9 +429,7 @@ class _QuestionEditPageState extends ConsumerState<QuestionEditPage> {
 
   void _toast(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(msg), duration: const Duration(seconds: 2)));
+    showAppToast(context, msg);
   }
 
   @override

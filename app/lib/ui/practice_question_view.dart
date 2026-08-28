@@ -9,6 +9,7 @@ class _QuestionView extends StatelessWidget {
     required this.index,
     required this.total,
     required this.flagged,
+    required this.showFlag,
     required this.onToggleFlag,
     required this.showRating,
     required this.showRemoveWrong,
@@ -26,6 +27,9 @@ class _QuestionView extends StatelessWidget {
   final int index;
   final int total;
   final bool flagged;
+
+  /// 审题标记开关（关闭时隐藏旗子，默认关）
+  final bool showFlag;
   final Future<void> Function() onToggleFlag;
   final bool showRating;
   final bool showRemoveWrong;
@@ -90,7 +94,7 @@ class _QuestionView extends StatelessWidget {
                 ),
               ),
             ),
-            if (reviewModeEnabled) ...[
+            if (showFlag) ...[
               const SizedBox(width: 6),
               // 审题标记按钮（v7）
               IconButton(

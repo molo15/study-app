@@ -34,6 +34,7 @@ class _ThemePanelPageState extends ConsumerState<_ThemePanelPage> {
 
   late AppThemeConfig _config;
   bool _ready = false;
+  bool _reviewEnabled = false; // 审题标记开关（默认关）
 
   @override
   void initState() {
@@ -43,9 +44,12 @@ class _ThemePanelPageState extends ConsumerState<_ThemePanelPage> {
 
   Future<void> _load() async {
     final config = await ref.read(themeControllerProvider.future);
+    final repo = await ref.read(quizRepositoryProvider);
+    final reviewEnabled = await repo.reviewModeEnabled();
     if (!mounted) return;
     setState(() {
       _config = config;
+      _reviewEnabled = reviewEnabled;
       _ready = true;
     });
   }
@@ -187,12 +191,12 @@ class _ThemePanelPageState extends ConsumerState<_ThemePanelPage> {
               padding: const EdgeInsets.all(16),
               children: [
                 // 实时预览
-                const _SectionHeader(title: '预览', helperText: '先看效果，再调整参数'),
+                const AppSectionHeader(title: '预览', helperText: '先看效果，再调整参数'),
                 const SizedBox(height: 8),
                 _buildPreviewCard(theme),
                 const SizedBox(height: 24),
                 // 主色预设
-                const _SectionHeader(title: '主色'),
+                const AppSectionHeader(title: '主色'),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 12,
@@ -211,7 +215,7 @@ class _ThemePanelPageState extends ConsumerState<_ThemePanelPage> {
                 ),
                 const SizedBox(height: 24),
                 // 背景色预设
-                const _SectionHeader(title: '背景色'),
+                const AppSectionHeader(title: '背景色'),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 12,
@@ -230,7 +234,7 @@ class _ThemePanelPageState extends ConsumerState<_ThemePanelPage> {
                 ),
                 const SizedBox(height: 24),
                 // 背景图片（需求：全局背景图，允许用户自选本地图）
-                const _SectionHeader(title: '背景图片'),
+                const AppSectionHeader(title: '背景图片'),
                 const SizedBox(height: 8),
                 Card(
                   child: ListTile(
@@ -275,7 +279,7 @@ class _ThemePanelPageState extends ConsumerState<_ThemePanelPage> {
                   ),
                 const SizedBox(height: 8),
                 // 卡片透明度
-                const _SectionHeader(title: '卡片透明度'),
+                const AppSectionHeader(title: '卡片透明度'),
                 Slider(
                   value: _config.cardOpacity,
                   min: 0.3,
@@ -289,7 +293,7 @@ class _ThemePanelPageState extends ConsumerState<_ThemePanelPage> {
                 ),
                 const SizedBox(height: 8),
                 // 卡片圆角
-                const _SectionHeader(title: '卡片圆角'),
+                const AppSectionHeader(title: '卡片圆角'),
                 Slider(
                   value: _config.cornerRadius,
                   min: 8,
@@ -318,6 +322,21 @@ class _ThemePanelPageState extends ConsumerState<_ThemePanelPage> {
                   subtitle: const Text('沉浸式全屏，下拉可临时唤出系统栏'),
                   value: _config.hideStatusBar,
                   onChanged: (v) => _apply(_config.copyWith(hideStatusBar: v)),
+                ),
+                const SizedBox(height: 8),
+                // 功能开关（审题标记）
+                const AppSectionHeader(title: '功能', helperText: '按需开启的附加功能'),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  secondary: const Icon(Icons.flag_outlined),
+                  title: const Text('审题标记'),
+                  subtitle: const Text('开启后刷题页显示旗子标记，设置页可导出标记清单'),
+                  value: _reviewEnabled,
+                  onChanged: (v) async {
+                    final repo = await ref.read(quizRepositoryProvider);
+                    await repo.setReviewModeEnabled(v);
+                    if (mounted) setState(() => _reviewEnabled = v);
+                  },
                 ),
                 const SizedBox(height: 8),
                 // 恢复默认

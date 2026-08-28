@@ -26,6 +26,10 @@ import 'package:flutter/material.dart';
 
 import '../theme_controller.dart' show AppSpacing;
 
+// 公开命名参数(message/onRetry/icon/...)→私有字段(_message/_onRetry/...) 的必要映射，
+// 无法用 initializing formal 表达，豁免 prefer_initializing_formals 提示。
+// ignore_for_file: prefer_initializing_formals
+
 class AppStateView extends StatelessWidget {
   /// 加载中：居中圆形进度指示器
   const AppStateView.loading({super.key})
@@ -39,24 +43,34 @@ class AppStateView extends StatelessWidget {
       _onRetry = null;
 
   /// 出错：图标 + 说明 + 重试按钮（[onRetry] 为空时只展示说明，不显示按钮）
-  const AppStateView.error({super.key, required this._message, this._onRetry})
-    : _isLoading = false,
-      _isError = true,
-      _icon = null,
-      _title = null,
-      _actionLabel = null,
-      _onAction = null;
+  const AppStateView.error({
+    super.key,
+    required String message,
+    VoidCallback? onRetry,
+  }) : _message = message,
+       _onRetry = onRetry,
+       _isLoading = false,
+       _isError = true,
+       _icon = null,
+       _title = null,
+       _actionLabel = null,
+       _onAction = null;
 
   /// 空数据：图标 + 标题 + 说明 + 可选行动按钮
   /// （[actionLabel] 与 [onAction] 同时提供时显示行动按钮）
   const AppStateView.empty({
     super.key,
-    required this._icon,
-    required this._title,
-    this._message,
-    this._actionLabel,
-    this._onAction,
-  }) : _isLoading = false,
+    required IconData icon,
+    required String title,
+    String? message,
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) : _icon = icon,
+       _title = title,
+       _message = message,
+       _actionLabel = actionLabel,
+       _onAction = onAction,
+       _isLoading = false,
        _isError = false,
        _onRetry = null;
 

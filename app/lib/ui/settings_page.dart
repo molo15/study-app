@@ -17,6 +17,10 @@ import '../services/export_helper.dart';
 import 'theme_controller.dart';
 import 'glass_app_bar.dart';
 import 'question_manage_page.dart';
+import 'widgets/app_section_header.dart';
+import 'widgets/app_state_view.dart';
+import 'app_toast.dart';
+import 'app_routes.dart';
 
 part 'settings_theme_panel.dart';
 
@@ -34,6 +38,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   List<BankInfo> _banks = const [];
   double _desiredRetention = 0.9;
   bool _showPracticeTimer = false;
+  bool _reviewEnabled = false; // 审题标记开关（默认关）
   StudyGoal _studyGoal = const StudyGoal();
 
   @override
@@ -49,12 +54,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       final retention =
           double.tryParse(await repo.setting('desired_retention') ?? '') ?? 0.9;
       final showPracticeTimer = await repo.practiceTimerVisible();
+      final reviewEnabled = await repo.reviewModeEnabled();
       final studyGoal = await repo.studyGoal() ?? const StudyGoal();
       if (!mounted) return;
       setState(() {
         _banks = banks;
         _desiredRetention = retention;
         _showPracticeTimer = showPracticeTimer;
+        _reviewEnabled = reviewEnabled;
         _studyGoal = studyGoal;
         _loading = false;
       });
@@ -69,14 +76,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   void _toast(String text) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+    showAppToast(context, text);
   }
 
   /// 打开主题定制面板（需求：高自由度自定义主题）
   Future<void> _openThemePanel() async {
     await Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (_) => const _ThemePanelPage()));
+    ).push(AppPageRoute(builder: (_) => const _ThemePanelPage()));
   }
 
   // ---------- 学习目标（P2） ----------
@@ -84,7 +91,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Future<void> _saveStudyGoal() async {
     final repo = await ref.read(quizRepositoryProvider);
     await repo.setStudyGoal(_studyGoal);
-    _toast('学习目标已保存');
+    // 静默保存：学习目标为高频微调操作（开关/日期/步进/输入），不弹横幅打扰
   }
 
   Future<void> _toggleStudyGoal(bool value) async {
@@ -126,18 +133,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     await _saveStudyGoal();
   }
 
-  Future<void> _adjustDaily({required bool isNew, required int delta}) async {
-    final base = isNew ? _studyGoal.dailyNew : _studyGoal.dailyReview;
-    final next = (base + delta).clamp(0, 200);
-    setState(() => _studyGoal = StudyGoal(
-      examDate: _studyGoal.examDate,
-      dailyNew: isNew ? next : _studyGoal.dailyNew,
-      dailyReview: isNew ? _studyGoal.dailyReview : next,
-      enabled: _studyGoal.enabled,
-    ));
-    await _saveStudyGoal();
-  }
-
   /// 学习目标设置卡：启用开关 + 考试日期 + 每日新题/复习（计划倒排为建议，用户可自由覆盖）
   Widget _buildStudyGoalCard(ThemeData theme) {
     final goal = _studyGoal;
@@ -152,8 +147,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ),
             title: const Text('学习目标'),
             subtitle: Text(goal.enabled
-                ? '已启用 · 首页显示倒计时与每日任务'
-                : '设置考试日期与每日题量，首页显示倒计时'),
+                ? '已启用 · 首页显示考试倒计时'
+                : '设置考试日期，首页显示倒计时'),
             value: goal.enabled,
             onChanged: _toggleStudyGoal,
           ),
@@ -173,29 +168,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             trailing: const Icon(Icons.chevron_right),
             onTap: _pickExamDate,
           ),
-          const Divider(height: 1, indent: 16, endIndent: 16),
-          ListTile(
-            enabled: goal.enabled,
-            leading: const Icon(Icons.add_circle_outline),
-            title: const Text('每日新题目标'),
-            trailing: _Stepper(
-              value: goal.dailyNew,
-              onChanged: (delta) => _adjustDaily(isNew: true, delta: delta),
-            ),
-          ),
-          ListTile(
-            enabled: goal.enabled,
-            leading: const Icon(Icons.autorenew),
-            title: const Text('每日复习目标'),
-            trailing: _Stepper(
-              value: goal.dailyReview,
-              onChanged: (delta) => _adjustDaily(isNew: false, delta: delta),
-            ),
-          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: Text(
-              '计划倒排仅为建议，可随时在首页覆盖或暂停',
+              '设置考试日期后，首页会显示距离考试的天数',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.outline,
               ),
@@ -296,13 +272,97 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
+  /// 导入备份：从导出的 JSON 全量恢复（清空现有数据，不可撤销）
+  Future<void> _importBackup() async {
+    try {
+      final file = await FilePicker.pickFile(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+        dialogTitle: '选择备份文件（.json）',
+      );
+      if (file == null) return;
+      final text = utf8.decode(await file.readAsBytes());
+      if (!mounted) return;
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('导入备份？'),
+          content: const Text(
+            '将清空当前全部题目、作答记录、复习进度、错题本并恢复为备份内容，'
+            '不可撤销。建议先「导出备份」留存当前数据。',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('导入并覆盖'),
+            ),
+          ],
+        ),
+      );
+      if (ok != true) return;
+      final repo = await ref.read(quizRepositoryProvider);
+      await repo.restoreJson(text);
+      _toast('已从备份恢复全部数据');
+      await _load();
+    } on FormatException catch (e) {
+      _toast('备份文件无效：${e.message}');
+    } catch (e) {
+      _toast('导入备份失败：$e');
+    }
+  }
+
+  /// 关于：题库导入格式说明弹窗
+  void _showImportFormat() {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('题库导入格式'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Text('支持两种题库包容器：', style: TextStyle(fontWeight: FontWeight.w700)),
+              SizedBox(height: 6),
+              Text('· .json：单文件，顶层含 manifest 字段 + questions 数组'),
+              Text('· .zip：manifest.json + questions/ 目录（可按章节分文件）'),
+              SizedBox(height: 12),
+              Text('题目必填字段：', style: TextStyle(fontWeight: FontWeight.w700)),
+              SizedBox(height: 6),
+              Text('· id：全局唯一，如 bank-xxx:q_00001'),
+              Text('· type：single_choice / multi_choice / true_false / blank / short_answer'),
+              Text('· stem：题干'),
+              Text('· answer：答案（选择题为选项 key 或正确项文本）'),
+              Text('· options：选择题选项数组 [{"key":"A","text":"..."}]'),
+              SizedBox(height: 12),
+              Text('可选字段：', style: TextStyle(fontWeight: FontWeight.w700)),
+              SizedBox(height: 6),
+              Text('· explanation：解析、chapter：章节、purpose：basic/test'),
+              Text('· formatVersion：1-4（缺省按基础格式解析）'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('知道了'),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ---------- 题库包管理操作 ----------
 
   Future<void> _onBankAction(BankInfo bank, String action) async {
     switch (action) {
       case 'edit':
         await Navigator.of(context).push(
-          MaterialPageRoute(
+          AppPageRoute(
             builder: (_) =>
                 QuestionManagePage(bankId: bank.bankId, bankName: bank.name),
           ),
@@ -447,20 +507,20 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-          ? _ErrorRetry(message: _error!, onRetry: _load)
+          ? AppStateView.error(message: _error!, onRetry: _load)
           : ListView(
               // 底部留 96 安全空间，防沉浸式导航遮挡（需求）
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
               children: [
                 // ---------- 学习目标（P2） ----------
-                const _SectionHeader(
+                const AppSectionHeader(
                   title: '学习目标',
-                  helperText: '考试倒计时与每日任务（计划倒排为建议，可自由覆盖）',
+                  helperText: '设置考试日期，首页显示倒计时',
                 ),
                 _buildStudyGoalCard(theme),
                 const SizedBox(height: 16),
                 // ---------- 学习设置 ----------
-                const _SectionHeader(title: '学习设置', helperText: '刷题时的显示与复习节奏'),
+                const AppSectionHeader(title: '学习设置', helperText: '刷题时的显示与复习节奏'),
                 Card(
                   clipBehavior: Clip.antiAlias,
                   child: Column(
@@ -506,7 +566,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ),
                 const SizedBox(height: 16),
                 // ---------- 外观设置 ----------
-                const _SectionHeader(
+                const AppSectionHeader(
                   title: '外观设置',
                   helperText: '自定义主色、背景与圆角风格',
                 ),
@@ -524,14 +584,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ),
                 const SizedBox(height: 16),
                 // ---------- 数据与题库 ----------
-                const _SectionHeader(title: '数据与题库', helperText: '题库包管理与数据备份'),
+                const AppSectionHeader(title: '数据与题库', helperText: '题库包管理与数据备份'),
                 Card(
                   clipBehavior: Clip.antiAlias,
                   child: Column(
                     children: [
                       // 题库包区块：可折叠，默认收起（用户要求）
                       ExpansionTile(
-                        initiallyExpanded: false,
+                        initiallyExpanded: true,
                         leading: _IconBox(
                           icon: Icons.folder_open_outlined,
                           color: theme.colorScheme.tertiary,
@@ -619,7 +679,18 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         trailing: const Icon(Icons.chevron_right),
                         onTap: _exportBackup,
                       ),
-                      if (reviewModeEnabled)
+                      const Divider(height: 1, indent: 16, endIndent: 16),
+                      ListTile(
+                        leading: _IconBox(
+                          icon: Icons.restore_outlined,
+                          color: theme.colorScheme.primary,
+                        ),
+                        title: const Text('导入备份'),
+                        subtitle: const Text('从导出的 JSON 备份恢复全部数据（覆盖当前）'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: _importBackup,
+                      ),
+                      if (_reviewEnabled)
                         ListTile(
                           leading: _IconBox(
                             icon: Icons.flag_outlined,
@@ -635,18 +706,34 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ),
                 const SizedBox(height: 16),
                 // ---------- 关于 ----------
-                const _SectionHeader(
+                const AppSectionHeader(
                   title: '关于',
                   helperText: '本地优先 · 学习数据仅保存在设备',
                 ),
                 Card(
-                  child: ListTile(
-                    leading: _IconBox(
-                      icon: Icons.school_outlined,
-                      color: theme.colorScheme.tertiary,
-                    ),
-                    title: const Text('考研刷题'),
-                    subtitle: const Text('本地离线刷题 · 学习数据不出设备'),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    children: [
+                      ListTile(
+                        leading: _IconBox(
+                          icon: Icons.school_outlined,
+                          color: theme.colorScheme.tertiary,
+                        ),
+                        title: const Text('考研刷题'),
+                        subtitle: const Text('本地离线刷题 · 学习数据不出设备'),
+                      ),
+                      const Divider(height: 1, indent: 16, endIndent: 16),
+                      ListTile(
+                        leading: _IconBox(
+                          icon: Icons.input_outlined,
+                          color: theme.colorScheme.tertiary,
+                        ),
+                        title: const Text('题库导入格式'),
+                        subtitle: const Text('自制题库包的 .json / .zip 格式要求'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: _showImportFormat,
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -655,78 +742,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 }
 
-/// 区块标题（AppSectionHeader 风格：titleMedium w700 + 可选说明）
-///
-/// widgets/ 目录由其他 agent 独占，此处私有实现相同视觉，避免跨文件依赖。
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title, this.helperText});
-
-  final String title;
-  final String? helperText;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  height: 1.3,
-                ),
-              ),
-              if (helperText != null && helperText!.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Text(
-                  helperText!,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// 统一错误态 + 重试（审查 P1-3）
-class _ErrorRetry extends StatelessWidget {
-  const _ErrorRetry({required this.message, required this.onRetry});
-
-  final String message;
-  final Future<void> Function() onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
-          const SizedBox(height: 12),
-          Text(
-            message,
-            style: theme.textTheme.bodyMedium,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          FilledButton.tonal(onPressed: onRetry, child: const Text('重试')),
-        ],
-      ),
-    );
-  }
-}
 
 /// 统一图标容器（与首页/错题本风格一致）
 class _IconBox extends StatelessWidget {
@@ -745,49 +760,6 @@ class _IconBox extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
       ),
       child: Icon(icon, color: color, size: 22),
-    );
-  }
-}
-
-/// 主题定制面板：顶部实时预览 + 主色/背景/透明度/圆角/深色（需求：高自由度）
-///
-/// 滑块拖动过程中只更新本地状态（预览卡实时变化），松手（onChangeEnd）才持久化，
-/// 避免拖动每帧写库并触发全局主题刷新。
-class _Stepper extends StatelessWidget {
-  const _Stepper({required this.value, required this.onChanged});
-
-  final int value;
-  final void Function(int delta) onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          visualDensity: VisualDensity.compact,
-          iconSize: 20,
-          onPressed: value > 0 ? () => onChanged(-1) : null,
-          icon: const Icon(Icons.remove_circle_outline),
-        ),
-        SizedBox(
-          width: 36,
-          child: Text(
-            '$value',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-        IconButton(
-          visualDensity: VisualDensity.compact,
-          iconSize: 20,
-          onPressed: value < 200 ? () => onChanged(1) : null,
-          icon: const Icon(Icons.add_circle_outline),
-        ),
-      ],
     );
   }
 }

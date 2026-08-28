@@ -67,6 +67,15 @@ mixin _SettingsMixin on RepositoryMixinBase {
   Future<bool> practiceTimerVisible() async =>
       (await setting(QuizRepository.practiceTimerVisibleKey)) == 'true';
 
+  /// 审题标记功能开关（默认关闭；关闭时刷题页不显示旗子、设置页不显示导出入口）
+  Future<bool> reviewModeEnabled() async =>
+      (await setting(QuizRepository.reviewModeEnabledKey)) == 'true';
+
+  Future<void> setReviewModeEnabled(bool enabled) => setSetting(
+        QuizRepository.reviewModeEnabledKey,
+        enabled ? 'true' : 'false',
+      );
+
   Future<void> setPracticeTimerVisible(bool visible) => setSetting(
     QuizRepository.practiceTimerVisibleKey,
     visible ? 'true' : 'false',

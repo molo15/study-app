@@ -12,7 +12,11 @@ import '../data/quiz_repository.dart';
 import '../models/models.dart';
 import 'glass_app_bar.dart';
 import 'memorize_page.dart';
+import 'memorize_tabs_page.dart';
 import 'practice_page.dart';
+import 'widgets/app_section_header.dart';
+import 'widgets/app_state_view.dart';
+import 'app_routes.dart';
 
 class ChapterOverviewPage extends ConsumerStatefulWidget {
   const ChapterOverviewPage({
@@ -85,7 +89,7 @@ class _ChapterOverviewPageState extends ConsumerState<ChapterOverviewPage> {
   /// 整章刷题
   void _startChapter() {
     Navigator.of(context).push(
-      MaterialPageRoute(
+      AppPageRoute(
         builder: (_) => PracticePage(
           bankId: widget.bankId,
           chapter: widget.chapter,
@@ -101,7 +105,7 @@ class _ChapterOverviewPageState extends ConsumerState<ChapterOverviewPage> {
     final questions = await repo.questionsByKnowledge(widget.bankId, kp.id);
     if (!mounted) return;
     Navigator.of(context).push(
-      MaterialPageRoute(
+      AppPageRoute(
         builder: (_) => PracticePage(
           bankId: widget.bankId,
           questions: questions,
@@ -111,7 +115,7 @@ class _ChapterOverviewPageState extends ConsumerState<ChapterOverviewPage> {
     );
   }
 
-  /// 背题模式（可整章或单知识点）
+  /// 背题模式：整章进入「知识点卡/题目背诵」双 Tab；单知识点保持逐题背诵
   Future<void> _startMemorize({String? knowledgeId}) async {
     final repo = await ref.read(quizRepositoryProvider);
     final List<Question> questions;
@@ -124,18 +128,42 @@ class _ChapterOverviewPageState extends ConsumerState<ChapterOverviewPage> {
       );
     }
     if (!mounted) return;
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => MemorizePage(
-          bankId: widget.bankId,
-          chapter: widget.chapter,
-          title: knowledgeId == null
-              ? '${widget.chapter} · 背题'
-              : '${_knowledge.firstWhere((k) => k.id == knowledgeId).name} · 背题',
-          questions: questions,
+    final kpName = _kpName(knowledgeId);
+    if (knowledgeId == null) {
+      // 整章：双 Tab 背题（知识点卡默认）
+      Navigator.of(context).push(
+        AppPageRoute(
+          builder: (_) => MemorizeTabsPage(
+            bankId: widget.bankId,
+            chapter: widget.chapter,
+            title: '${widget.chapter} · 背题',
+            questions: questions,
+            knowledge: _knowledge,
+          ),
         ),
-      ),
-    );
+      );
+    } else {
+      // 单知识点：逐题背诵
+      Navigator.of(context).push(
+        AppPageRoute(
+          builder: (_) => MemorizePage(
+            bankId: widget.bankId,
+            chapter: widget.chapter,
+            title: kpName.isEmpty ? '${widget.chapter} · 背题' : '$kpName · 背题',
+            questions: questions,
+          ),
+        ),
+      );
+    }
+  }
+
+  /// 知识点名称兜底查找（knowledgeId 失效时返回空串，避免 firstWhere 抛异常）
+  String _kpName(String? id) {
+    if (id == null) return '';
+    for (final k in _knowledge) {
+      if (k.id == id) return k.name;
+    }
+    return '';
   }
 
   @override
@@ -149,7 +177,7 @@ class _ChapterOverviewPageState extends ConsumerState<ChapterOverviewPage> {
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? _ErrorView(
+              ? AppStateView.error(
                   message: _error!,
                   onRetry: () {
                     setState(() {
@@ -172,7 +200,7 @@ class _ChapterOverviewPageState extends ConsumerState<ChapterOverviewPage> {
         const SizedBox(height: 12),
         _buildActionRow(theme),
         const SizedBox(height: 20),
-        _SectionTitle(
+        AppSectionHeader(
           title: hasKnowledge ? '知识点 · ${_knowledge.length}' : '本章题目',
           trailing: Text(
             hasKnowledge
@@ -330,14 +358,13 @@ class _KnowledgeCardState extends State<_KnowledgeCard> {
             Row(
               children: [
                 if (kp.hot) ...[
-                  const Icon(
+                  Icon(
                     Icons.local_fire_department,
                     size: 18,
-                    color: Colors.deepOrange,
+                    color: theme.colorScheme.tertiary,
                   ),
                   const SizedBox(width: 4),
-                ],
-                Expanded(
+                ],                Expanded(
                   child: Text(
                     kp.name,
                     style: theme.textTheme.titleSmall?.copyWith(
@@ -424,65 +451,3 @@ class _KnowledgeCardState extends State<_KnowledgeCard> {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title, this.trailing});
-
-  final String title;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Row(
-      children: [
-        Text(
-          title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const Spacer(),
-        ?trailing,
-      ],
-    );
-  }
-}
-
-class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.cloud_off_outlined,
-              size: 44,
-              color: theme.colorScheme.error,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            FilledButton.tonalIcon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('重试'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

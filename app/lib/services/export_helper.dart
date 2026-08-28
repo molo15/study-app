@@ -4,10 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
-/// 审题标记功能（刷题页旗子 + 设置页导出入口）。
-/// 常驻功能（用户决策 2026-08-24）：不再按构建隐藏，正式版同样可见。
-const bool reviewModeEnabled = true;
-
 /// 把文本文件导出到系统公共「下载」目录（方便在文件管理/下载中取用），
 /// 返回展示给用户的路径。
 ///

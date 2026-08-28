@@ -303,6 +303,7 @@ class AnswerLog {
     required this.timeMs,
     required this.answeredAt,
     this.sessionId,
+    this.userAnswer,
   });
 
   final String questionId;
@@ -325,6 +326,9 @@ class AnswerLog {
   /// 关联模拟卷会话（仅 mock 模式，v3）
   final int? sessionId;
 
+  /// 用户作答快照（v10，模拟卷逐题回顾用；选择题为选项 key 如"A、B"，填空/简答为文本）
+  final String? userAnswer;
+
   Map<String, dynamic> toMap() => {
         'question_id': questionId,
         'mode': mode,
@@ -333,6 +337,7 @@ class AnswerLog {
         'time_ms': timeMs,
         'answered_at': answeredAt,
         'session_id': sessionId,
+        'user_answer': userAnswer,
       };
 
   static AnswerLog fromMap(Map<String, dynamic> row) => AnswerLog(
@@ -343,6 +348,7 @@ class AnswerLog {
         timeMs: row['time_ms'] as int,
         answeredAt: row['answered_at'] as int,
         sessionId: row['session_id'] as int?,
+        userAnswer: row['user_answer'] as String?,
       );
 }
 
@@ -572,6 +578,7 @@ class BankManifest {
     required this.bankId,
     required this.name,
     required this.version,
+    this.idSchema,
     this.chapterGroups = const [],
     this.knowledge = const [],
     this.overviews = const [],
@@ -581,6 +588,11 @@ class BankManifest {
   final String bankId;
   final String name;
   final String version;
+
+  /// 题 id 体系标识（v1.1.3）：v0.12 起为 'q-b'（题 id 用 q_/b_ 前缀）；
+  /// 旧包（v0.11 及更早，kb_ 前缀）无此字段。idSchema 变化 = 不兼容升级，
+  /// 导入时整库重建（见 seed_loader），避免旧题被整批软归档堆积。
+  final String? idSchema;
 
   /// 两级章节分组（v3）；旧包可转为 [{group:'全部', chapters:[...]}]
   final List<ChapterGroup> chapterGroups;
@@ -611,6 +623,7 @@ class BankManifest {
       bankId: json['bankId'] as String,
       name: json['name'] as String,
       version: json['version'] as String,
+      idSchema: json['idSchema'] as String?,
       chapterGroups: groups,
       knowledge: (json['knowledge'] as List<dynamic>? ?? const [])
           .map((e) => KnowledgePoint.fromJson(e as Map<String, dynamic>))

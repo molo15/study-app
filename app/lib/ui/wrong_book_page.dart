@@ -13,6 +13,7 @@ import '../data/quiz_repository.dart';
 import '../models/models.dart';
 import 'practice_page.dart';
 import 'glass_app_bar.dart';
+import 'app_routes.dart';
 
 class WrongBookPage extends ConsumerStatefulWidget {
   const WrongBookPage({super.key, this.bankId});
@@ -67,7 +68,7 @@ class _WrongBookPageState extends ConsumerState<WrongBookPage> {
 
   Future<void> _openPractice() async {
     await Navigator.of(context).push(
-      MaterialPageRoute(
+      AppPageRoute(
         builder: (_) => PracticePage(
           mode: PracticeMode.wrongRework,
           bankId: widget.bankId, // 审查 P1-1：错题重刷按当前库过滤

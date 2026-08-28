@@ -42,28 +42,14 @@ class _RootPageState extends State<RootPage> {
       extendBody: true,
       body: NotificationListener<ScrollNotification>(
         onNotification: _onScroll,
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 220),
-          switchInCurve: Curves.easeOutCubic,
-          switchOutCurve: Curves.easeInCubic,
-          transitionBuilder: (child, animation) => FadeTransition(
-            opacity: animation,
-            child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 0.02),
-                end: Offset.zero,
-              ).animate(animation),
-              child: child,
-            ),
-          ),
-          child: KeyedSubtree(
-            key: ValueKey(_index),
-            child: switch (_index) {
-              0 => const HomePage(),
-              1 => const StatsPage(),
-              _ => const SettingsPage(),
-            },
-          ),
+        // IndexedStack 常驻三页（状态保留、切换零重建）+ 慢速轻微上滑过渡（v1.1.3）
+        child: _SmoothTabView(
+          index: _index,
+          children: const [
+            HomePage(),
+            StatsPage(),
+            SettingsPage(),
+          ],
         ),
       ),
       bottomNavigationBar: IgnorePointer(
@@ -101,6 +87,65 @@ class _RootPageState extends State<RootPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Tab 切换容器：IndexedStack 常驻三页（状态保留、切换零重建）+ 慢速淡入上滑过渡。
+///
+/// 相比 AnimatedSwitcher + ValueKey 重建整页，IndexedStack 避免切 Tab 时
+/// 重复读库/重建，动画期间无卡顿；切换时新页轻微上滑（300ms 慢速档，
+/// 无透明度变化，切换不露背景）。
+class _SmoothTabView extends StatefulWidget {
+  const _SmoothTabView({required this.index, required this.children});
+
+  final int index;
+  final List<Widget> children;
+
+  @override
+  State<_SmoothTabView> createState() => _SmoothTabViewState();
+}
+
+class _SmoothTabViewState extends State<_SmoothTabView>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 300), // 慢速档
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.value = 1; // 首屏不播动画，直接完整显示
+  }
+
+  @override
+  void didUpdateWidget(covariant _SmoothTabView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.index != widget.index) {
+      _controller.forward(from: 0); // 切换 Tab：淡入上滑
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final curved = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    );
+    // 仅轻微上滑过渡（v1.1.3：去掉透明度淡入，避免切换瞬间背景透出，显得卡顿）
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(0, 0.012),
+        end: Offset.zero,
+      ).animate(curved),
+      child: IndexedStack(index: widget.index, children: widget.children),
     );
   }
 }

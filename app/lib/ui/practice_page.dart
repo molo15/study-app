@@ -18,8 +18,9 @@ import '../data/grading.dart';
 import '../data/quiz_repository.dart';
 import '../models/models.dart';
 import '../services/app_log.dart';
-import '../services/export_helper.dart' show reviewModeEnabled;
+
 import 'glass_app_bar.dart';
+import 'app_toast.dart';
 
 part 'practice_question_view.dart';
 part 'practice_answer_sheet.dart';
@@ -117,6 +118,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
   final Stopwatch _practiceStopwatch = Stopwatch();
   Timer? _timerRefresh;
   bool _showPracticeTimer = false;
+  bool _reviewEnabled = false; // 审题标记开关（默认关，主题定制中开启）
   int _displayedSeconds = 0;
   int _questionStartedElapsedSeconds = 0;
   bool _pageFinished = false;
@@ -208,6 +210,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
     try {
       final repo = await ref.read(quizRepositoryProvider);
       final showPracticeTimer = await repo.practiceTimerVisible();
+      final reviewEnabled = await repo.reviewModeEnabled();
       final List<Question> questions;
       if (widget.questions != null) {
         // 重点题目合集：直接刷预取题目，不重新查询题库
@@ -259,6 +262,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
       if (!mounted) return;
       setState(() {
         _showPracticeTimer = showPracticeTimer;
+        _reviewEnabled = reviewEnabled;
         _queue = questions;
         _results = List<Grade?>.filled(questions.length, null);
         _index = startIndex;
@@ -516,12 +520,8 @@ class _PracticePageState extends ConsumerState<PracticePage>
           _grade == Grade.correct &&
           await repo.consecutiveCorrectCount(question.id) >=
               QuizRepository.wrongBookRetireThreshold) {
+        // 连续答对自动移出：静默执行，不弹横幅打断练习节奏（UI 审查 P2-4）
         await repo.removeFromWrongBook(question.id);
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('已移出错题本（连续答对）')));
-        }
       }
       if (!mounted) return; // 页面可能已被用户返回（审查 P1-4）
       _stopPracticeTimer();
@@ -536,9 +536,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
     final repo = await ref.read(quizRepositoryProvider);
     await repo.removeFromWrongBook(_current.id);
     if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('已移出错题本')));
+      showAppToast(context, '已移出错题本');
     }
   }
 
@@ -763,6 +761,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
         index: _index + 1,
         total: _queue.length,
         flagged: _flagged,
+        showFlag: _reviewEnabled,
         onToggleFlag: _toggleFlag,
         showRating: _submitted,
         showRemoveWrong: isWrongRework && _submitted,

@@ -35,6 +35,8 @@ mixin _MockMixin on RepositoryMixinBase {
 
   /// 模拟卷交卷：单事务原子写入（审查 P1-4）
   /// 插成绩单占位 → 逐题日志（mode=mock, session_id）→ 回填汇总，返回完整会话
+  /// [pointsByType] 提供时按题型加权计分（综合卷 150 分制）：正确满分、部分正确半分；
+  /// 为空时保持百分制（正确数/总题数×100），兼容单科固定卷。
   Future<MockSession> submitMockSession({
     required String paperId,
     required int startedAt,
@@ -42,9 +44,11 @@ mixin _MockMixin on RepositoryMixinBase {
     required List<Question> questions,
     required Map<String, Set<String>> answers,
     required int submittedAt,
+    Map<QuestionType, int>? pointsByType,
   }) async {
     var correct = 0, partial = 0, wrong = 0, skipped = 0;
     late int sessionId;
+    late int score; // 闭包外声明，供返回 MockSession 复用
     await _db.transaction((txn) async {
       sessionId = await txn.insert(
         'mock_sessions',
@@ -62,7 +66,8 @@ mixin _MockMixin on RepositoryMixinBase {
         ).toMap(),
       );
       for (final q in questions) {
-        final grade = gradeQuestion(q, answers[q.id] ?? const <String>{});
+        final userSet = answers[q.id] ?? const <String>{};
+        final grade = gradeQuestion(q, userSet);
         switch (grade) {
           case Grade.correct:
             correct++;
@@ -82,6 +87,7 @@ mixin _MockMixin on RepositoryMixinBase {
             timeMs: 0,
             answeredAt: submittedAt,
             sessionId: sessionId,
+            userAnswer: _userAnswerText(q, userSet),
           ).toMap(),
         );
         if (grade == Grade.wrong) {
@@ -93,9 +99,26 @@ mixin _MockMixin on RepositoryMixinBase {
           );
         }
       }
-      final score = questions.isEmpty
-          ? 0
-          : (correct * 100 / questions.length).round();
+      if (pointsByType == null || pointsByType.isEmpty) {
+        score = questions.isEmpty
+            ? 0
+            : (correct * 100 / questions.length).round();
+      } else {
+        // 150 分制加权：正确满分、部分正确半分
+        var gained = 0;
+        var total = 0;
+        for (final q in questions) {
+          final pts = pointsByType[q.type] ?? 1;
+          total += pts;
+          final g = gradeQuestion(q, answers[q.id] ?? const <String>{});
+          if (g == Grade.correct) {
+            gained += pts;
+          } else if (g == Grade.partial) {
+            gained += (pts / 2).round();
+          }
+        }
+        score = total == 0 ? 0 : gained;
+      }
       await txn.update(
         'mock_sessions',
         {
@@ -119,9 +142,75 @@ mixin _MockMixin on RepositoryMixinBase {
       partial: partial,
       wrong: wrong,
       skipped: skipped,
-      score: questions.isEmpty ? 0 : (correct * 100 / questions.length).round(),
+      score: pointsByType == null || pointsByType.isEmpty
+          ? (questions.isEmpty ? 0 : (correct * 100 / questions.length).round())
+          : score,
       submittedAt: submittedAt,
     );
+  }
+
+  /// 用户作答快照文本：选择题为选项 key（如"A、B"），填空/简答为文本
+  static String _userAnswerText(Question q, Set<String> user) {
+    if (user.isEmpty) return '';
+    final isChoice =
+        q.type == QuestionType.singleChoice ||
+        q.type == QuestionType.multiChoice ||
+        q.type == QuestionType.trueFalse;
+    if (!isChoice) return user.first;
+    final keys = user.toList()..sort();
+    return keys.join('、');
+  }
+
+  // ---------- 综合模拟卷（随机组卷，150 分制） ----------
+
+  /// 综合卷：按模板从 5 科随机抽题（卷内不重复）。
+  /// 某科某题型题量不足时按实际可得题量抽（不报错），保证可作答。
+  /// 模板与分值常量定义在 [QuizRepository.compositeTemplate] / [QuizRepository.compositePoints]。
+  Future<List<Question>> generateCompositePaper() async {
+    final questions = <Question>[];
+    final seen = <String>{};
+    // 各题型期望总数（跨学科求和），用于缺口补足
+    final wantByType = <String, int>{};
+    for (final entry in QuizRepository.compositeTemplate.entries) {
+      for (final te in entry.value.entries) {
+        wantByType[te.key] = (wantByType[te.key] ?? 0) + te.value;
+      }
+    }
+    // 第一轮：按学科配额抽取（优先现汉/古汉；多选以两科为主）
+    for (final entry in QuizRepository.compositeTemplate.entries) {
+      final bankId = entry.key;
+      for (final te in entry.value.entries) {
+        final type = te.key;
+        final want = te.value;
+        if (want <= 0) continue;
+        final rows = await _db.rawQuery(
+          "SELECT * FROM questions WHERE bank_id = ? AND type = ? AND status = 'active' ORDER BY RANDOM() LIMIT ?",
+          [bankId, type, want],
+        );
+        for (final r in rows) {
+          final q = Question.fromMap(r);
+          if (seen.add(q.id)) questions.add(q);
+        }
+      }
+    }
+    // 第二轮：某题型仍不足期望时，从全库同题型（排除已抽）随机补足，
+    // 保证每卷题型数量稳定（放宽：多选等稀缺题型不再因单科不足而缺额）
+    for (final te in wantByType.entries) {
+      final type = te.key;
+      final want = te.value;
+      final have = questions.where((q) => q.type.json == type).length;
+      if (have >= want) continue;
+      final need = want - have;
+      final rows = await _db.rawQuery(
+        "SELECT * FROM questions WHERE type = ? AND status = 'active' ORDER BY RANDOM() LIMIT ?",
+        [type, need],
+      );
+      for (final r in rows) {
+        final q = Question.fromMap(r);
+        if (seen.add(q.id)) questions.add(q);
+      }
+    }
+    return questions;
   }
 
   /// 保存模拟卷成绩单，返回会话 id（调用方随后写 answer_logs 并回填汇总）
@@ -151,6 +240,40 @@ mixin _MockMixin on RepositoryMixinBase {
       limit: 50,
     );
     return rows.map(MockSession.fromMap).toList();
+  }
+
+  /// 恢复某次模考会话的逐题回顾数据（历史成绩二次回看）：
+  /// 从 answer_logs 按 session 读 user_answer 快照，还原 answers map。
+  Future<({List<Question> questions, Map<String, Set<String>> answers})>
+  mockSessionReview(int sessionId) async {
+    final logs = await _db.query(
+      'answer_logs',
+      where: 'session_id = ?',
+      whereArgs: [sessionId],
+      orderBy: 'id',
+    );
+    final ids = <String>[
+      for (final r in logs) r['question_id'] as String,
+    ];
+    final questions = await questionsByIds(ids);
+    final typeById = {for (final q in questions) q.id: q.type};
+    final answers = <String, Set<String>>{};
+    for (final r in logs) {
+      final qid = r['question_id'] as String;
+      final ua = r['user_answer'] as String?;
+      final type = typeById[qid];
+      if (type == null) continue;
+      if (ua == null || ua.isEmpty) {
+        answers[qid] = <String>{};
+        continue;
+      }
+      final isChoice =
+          type == QuestionType.singleChoice ||
+          type == QuestionType.multiChoice ||
+          type == QuestionType.trueFalse;
+      answers[qid] = isChoice ? ua.split('、').toSet() : <String>{ua};
+    }
+    return (questions: questions, answers: answers);
   }
 
   /// 今日已答数 / 今日正确率 / 连续学习天数（按 answered_at 去重日期倒推）

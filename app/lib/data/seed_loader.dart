@@ -175,6 +175,45 @@ class SeedLoader {
     var archivedCount = 0;
 
     await db.transaction((txn) async {
+      // 不兼容升级重建（v1.1.3）：idSchema 变化（如 v0.11 kb_ 前缀 → v0.12 q_/b_ 前缀）
+      // 时，整库清空再导入，避免旧 id 题被整批软归档堆积、且学习记录挂旧 id 无法匹配。
+      // 兼容升级（idSchema 相同 / 老包无 idSchema）走下方 upsert + 软归档，保留作答记录。
+      final newSchema = pack.manifest.idSchema;
+      if (newSchema != null) {
+        final schemaRows = await txn.query(
+          'settings',
+          columns: ['value'],
+          where: 'key = ?',
+          whereArgs: ['bank_${pack.manifest.bankId}_id_schema'],
+        );
+        final storedSchema = schemaRows.isEmpty
+            ? null
+            : schemaRows.first['value'] as String?;
+        if (storedSchema == null ||
+            storedSchema.isEmpty ||
+            storedSchema != newSchema) {
+          // 整库重建：先清关联数据（作答/调度/错题排除/审题标记/模拟卷）再清题。
+          // 知识点树与章节概览在下方统一按 bank 清旧重写，无需在此处理。
+          await txn.delete('answer_logs',
+              where: 'question_id IN (SELECT id FROM questions WHERE bank_id = ?)',
+              whereArgs: [pack.manifest.bankId]);
+          await txn.delete('card_scheduling',
+              where: 'question_id IN (SELECT id FROM questions WHERE bank_id = ?)',
+              whereArgs: [pack.manifest.bankId]);
+          await txn.delete('wrong_book_exclusions',
+              where: 'question_id IN (SELECT id FROM questions WHERE bank_id = ?)',
+              whereArgs: [pack.manifest.bankId]);
+          await txn.delete('review_flags',
+              where: 'bank_id = ?', whereArgs: [pack.manifest.bankId]);
+          await txn.delete('mock_sessions',
+              where: 'paper_id IN (SELECT id FROM mock_papers WHERE bank_id = ?)',
+              whereArgs: [pack.manifest.bankId]);
+          await txn.delete('mock_papers',
+              where: 'bank_id = ?', whereArgs: [pack.manifest.bankId]);
+          await txn.delete('questions',
+              where: 'bank_id = ?', whereArgs: [pack.manifest.bankId]);
+        }
+      }
       // 用户本地修改保护（v8）：user_edited=1 的题保留本地版本，
       // 内置式题库更新导入时跳过 REPLACE，避免覆盖用户修改
       final editedRows = await txn.query(
@@ -245,6 +284,11 @@ class SeedLoader {
       await txn.insert('settings', {
         'key': 'bank_${pack.manifest.bankId}_name',
         'value': pack.manifest.name,
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
+      // idSchema（v1.1.3）：记录本次导入的题 id 体系，用于不兼容升级判断
+      await txn.insert('settings', {
+        'key': 'bank_${pack.manifest.bankId}_id_schema',
+        'value': pack.manifest.idSchema ?? '',
       }, conflictAlgorithm: ConflictAlgorithm.replace);
       // 章节分组元数据（v3 两级；旧包单个"全部"分组）——供章节树展示
       await txn.insert('settings', {
