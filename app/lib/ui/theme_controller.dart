@@ -63,6 +63,31 @@ class AppThemeConfig {
 
   factory AppThemeConfig.defaults() => const AppThemeConfig();
 
+  /// P1 主题预设：一键切换整套主题（墨绿/纸米/经典蓝/夜间）
+  static const List<(String, AppThemeConfig)> presets = [
+    ('墨绿', AppThemeConfig(
+      primaryColor: '#00696D',
+      backgroundColor: '#F4F7F6',
+      cornerRadius: 16,
+    )),
+    ('纸米', AppThemeConfig(
+      primaryColor: '#8B6F47',
+      backgroundColor: '#F5EFE3',
+      cornerRadius: 18,
+    )),
+    ('经典蓝', AppThemeConfig(
+      primaryColor: '#1A56DB',
+      backgroundColor: '#F5F7FA',
+      cornerRadius: 14,
+    )),
+    ('夜间', AppThemeConfig(
+      primaryColor: '#4DB6AC',
+      backgroundColor: '#101418',
+      darkMode: true,
+      cornerRadius: 16,
+    )),
+  ];
+
   AppThemeConfig copyWith({
     String? primaryColor,
     String? backgroundColor,

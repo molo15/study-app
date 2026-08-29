@@ -171,7 +171,10 @@ class _ChapterOverviewPageState extends ConsumerState<ChapterOverviewPage> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: GlassAppBar(
-        title: Text(widget.chapter),
+        title: Hero(
+          tag: 'chapter-title:${widget.bankId}:${widget.chapter}',
+          child: Text(widget.chapter),
+        ),
         centerTitle: true,
       ),
       body: _loading

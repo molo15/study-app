@@ -23,6 +23,7 @@ import 'chapter_overview_page.dart';
 import 'glass_app_bar.dart';
 import 'practice_page.dart';
 import 'app_routes.dart';
+import 'widgets/staggered_item.dart';
 
 class BankPage extends ConsumerStatefulWidget {
   const BankPage({super.key, required this.bankId});
@@ -186,8 +187,11 @@ class _BankPageState extends ConsumerState<BankPage> {
                 else ...[
                   const SizedBox(height: 12),
                   // 章节树：编（ExpansionTile）→ 章（ListTile → 刷题）
-                  for (final group in _groups) ...[
-                    _buildGroupCard(theme, group),
+                  for (var i = 0; i < _groups.length; i++) ...[
+                    StaggeredItem(
+                      index: i,
+                      child: _buildGroupCard(theme, _groups[i]),
+                    ),
                     const SizedBox(height: 12),
                   ],
                 ],
@@ -575,11 +579,14 @@ class _ChapterTile extends StatelessWidget {
       return ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16),
         leading: const Icon(Icons.description_outlined, size: 20),
-        title: Text(
-          chapter,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.textTheme.bodyMedium,
+        title: Hero(
+          tag: 'chapter-title:$bankId:$chapter',
+          child: Text(
+            chapter,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodyMedium,
+          ),
         ),
         trailing: Text(
           '$total 题',
@@ -595,11 +602,14 @@ class _ChapterTile extends StatelessWidget {
       tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
       childrenPadding: const EdgeInsets.only(left: 24),
       leading: const Icon(Icons.description_outlined, size: 20),
-      title: Text(
-        chapter,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: theme.textTheme.bodyMedium,
+      title: Hero(
+        tag: 'chapter-title:$bankId:$chapter',
+        child: Text(
+          chapter,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodyMedium,
+        ),
       ),
       subtitle: Text(
         '共 $total 题 · 展开按基础/测试分类刷',

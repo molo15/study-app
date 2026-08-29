@@ -25,6 +25,8 @@ import 'practice_page.dart';
 import 'settings_page.dart';
 import 'wrong_book_page.dart';
 import 'app_routes.dart';
+import 'widgets/app_card.dart';
+import 'widgets/staggered_item.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -262,7 +264,11 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         ),
         const SizedBox(height: 8),
-        for (final bank in _banks) _buildBankCard(theme, bank),
+        for (var i = 0; i < _banks.length; i++)
+          StaggeredItem(
+            index: i,
+            child: _buildBankCard(theme, _banks[i]),
+          ),
         const SizedBox(height: 16),
       ],
     );
@@ -332,7 +338,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   /// 今日任务卡：三项计数 + 唯一主按钮（禁用逻辑不变）+ 无任务时的次级入口
   Widget _buildTodayCard(ThemeData theme) {
-    return Card(
+    return AppCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -410,59 +416,110 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  /// 快捷入口：错题本 + 模拟考试（次级卡片，模拟卷为空时保留入口占位）
+  /// P1.5 快捷入口：三并排卡（模拟考 / 背题 / 错题本）
   Widget _buildQuickEntries(ThemeData theme) {
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Column(
-        children: [
-          ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 4,
-            ),
-            leading: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.error.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(Icons.error_outline, color: theme.colorScheme.error),
-            ),
-            title: const Text('错题本'),
-            subtitle: Text(_wrongCount == 0 ? '暂无错题' : '共 $_wrongCount 道错题待巩固'),
-            trailing: const Icon(Icons.chevron_right),
+    return Row(
+      children: [
+        Expanded(
+          child: _quickEntryCard(
+            icon: Icons.assignment_outlined,
+            iconColor: theme.colorScheme.tertiary,
+            title: '模拟考',
+            subtitle: _mockPapers.isEmpty
+                ? '综合卷'
+                : '${_mockPapers.length + 1} 套',
+            onTap: () => _push(MockExamListPage(bankId: _currentBankId)),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _quickEntryCard(
+            icon: Icons.style_outlined,
+            iconColor: theme.colorScheme.primary,
+            title: '背题',
+            subtitle: '选章背诵',
+            onTap: _showBankPickerForMem,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _quickEntryCard(
+            icon: Icons.error_outline,
+            iconColor: theme.colorScheme.error,
+            title: '错题本',
+            subtitle: _wrongCount == 0 ? '暂无' : '$_wrongCount 道',
             onTap: () => _push(WrongBookPage(bankId: _currentBankId)),
           ),
-          const Divider(height: 1, indent: 72, endIndent: 16),
-          // 模拟卷：为空时显示轻量空态，入口仍保留（不破坏 mockPapers 判断逻辑）
-          ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 4,
+        ),
+      ],
+    );
+  }
+
+  /// 背题入口：弹出题库选择，选科后跳转到该科章节列表（用户选章进入背题）
+  Future<void> _showBankPickerForMem() async {
+    final theme = Theme.of(context);
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text('选择科目开始背题', style: theme.textTheme.titleMedium),
             ),
-            leading: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.tertiary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
+            for (final bank in _banks)
+              ListTile(
+                leading: const Icon(Icons.menu_book_outlined),
+                title: Text(bank.name),
+                subtitle: Text('${bank.active} 题'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.pop(ctx, bank.bankId),
               ),
-              child: Icon(
-                Icons.assignment_outlined,
-                color: theme.colorScheme.tertiary,
-              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (picked != null && mounted) {
+      _push(BankPage(bankId: picked));
+    }
+  }
+
+  /// P1.5 快捷入口小卡：图标 + 标题 + 副标题
+  Widget _quickEntryCard({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    return AppCard(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
             ),
-            title: const Text('模拟考试'),
-            subtitle: Text(
-              // 综合卷恒存在（随机组卷），计数 +1（P2-2）
-              _mockPapers.isEmpty
-                  ? '1 套综合卷 · 随机组卷'
-                  : '${_mockPapers.length + 1} 套卷 · 限时作答',
+            child: Icon(icon, color: iconColor, size: 20),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => _push(MockExamListPage(bankId: _currentBankId)),
           ),
         ],
       ),
@@ -471,7 +528,10 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   /// 题库列表卡：一行标题 + 两行辅助信息，题量弱化（仅用 BankInfo 现有字段）
   Widget _buildBankCard(ThemeData theme, BankInfo bank) {
-    return Card(
+    return AppCard(
+      padding: EdgeInsets.zero,
+      margin: const EdgeInsets.only(bottom: 10),
+      onTap: () => _push(BankPage(bankId: bank.bankId)),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
@@ -511,7 +571,6 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
         isThreeLine: true,
         trailing: const Icon(Icons.chevron_right),
-        onTap: () => _push(BankPage(bankId: bank.bankId)),
       ),
     );
   }

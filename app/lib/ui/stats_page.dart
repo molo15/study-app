@@ -23,6 +23,10 @@ class _StatsPageState extends ConsumerState<StatsPage> {
   bool _loading = true;
   String? _error;
   StudyStats? _stats;
+  // P2 章节掌握度：排序/筛选/折叠状态
+  bool _chapterSortByAccuracy = true; // true=按正确率升序（薄弱在前），false=章节顺序
+  int _chapterFilter = 0; // 0=全部 1=薄弱(<60%) 2=中等(60-80%) 3=掌握(>=80%)
+  bool _chapterExpanded = false; // 超过8章时默认折叠
 
   @override
   void initState() {
@@ -52,6 +56,27 @@ class _StatsPageState extends ConsumerState<StatsPage> {
     final minutes = (ms / 60000).floor();
     if (minutes < 60) return '$minutes 分钟';
     return '${(minutes / 60).toStringAsFixed(1)} 小时';
+  }
+
+  static const List<String> _filterLabels = ['全部', '薄弱', '中等', '掌握'];
+
+  /// P2：按筛选+排序返回章节列表；折叠时只取前8条
+  List<ChapterStats> _filteredChapters(List<ChapterStats> all) {
+    var list = all.where((c) {
+      switch (_chapterFilter) {
+        case 1: return c.accuracy < 60;
+        case 2: return c.accuracy >= 60 && c.accuracy < 80;
+        case 3: return c.accuracy >= 80;
+        default: return true;
+      }
+    }).toList();
+    if (_chapterSortByAccuracy) {
+      list.sort((a, b) => a.accuracy.compareTo(b.accuracy));
+    }
+    if (!_chapterExpanded && list.length > 8) {
+      list = list.sublist(0, 8);
+    }
+    return list;
   }
 
   @override
@@ -201,14 +226,31 @@ class _StatsPageState extends ConsumerState<StatsPage> {
             ),
           ),
         const SizedBox(height: 16),
-        // 章节分布
+        // P2 章节掌握度：排序+筛选+折叠+分档着色
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const _SectionHeader(title: '章节掌握度', helperText: '各章节作答量与正确率'),
+                Row(
+                  children: [
+                    const Expanded(
+                      child: _SectionHeader(title: '章节掌握度', helperText: '各章节作答量与正确率'),
+                    ),
+                    // 排序切换：薄弱在前 / 章节顺序
+                    IconButton(
+                      icon: Icon(
+                        _chapterSortByAccuracy ? Icons.sort : Icons.menu_open,
+                        size: 20,
+                      ),
+                      tooltip: _chapterSortByAccuracy ? '按章节顺序' : '按薄弱程度排序',
+                      onPressed: s.byChapter.isEmpty
+                          ? null
+                          : () => setState(() => _chapterSortByAccuracy = !_chapterSortByAccuracy),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 8),
                 if (s.byChapter.isEmpty)
                   Padding(
@@ -222,8 +264,38 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                       ),
                     ),
                   )
-                else
-                  for (final c in s.byChapter) _ChapterRow(stats: c),
+                else ...[
+                  // 筛选标签：全部/薄弱/中等/掌握
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      for (var i = 0; i < _filterLabels.length; i++)
+                        ChoiceChip(
+                          label: Text(_filterLabels[i]),
+                          selected: _chapterFilter == i,
+                          onSelected: (_) => setState(() => _chapterFilter = i),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // 过滤+排序后的章节列表
+                  for (final c in _filteredChapters(s.byChapter))
+                    _ChapterRow(stats: c),
+                  // 折叠/展开：超过8章时默认只显示8条
+                  if (_filteredChapters(s.byChapter).length > 8 && !_chapterExpanded) ...[
+                    const SizedBox(height: 4),
+                    TextButton(
+                      onPressed: () => setState(() => _chapterExpanded = true),
+                      child: Text('展开全部（共 ${_filteredChapters(s.byChapter).length} 章）'),
+                    ),
+                  ] else if (_chapterExpanded && _filteredChapters(s.byChapter).length > 8) ...[
+                    const SizedBox(height: 4),
+                    TextButton(
+                      onPressed: () => setState(() => _chapterExpanded = false),
+                      child: const Text('收起'),
+                    ),
+                  ],
+                ],
               ],
             ),
           ),
@@ -542,6 +614,11 @@ class _ChapterRow extends StatelessWidget {
             child: LinearProgressIndicator(
               value: stats.accuracy / 100,
               backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              color: stats.accuracy < 60
+                  ? theme.colorScheme.error
+                  : stats.accuracy < 80
+                      ? Colors.orange
+                      : theme.colorScheme.primary,
             ),
           ),
           const SizedBox(width: 8),

@@ -87,6 +87,68 @@ class _ThemePanelPageState extends ConsumerState<_ThemePanelPage> {
   }
 
   /// 颜色选择器：点击区域 ≥48dp，带 Tooltip 与 Semantics 标签（审查 P1-3）
+  /// P1 主题预设卡片：主色+背景色预览 + 名称
+  Widget _presetCard({
+    required String name,
+    required AppThemeConfig preset,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 90,
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? theme.colorScheme.primary : theme.colorScheme.outlineVariant,
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Container(
+              height: 36,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: parseHexColor(preset.backgroundColor),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: parseHexColor(preset.primaryColor),
+                      borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
+                    ),
+                  ),
+                  const Spacer(),
+                  if (preset.darkMode)
+                    const Padding(
+                      padding: EdgeInsets.only(right: 6),
+                      child: Icon(Icons.dark_mode_outlined, size: 14, color: Colors.white54),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              name,
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                color: selected ? theme.colorScheme.primary : null,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _colorSwatch({
     required String hex,
     required bool selected,
@@ -194,6 +256,30 @@ class _ThemePanelPageState extends ConsumerState<_ThemePanelPage> {
                 const AppSectionHeader(title: '预览', helperText: '先看效果，再调整参数'),
                 const SizedBox(height: 8),
                 _buildPreviewCard(theme),
+                const SizedBox(height: 24),
+                // P1 主题预设：一键切换整套主题
+                const AppSectionHeader(title: '主题预设', helperText: '一键切换整套配色与风格'),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    for (final (name, preset) in AppThemeConfig.presets)
+                      _presetCard(
+                        name: name,
+                        preset: preset,
+                        selected: _config.primaryColor == preset.primaryColor &&
+                            _config.backgroundColor == preset.backgroundColor,
+                        onTap: () => _apply(preset.copyWith(
+                          reduceMotion: _config.reduceMotion,
+                          backgroundImagePath: _config.backgroundImagePath,
+                          backgroundOpacity: _config.backgroundOpacity,
+                          cardOpacity: _config.cardOpacity,
+                          hideStatusBar: _config.hideStatusBar,
+                        )),
+                      ),
+                  ],
+                ),
                 const SizedBox(height: 24),
                 // 主色预设
                 const AppSectionHeader(title: '主色'),

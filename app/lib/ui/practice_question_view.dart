@@ -56,8 +56,25 @@ class _QuestionView extends StatelessWidget {
             QuestionOption(key: '错误', text: '错误'),
           ]
         : question.options;
-    return ListView(
-      padding: const EdgeInsets.all(16),
+    return AnimatedSwitcher(
+      duration: reduceMotion ? Duration.zero : AppAnim.grade,
+      switchInCurve: AppAnim.standard,
+      switchOutCurve: AppAnim.standard,
+      // 只显示当前 child：避免新旧 ListView 叠加导致 TextField 串题（测试 P1-5）
+      layoutBuilder: (currentChild, previousChildren) => currentChild!,
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0.06, 0),
+            end: Offset.zero,
+          ).animate(animation),
+          child: child,
+        ),
+      ),
+      child: ListView(
+        key: ValueKey(question.id),
+        padding: const EdgeInsets.all(16),
       children: [
         // 题型徽章 + 章节 + 进度
         Row(
@@ -233,6 +250,7 @@ class _QuestionView extends StatelessWidget {
             label: const Text('提交'),
           ),
       ],
+      ),
     );
   }
 }
@@ -271,6 +289,10 @@ class _OptionTileState extends State<_OptionTile>
   @override
   void didUpdateWidget(covariant _OptionTile oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // P0 修复：切题时 question.id 变化，重置抖动控制器，避免偏移残留
+    if (oldWidget.question.id != widget.question.id) {
+      _shakeCtrl.value = 0;
+    }
     final isCorrect = widget.question.answer.contains(widget.option.key);
     if (!oldWidget.submitted &&
         widget.submitted &&
