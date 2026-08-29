@@ -50,3 +50,10 @@ tmp_*.png
 
 # 一次性临时脚本
 tools/_tmp_*.py
+
+# 构建日志
+/build_v*.txt
+app/build_v*.txt
+
+# 审核日志
+app/audit_*.txt
