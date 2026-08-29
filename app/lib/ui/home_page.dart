@@ -300,7 +300,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      days == null ? '考试日已过或未设置' : '距考试还有 $days 天',
+                      days == null
+                          ? (goal.examDate == null
+                                ? '未设置考试日期'
+                                : '考试日期已过')
+                          : '距考试还有 $days 天',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: days != null && days <= 30
