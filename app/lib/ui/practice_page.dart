@@ -9,6 +9,7 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,6 +19,9 @@ import '../data/grading.dart';
 import '../data/quiz_repository.dart';
 import '../models/models.dart';
 import '../services/app_log.dart';
+
+import 'widgets/animation_constants.dart';
+import 'theme_controller.dart';
 
 import 'glass_app_bar.dart';
 import 'app_toast.dart';
@@ -717,6 +721,8 @@ class _PracticePageState extends ConsumerState<PracticePage>
       );
     }
     final isWrongRework = widget.mode == PracticeMode.wrongRework;
+    // P0 手感优化：减少动效开关（主题配置持久化）
+    final reduceMotion = ref.watch(themeControllerProvider).value?.reduceMotion ?? false;
     return Scaffold(
       appBar: GlassAppBar(
         title: Text(_modeLabel),
@@ -754,6 +760,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
         ),
       ),
       body: _QuestionView(
+        reduceMotion: reduceMotion,
         question: _current,
         selection: _selection,
         submitted: _submitted,

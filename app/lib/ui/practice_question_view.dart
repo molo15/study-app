@@ -2,6 +2,7 @@ part of 'practice_page.dart';
 
 class _QuestionView extends StatelessWidget {
   const _QuestionView({
+    required this.reduceMotion,
     required this.question,
     required this.selection,
     required this.submitted,
@@ -19,6 +20,9 @@ class _QuestionView extends StatelessWidget {
     required this.onRate,
     required this.onRemoveWrong,
   });
+
+  /// 减少动效（P0 手感优化）
+  final bool reduceMotion;
 
   final Question question;
   final Set<String> selection;
@@ -134,6 +138,7 @@ class _QuestionView extends StatelessWidget {
             question: question,
             selected: selection.contains(option.key),
             submitted: submitted,
+            reduceMotion: reduceMotion,
             onTap: () => onSelect(option.key),
           ),
         for (final type in [QuestionType.blank, QuestionType.shortAnswer])
@@ -147,7 +152,7 @@ class _QuestionView extends StatelessWidget {
             ),
         const SizedBox(height: 20),
         if (submitted) ...[
-          _ResultCard(question: question, grade: grade),
+          _ResultCard(question: question, grade: grade, reduceMotion: reduceMotion),
           const SizedBox(height: 16),
           if (showRating) ...[
             Text(
@@ -232,12 +237,13 @@ class _QuestionView extends StatelessWidget {
   }
 }
 
-class _OptionTile extends StatelessWidget {
+class _OptionTile extends StatefulWidget {
   const _OptionTile({
     required this.option,
     required this.question,
     required this.selected,
     required this.submitted,
+    required this.reduceMotion,
     required this.onTap,
   });
 
@@ -245,105 +251,145 @@ class _OptionTile extends StatelessWidget {
   final Question question;
   final bool selected;
   final bool submitted;
+  final bool reduceMotion;
   final VoidCallback onTap;
+
+  @override
+  State<_OptionTile> createState() => _OptionTileState();
+}
+
+class _OptionTileState extends State<_OptionTile>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _shakeCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _shakeCtrl = AnimationController(vsync: this, duration: AppAnim.shake);
+  }
+
+  @override
+  void didUpdateWidget(covariant _OptionTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final isCorrect = widget.question.answer.contains(widget.option.key);
+    if (!oldWidget.submitted &&
+        widget.submitted &&
+        widget.selected &&
+        !isCorrect &&
+        !widget.reduceMotion) {
+      _shakeCtrl.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _shakeCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // 判断题与单选共用互斥/样式逻辑（审查 P1-B：isChoice 补 trueFalse）
-    final isChoice =
-        question.type == QuestionType.singleChoice ||
-        question.type == QuestionType.multiChoice ||
-        question.type == QuestionType.trueFalse;
-    final isCorrect = question.answer.contains(option.key);
+    final isChoice = widget.question.type == QuestionType.singleChoice ||
+        widget.question.type == QuestionType.multiChoice ||
+        widget.question.type == QuestionType.trueFalse;
+    final isCorrect = widget.question.answer.contains(widget.option.key);
 
     Color? borderColor;
     Color? fillColor;
     IconData? trailing;
-    if (isChoice && submitted) {
+    if (isChoice && widget.submitted) {
       if (isCorrect) {
         borderColor = _semantic(context, _kSuccess, _kSuccessDark);
         fillColor = borderColor.withValues(alpha: 0.08);
         trailing = Icons.check_circle;
-      } else if (selected) {
+      } else if (widget.selected) {
         borderColor = _semantic(context, _kError, _kErrorDark);
         fillColor = borderColor.withValues(alpha: 0.06);
         trailing = Icons.cancel;
       }
-    } else if (isChoice && selected && !submitted) {
+    } else if (isChoice && widget.selected && !widget.submitted) {
       borderColor = theme.colorScheme.primary;
       fillColor = theme.colorScheme.primary.withValues(alpha: 0.14);
     }
 
-    // 选项选中/判分态颜色过渡（UI 审查③：瞬时切换无动画）
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      curve: Curves.easeOut,
-      margin: const EdgeInsets.symmetric(vertical: 5),
-      // 背景色放 Material 上：Material 是 ListTile 的祖先，
-      // 水波纹/选中态正常绘制（放在 DecoratedBox 会触发 debug 断言）
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: borderColor ?? theme.colorScheme.outlineVariant,
-          width: borderColor == null ? 1 : 1.8,
-        ),
-      ),
-      child: Material(
-        color: fillColor ?? Colors.transparent,
-        borderRadius: BorderRadius.circular(13),
-        // 选项最小高度约 52dp，提交前后点击区域与高度保持一致（设计方案 §4.4）
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 52),
-          child: ListTile(
-            leading: isChoice
-                ? Icon(
-                    selected
-                        ? Icons.check_circle_outlined
-                        : Icons.circle_outlined,
-                    color: selected
-                        ? (borderColor ?? theme.colorScheme.primary)
-                        : theme.colorScheme.outline,
-                  )
-                : null,
-            // 判断题：显示「正确/错误」不带 key 前缀（修复：避免"正确. 正确"）
-            title: Text(
-              question.type == QuestionType.trueFalse
-                  ? option.text
-                  : '${option.key}. ${option.text}',
-              style: TextStyle(
-                fontWeight: selected && !submitted ? FontWeight.w600 : null,
+    // P0 手感：错误选中时水平抖动（sin 波 × 4px，衰减）
+    final shakeDx = widget.reduceMotion
+        ? 0.0
+        : _shakeCtrl.value == 0
+            ? 0.0
+            : (1 - _shakeCtrl.value) * 4 * math.sin(_shakeCtrl.value * 3 * math.pi);
+    // P0 手感：判题正确→1.03 弹性放大；选中未提交→1.01 微弹
+    final scale = widget.submitted && isCorrect
+        ? (widget.reduceMotion ? 1.0 : 1.03)
+        : (widget.selected && !widget.submitted ? 1.01 : 1.0);
+    final scaleCurve =
+        widget.submitted && isCorrect ? AppAnim.elastic : AppAnim.standard;
+
+    return Transform.translate(
+      offset: Offset(shakeDx, 0),
+      child: AnimatedScale(
+        scale: scale,
+        duration: widget.reduceMotion ? Duration.zero : AppAnim.grade,
+        curve: scaleCurve,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          margin: const EdgeInsets.symmetric(vertical: 5),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: borderColor ?? theme.colorScheme.outlineVariant,
+              width: borderColor == null ? 1 : 1.8,
+            ),
+          ),
+          child: Material(
+            color: fillColor ?? Colors.transparent,
+            borderRadius: BorderRadius.circular(13),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 52),
+              child: ListTile(
+                leading: isChoice
+                    ? Icon(
+                        widget.selected
+                            ? Icons.check_circle_outlined
+                            : Icons.circle_outlined,
+                        color: widget.selected
+                            ? (borderColor ?? theme.colorScheme.primary)
+                            : theme.colorScheme.outline,
+                      )
+                    : null,
+                title: Text(
+                  widget.question.type == QuestionType.trueFalse
+                      ? widget.option.text
+                      : '${widget.option.key}. ${widget.option.text}',
+                  style: TextStyle(
+                    fontWeight:
+                        widget.selected && !widget.submitted ? FontWeight.w600 : null,
+                  ),
+                ),
+                trailing: trailing == null
+                    ? null
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (trailing == Icons.check_circle) ...[
+                            Text('正确',
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                    color: borderColor, fontWeight: FontWeight.w700)),
+                            const SizedBox(width: 4),
+                          ] else if (trailing == Icons.cancel) ...[
+                            Text('错误',
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                    color: borderColor, fontWeight: FontWeight.w700)),
+                            const SizedBox(width: 4),
+                          ],
+                          Icon(trailing, color: borderColor, size: 20),
+                        ],
+                      ),
+                onTap: widget.onTap,
               ),
             ),
-            // 正确/错误态：图标 + 文字双重反馈，不依赖纯色（设计方案 §3.4/P1-2）
-            trailing: trailing == null
-                ? null
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (trailing == Icons.check_circle) ...[
-                        Text(
-                          '正确',
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: borderColor,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                      ] else if (trailing == Icons.cancel) ...[
-                        Text(
-                          '错误',
-                          style: theme.textTheme.labelMedium?.copyWith(
-                            color: borderColor,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                      ],
-                      Icon(trailing, color: borderColor, size: 20),
-                    ],
-                  ),
-            onTap: onTap,
           ),
         ),
       ),
@@ -484,11 +530,14 @@ class _FreeAnswerFieldState extends State<_FreeAnswerField> {
   }
 }
 /// 判分与解析卡片（左侧色条，含来源出处展示）
+/// P0 手感：提交后从底部滑入 + 淡入
 class _ResultCard extends StatelessWidget {
-  const _ResultCard({required this.question, required this.grade});
+  const _ResultCard(
+      {required this.question, required this.grade, required this.reduceMotion});
 
   final Question question;
   final Grade grade;
+  final bool reduceMotion;
 
   @override
   Widget build(BuildContext context) {
@@ -521,9 +570,8 @@ class _ResultCard extends StatelessWidget {
       if (question.sourceBlockId != null && question.sourceBlockId!.isNotEmpty)
         '块 ${question.sourceBlockId}',
     ].join(' · ');
-    return Container(
+    final card = Container(
       decoration: BoxDecoration(
-        // 深色模式适配（UI 复审 P0-1）：卡片底色跟随主题与透明度
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: color.withValues(alpha: 0.4), width: 1),
@@ -536,9 +584,8 @@ class _ResultCard extends StatelessWidget {
               width: 5,
               decoration: BoxDecoration(
                 color: color,
-                borderRadius: const BorderRadius.horizontal(
-                  left: Radius.circular(14),
-                ),
+                borderRadius:
+                    const BorderRadius.horizontal(left: Radius.circular(14)),
               ),
             ),
             Expanded(
@@ -547,54 +594,34 @@ class _ResultCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Icon(icon, color: color, size: 20),
-                        const SizedBox(width: 6),
-                        Text(
-                          label,
+                    Row(children: [
+                      Icon(icon, color: color, size: 20),
+                      const SizedBox(width: 6),
+                      Text(label,
                           style: theme.textTheme.titleSmall?.copyWith(
-                            color: color,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
+                              color: color, fontWeight: FontWeight.w700)),
+                    ]),
                     const SizedBox(height: 8),
-                    // 审查 P2-1：填空/简答也展示参考答案（做错后可巩固）
                     if (question.type == QuestionType.singleChoice ||
                         question.type == QuestionType.trueFalse ||
                         question.type == QuestionType.multiChoice)
-                      Text(
-                        '正确答案：${question.answer.join('、')}',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      Text('正确答案：${question.answer.join('、')}',
+                          style: theme.textTheme.bodyMedium
+                              ?.copyWith(fontWeight: FontWeight.w600)),
                     if (question.type == QuestionType.blank ||
                         question.type == QuestionType.shortAnswer)
-                      Text(
-                        '参考答案：${question.answer.join('；')}',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      Text('参考答案：${question.answer.join('；')}',
+                          style: theme.textTheme.bodyMedium
+                              ?.copyWith(fontWeight: FontWeight.w600)),
                     const SizedBox(height: 8),
                     if (question.explanation.isNotEmpty)
-                      Text(
-                        '解析：${question.explanation}',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          height: 1.5,
-                        ),
-                      ),
+                      Text('解析：${question.explanation}',
+                          style: theme.textTheme.bodyMedium?.copyWith(height: 1.5)),
                     if (sourceText.isNotEmpty) ...[
                       const SizedBox(height: 8),
-                      Text(
-                        sourceText,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.outline,
-                        ),
-                      ),
+                      Text(sourceText,
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: theme.colorScheme.outline)),
                     ],
                   ],
                 ),
@@ -603,6 +630,20 @@ class _ResultCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+    // P0 手感：滑入 + 淡入（reduceMotion 时直接显示）
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: reduceMotion ? Duration.zero : AppAnim.slideIn,
+      curve: AppAnim.standard,
+      builder: (context, value, child) => Opacity(
+        opacity: value,
+        child: Transform.translate(
+          offset: Offset(0, (1 - value) * 24),
+          child: child,
+        ),
+      ),
+      child: card,
     );
   }
 }

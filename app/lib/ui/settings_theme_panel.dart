@@ -324,6 +324,15 @@ class _ThemePanelPageState extends ConsumerState<_ThemePanelPage> {
                   onChanged: (v) => _apply(_config.copyWith(hideStatusBar: v)),
                 ),
                 const SizedBox(height: 8),
+                // 减少动效（P0 手感优化）
+                SwitchListTile(
+                  secondary: const Icon(Icons.speed_outlined),
+                  title: const Text('减少动效'),
+                  subtitle: const Text('关闭判题抖动/弹性放大等装饰动效，仅保留颜色反馈，更流畅省电'),
+                  value: _config.reduceMotion,
+                  onChanged: (v) => _apply(_config.copyWith(reduceMotion: v)),
+                ),
+                const SizedBox(height: 8),
                 // 功能开关（审题标记）
                 const AppSectionHeader(title: '功能', helperText: '按需开启的附加功能'),
                 const SizedBox(height: 8),

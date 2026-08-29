@@ -34,6 +34,7 @@ class AppThemeConfig {
     this.cornerRadius = 16.0,
     this.darkMode = false,
     this.hideStatusBar = false,
+    this.reduceMotion = false,
   });
 
   final String primaryColor;
@@ -51,6 +52,10 @@ class AppThemeConfig {
   /// 隐藏系统状态栏（沉浸模式；默认显示）
   final bool hideStatusBar;
 
+  /// 减少动效（P0 手感优化）：开启后非必要动效时长减半或跳过，
+  /// 仅保留判题颜色反馈，照顾低性能设备与专注用户。默认关。
+  final bool reduceMotion;
+
   Color get primary => parseHexColor(primaryColor);
 
   Color get background =>
@@ -67,6 +72,7 @@ class AppThemeConfig {
     double? cornerRadius,
     bool? darkMode,
     bool? hideStatusBar,
+    bool? reduceMotion,
   }) => AppThemeConfig(
     primaryColor: primaryColor ?? this.primaryColor,
     backgroundColor: backgroundColor ?? this.backgroundColor,
@@ -76,6 +82,7 @@ class AppThemeConfig {
     cornerRadius: cornerRadius ?? this.cornerRadius,
     darkMode: darkMode ?? this.darkMode,
     hideStatusBar: hideStatusBar ?? this.hideStatusBar,
+    reduceMotion: reduceMotion ?? this.reduceMotion,
   );
 
   Map<String, dynamic> toJson() => {
@@ -87,6 +94,7 @@ class AppThemeConfig {
     'cornerRadius': cornerRadius,
     'darkMode': darkMode,
     'hideStatusBar': hideStatusBar,
+    'reduceMotion': reduceMotion,
   };
 
   factory AppThemeConfig.fromJson(Map<String, dynamic> json) => AppThemeConfig(
@@ -98,6 +106,7 @@ class AppThemeConfig {
     cornerRadius: (json['cornerRadius'] as num?)?.toDouble() ?? 16.0,
     darkMode: json['darkMode'] as bool? ?? false,
     hideStatusBar: json['hideStatusBar'] as bool? ?? false,
+    reduceMotion: json['reduceMotion'] as bool? ?? false,
   );
 
   /// 由配置构建 ThemeData（迁移自 app_theme.dart，支持深色）
