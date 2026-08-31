@@ -21,8 +21,11 @@ class MainActivity : FlutterActivity() {
                 when (call.method) {
                     "saveToDownloads" -> {
                         val fileName = call.argument<String>("fileName") ?: "export.json"
-                        val content =
-                            (call.argument<String>("content") ?: "").toByteArray(Charsets.UTF_8)
+                        val content: ByteArray = when (val c = call.argument<Any>("content")) {
+                            is String -> c.toByteArray(Charsets.UTF_8)
+                            is ByteArray -> c
+                            else -> ByteArray(0)
+                        }
                         try {
                             result.success(saveToDownloads(fileName, content))
                         } catch (e: Exception) {

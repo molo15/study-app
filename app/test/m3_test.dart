@@ -200,6 +200,8 @@ void main() {
             onConfigure: AppDatabase.configure,
             onCreate: (db, v) => AppDatabase.createSchema(db, v),
           ));
+      // 新设计：题库以本地内置包为准，先 seed 题库再恢复用户状态（多端方案 §2.5）
+      await QuizRepository(db2).importBank(SeedLoader.parse(await demoBankJson()));
       await QuizRepository(db2).restoreJson(json);
       final stats2 = await QuizRepository(db2).studyStats();
       expect(stats2.totalAnswered, 1);

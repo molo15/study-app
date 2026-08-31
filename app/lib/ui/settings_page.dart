@@ -307,15 +307,22 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     }
   }
 
+  /// 导出存档（v3：zip 压缩，含全部用户状态，不含题库；多端方案 §2）
   Future<void> _exportBackup() async {
     final repo = await ref.read(quizRepositoryProvider);
-    final json = await repo.exportJson();
+    final bytes = await repo.exportArchive();
     final stamp = DateTime.now()
         .toIso8601String()
         .replaceAll(':', '-')
         .split('.')
         .first;
-    await _exportToFile('quiz_backup_$stamp.json', json);
+    try {
+      final path = await exportToDownloadsBytes(
+          'quiz_archive_$stamp.zip', bytes);
+      _toast('已导出存档：$path');
+    } catch (e) {
+      _toast('导出失败：$e');
+    }
   }
 
   /// 导出审题标记清单（v7：刷题时标记的"待修改"题目；保存到公共下载目录）
@@ -337,24 +344,53 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  /// 导入备份：从导出的 JSON 全量恢复（清空现有数据，不可撤销）
+  /// 导入存档：支持 .zip（v3 存档）与 .json（v1/v2 旧备份）。
+  /// 解析预览 → 确认（含题库版本不匹配提示）→ 全量恢复用户状态（不动题库）。
   Future<void> _importBackup() async {
     try {
       final file = await FilePicker.pickFile(
         type: FileType.custom,
-        allowedExtensions: ['json'],
-        dialogTitle: '选择备份文件（.json）',
+        allowedExtensions: ['zip', 'json'],
+        dialogTitle: '选择存档文件（.zip 或 .json）',
       );
       if (file == null) return;
-      final text = utf8.decode(await file.readAsBytes());
+      final bytes = await file.readAsBytes();
+      if (!mounted) return;
+      final repo = await ref.read(quizRepositoryProvider);
+      final preview = await repo.parseArchive(bytes);
+      final mismatches = preview.bankMismatches;
       if (!mounted) return;
       final ok = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('导入备份？'),
-          content: const Text(
-            '将清空当前全部题目、作答记录、复习进度、错题本并恢复为备份内容，'
-            '不可撤销。建议先「导出备份」留存当前数据。',
+          title: const Text('导入存档？'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '将恢复存档中的全部用户状态（做题记录、复习进度、背题进度、'
+                  '错题本、模拟考记录、审题标记、设置），题库以本机内置包为准。'
+                  '不可撤销，建议先「导出存档」留存当前数据。',
+                  style: const TextStyle(fontSize: 13, height: 1.5),
+                ),
+                if (mismatches.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  const Text('⚠ 题库版本不一致：',
+                      style: TextStyle(fontWeight: FontWeight.w700)),
+                  for (final m in mismatches)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text('· $m',
+                          style: const TextStyle(fontSize: 12.5)),
+                    ),
+                  const SizedBox(height: 6),
+                  const Text('记录可能无法匹配到题，建议先在两端统一题库版本。',
+                      style: TextStyle(fontSize: 12.5)),
+                ],
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -369,14 +405,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         ),
       );
       if (ok != true) return;
-      final repo = await ref.read(quizRepositoryProvider);
-      await repo.restoreJson(text);
-      _toast('已从备份恢复全部数据');
+      final result = await repo.restoreArchive(bytes);
+      _toast('已恢复：做题记录 ${result.restoredLogs} 条、复习卡 ${result.restoredCards} 张');
       await _load();
     } on FormatException catch (e) {
-      _toast('备份文件无效：${e.message}');
+      _toast('存档文件无效：${e.message}');
     } catch (e) {
-      _toast('导入备份失败：$e');
+      _toast('导入存档失败：$e');
     }
   }
 
