@@ -319,6 +319,8 @@ class _KnowledgeMemorizePageState
   Widget _frontCard(ThemeData theme, KnowledgePoint kp) {
     final config = ref.watch(themeControllerProvider).asData?.value;
     final accent = config?.accent ?? const Color(0xFF4F7CD4);
+    final dark = config?.darkMode ?? false;
+    final base = dark ? const Color(0xFF2B3646) : Colors.white;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -327,12 +329,14 @@ class _KnowledgeMemorizePageState
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withValues(alpha: 0.78),
-            Colors.white.withValues(alpha: 0.40),
+            base.withValues(alpha: dark ? 0.9 : 0.78),
+            base.withValues(alpha: dark ? 0.7 : 0.40),
           ],
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: dark ? 0.2 : 0.7),
+        ),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -390,6 +394,9 @@ class _KnowledgeMemorizePageState
 
   /// 卡背面：要点完整展开 + 关联题入口
   Widget _backCard(ThemeData theme, KnowledgePoint kp) {
+    final config = ref.watch(themeControllerProvider).asData?.value;
+    final dark = config?.darkMode ?? false;
+    final base = dark ? const Color(0xFF2B3646) : Colors.white;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -398,12 +405,14 @@ class _KnowledgeMemorizePageState
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withValues(alpha: 0.80),
-            Colors.white.withValues(alpha: 0.42),
+            base.withValues(alpha: dark ? 0.92 : 0.80),
+            base.withValues(alpha: dark ? 0.72 : 0.42),
           ],
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: dark ? 0.2 : 0.7),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -66,7 +66,8 @@ class GlassCard extends ConsumerWidget {
         child: content,
       );
     } else {
-      final base = color ?? Colors.white;
+      // 深色模式：深色玻璃（白底 + 深色主题浅字会不可读）
+      final base = color ?? (ink ? const Color(0xFF2B3646) : Colors.white);
       glass = Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -79,7 +80,8 @@ class GlassCard extends ConsumerWidget {
           ),
           borderRadius: BorderRadius.circular(r),
           border: Border.all(
-            color: borderColor ?? Colors.white.withValues(alpha: 0.62),
+            color: borderColor ??
+                Colors.white.withValues(alpha: ink ? 0.18 : 0.62),
           ),
         ),
         child: ClipRRect(
@@ -105,7 +107,7 @@ class GlassCard extends ConsumerWidget {
         ],
         // 顶部高光描边（质感）
         border: highlight && frost
-            ? Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.85)))
+            ? Border(top: BorderSide(color: Colors.white.withValues(alpha: ink ? 0.22 : 0.85)))
             : null,
       ),
       child: glass,

@@ -537,7 +537,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         ),
         const SizedBox(width: 8),
-        Text(label, style: const TextStyle(fontSize: 12.5, color: Color(0xFF56647C))),
+        Text(label, style: TextStyle(fontSize: 12.5, color: Theme.of(context).colorScheme.onSurfaceVariant)),
         const Spacer(),
         Text('$value', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
       ],

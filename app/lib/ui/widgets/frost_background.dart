@@ -66,11 +66,14 @@ class FrostBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     if (!config.frost) return child;
 
-    final top = config.frostTop;
-    final bottom = config.frostBottom;
+    // 深色模式：冷磨砂用深色渐变，避免浅色背景 + 深色主题浅色文字不可读
+    final dark = config.darkMode;
+    final top = dark ? const Color(0xFF131B28) : config.frostTop;
+    final bottom = dark ? const Color(0xFF1E2B3C) : config.frostBottom;
     final accent = config.accent;
-    final warm = Color.lerp(accent, Colors.white, 0.62)!;
-    final cool = Color.lerp(accent, Colors.white, 0.5)!;
+    final mixTarget = dark ? Colors.black : Colors.white;
+    final warm = Color.lerp(accent, mixTarget, dark ? 0.45 : 0.62)!;
+    final cool = Color.lerp(accent, mixTarget, dark ? 0.35 : 0.5)!;
 
     return Stack(
       fit: StackFit.expand,
@@ -90,8 +93,8 @@ class FrostBackground extends StatelessWidget {
         // 右上
         _FrostBlob(color: cool, size: 180, right: -50, top: -40, opacity: 0.42),
         // 左下
-        _FrostBlob(color: cool, size: 200, left: -60, bottom: -55),
-        // 中右（偏白，弱化）
+        _FrostBlob(color: cool, size: 200, left: -60, bottom: -55, opacity: dark ? 0.22 : 0.45),
+        // 中右（偏白，弱化；深色模式下用冷色调暗）
         Positioned(
           right: 18,
           top: 0,
@@ -104,10 +107,10 @@ class FrostBackground extends StatelessWidget {
                 height: 130,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.5),
+                  color: dark ? cool.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.5),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.white.withValues(alpha: 0.5),
+                      color: dark ? cool.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.5),
                       blurRadius: 70,
                       spreadRadius: 24,
                     ),

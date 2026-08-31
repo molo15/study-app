@@ -102,6 +102,11 @@ class AppCard extends ConsumerWidget {
     WidgetRef ref,
   ) {
     final r = radius ?? (config?.cornerRadius ?? 18);
+    // 深色模式：深色玻璃（白底 + 深色主题浅字会不可读）
+    final dark = config?.darkMode ?? false;
+    final glassBase = color ?? (dark ? const Color(0xFF2B3646) : Colors.white);
+    final glassBorder = border ??
+        Border.all(color: Colors.white.withValues(alpha: dark ? 0.18 : 0.62));
     final (double aTop, double aBottom, double blur, double shadowA) =
         switch (depth) {
       1 => (0.78, 0.45, 26.0, 0.16),
@@ -119,13 +124,12 @@ class AppCard extends ConsumerWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              (color ?? Colors.white).withValues(alpha: aTop),
-              (color ?? Colors.white).withValues(alpha: aBottom),
+              glassBase.withValues(alpha: aTop),
+              glassBase.withValues(alpha: aBottom),
             ],
           ),
           borderRadius: BorderRadius.circular(r),
-          border: border ??
-              Border.all(color: Colors.white.withValues(alpha: 0.62)),
+          border: glassBorder,
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(r),
@@ -152,7 +156,9 @@ class AppCard extends ConsumerWidget {
             : null,
         // 顶部高光描边（质感）
         border: Border(
-          top: BorderSide(color: Colors.white.withValues(alpha: 0.85)),
+          top: BorderSide(
+            color: Colors.white.withValues(alpha: dark ? 0.22 : 0.85),
+          ),
         ),
       ),
       child: body,
@@ -183,13 +189,12 @@ class AppCard extends ConsumerWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              (color ?? Colors.white).withValues(alpha: aTop),
-              (color ?? Colors.white).withValues(alpha: aBottom),
+              glassBase.withValues(alpha: aTop),
+              glassBase.withValues(alpha: aBottom),
             ],
           ),
           borderRadius: BorderRadius.circular(r),
-          border: border ??
-              Border.all(color: Colors.white.withValues(alpha: 0.62)),
+          border: glassBorder,
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(r),

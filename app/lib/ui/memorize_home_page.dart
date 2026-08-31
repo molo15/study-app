@@ -92,18 +92,18 @@ class _MemorizeHomePageState extends ConsumerState<MemorizeHomePage> {
                   ],
                 ),
                 const SizedBox(height: 10),
-                const Text(
+                Text(
                   '按知识点推送背诵卡，正面记知识点、背面记要点；\n没记住会反复出现，直到背会为止，不进普通复习队列。',
-                  style: TextStyle(fontSize: 12.5, height: 1.55, color: Color(0xFF56647C)),
+                  style: TextStyle(fontSize: 12.5, height: 1.55, color: theme.colorScheme.onSurfaceVariant),
                 ),
               ],
             ),
           ),
         ),
 
-        const Padding(
-          padding: EdgeInsets.fromLTRB(4, 4, 4, 12),
-          child: Text('按科目背诵', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF56647C))),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 4, 4, 12),
+          child: Text('按科目背诵', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: theme.colorScheme.onSurfaceVariant)),
         ),
         ..._banks.map((b) => _bankItem(theme, accent, ink2, b)),
       ],

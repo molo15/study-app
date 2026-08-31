@@ -139,7 +139,14 @@ class _BankHomePageState extends ConsumerState<BankHomePage> {
       padding: const EdgeInsets.fromLTRB(4, 4, 4, 12),
       child: Row(
         children: [
-          Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF56647C))),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
       ),
     );
