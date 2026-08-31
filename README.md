@@ -18,8 +18,8 @@ D:\study_app
 │   │   ├── services/     # 日志、导出工具
 │   │   └── ui/           # 页面（首页/题库/章节概览/刷题/背题/错题本/统计/设置/模拟卷...）
 │   │       └── widgets/  # 通用小组件
-│   ├── assets/banks/     # 内置题库包（5 库 zip，formatVersion=4，v0.11.0）
-│   ├── test/             # 单元 + 组件测试（52 个）
+│   ├── assets/banks/     # 内置题库包（5 库 zip，formatVersion=4，v0.14.0）
+│   ├── test/             # 单元 + 组件测试（67 个）
 │   └── pubspec.yaml      # 依赖：riverpod/sqflite/fsrs/archive/fl_chart...
 ├── tools/seed-builder/   # 题库生产线（Python 为主，Node.js 辅助思源导出）
 │   ├── pipeline/         # 活跃流水线脚本（打包/校验/覆盖率/出题，见其 README）
@@ -43,8 +43,9 @@ D:\study_app
 seed-builder（Python 生产线）
    ├─ 素材结构化：skeleton / materials JSON（章节 → 知识点）
    ├─ 出题生成：gen_*.py（基础题=知识直问直答；测试题=简答/名解/论述）
-   ├─ 打包：pack_v4.py（formatVersion=4：选项洗牌 + answer 文本编码 + knowledge/overviews）
-   └─ 校验：verify_v011.py（模拟 App 解析：answer 文本→key 映射 / 覆盖率 / 强去重）
+   ├─ 打包：pack_v013.py → v0.13.0（选项洗牌 + answer 文本编码 + knowledge/overviews），
+   │        再跑 mc_expand_*×5 → v0.14.0（多选扩充）
+   └─ 校验：verify_*.py（模拟 App 解析：answer 文本→key 映射 / 覆盖率 / 强去重 / P0-P2 分级）
    ▼
 app/assets/banks/*.zip（5 库题库包，随 APK 内置）
    ▼
@@ -52,7 +53,7 @@ Flutter App
    ├─ seed_loader → SQLite（questions/knowledge_points/chapter_overviews/answer_logs/card_scheduling）
    ├─ fsrs 包：间隔重复调度（desired_retention 可调）
    ├─ Riverpod：状态管理（databaseProvider / quizRepositoryProvider / srsProvider）
-   └─ 页面：首页(倒计时/今日任务) → 题库 → 章节概览(知识点树) → 刷题/背题
+   └─ 页面：首页(考试倒计时·象征性) → 题库 → 章节概览(知识点树) → 刷题/背题
 ```
 
 ## 关键约定
@@ -73,8 +74,10 @@ cd app && flutter analyze
 cd app && flutter test
 cd app && flutter build apk --debug
 
-# 题库打包（v4）
-cd tools/seed-builder/pipeline && python pack_v4.py   # 打包 5 库 → assets/banks
-python verify_v011.py                                # v4 包 App 解析校验
-python coverage_report.py                            # 基础题覆盖率报告
+# 题库打包（v4 / v0.13→v0.14）
+cd tools/seed-builder/pipeline && python pack_v013.py   # 打包 5 库 → assets/banks（v0.13.0）
+python mc_expand_xdhy.py && python mc_expand_gdhy.py \
+  && python mc_expand_gdwx.py && python mc_expand_xdwx.py && python mc_expand_ddwx.py  # 多选扩充 → v0.14.0
+python verify_v013.py                                  # v4 包 App 解析校验
+python coverage_report.py                              # 基础题覆盖率报告
 ```

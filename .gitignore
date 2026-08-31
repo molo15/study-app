@@ -17,6 +17,9 @@
 # 各类备份文件（含题库去重/合并前的 .zip.bak）
 *.bak
 
+# 题库包备份目录（保留本地回退能力，不入库）
+app/assets/banks_bak_*/
+
 # 助手工作目录与缓存（非项目源码）
 .workbuddy/
 .zcode/
