@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'data/app_database.dart';
 import 'services/db_factory.dart';
 import 'ui/root_page.dart';
 import 'ui/theme_controller.dart';
@@ -13,6 +16,26 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // 平台数据库工厂：io 默认 sqflite；web 切 sqflite_common_ffi_web（sqlite3.wasm）
   await initPlatformDatabaseFactory();
+  // 启动优化：提前并行打开数据库（web 首次打开会加载
+  // sqlite3.wasm，与首帧渲染并行，减少首屏等待）。
+  // 失败不阻塞首帧（HomePage 加载态会重试，AppDatabase.open 已有自愈逻辑）。
+  unawaited(AppDatabase.instance.then((_) {}, onError: (_) {}));
+  // 中文字体（启动加载优化）：不再放入 pubspec fonts 声明（web 端 Flutter 会
+  // 预下载 FontManifest 声明的全部字体，17.7MB VF 首屏必下载），改用 FontLoader
+  // 运行时按平台加载子集字体——web 用 woff2（3MB），io 用 ttf（7MB 本地文件）。
+  // web 端 await 加载：与 canvaskit(7.3MB)/main.dart.js 并行下载，不增加总启动时间，
+  // 且首帧字体已就绪，避免渲染器 fallback 到 Google Fonts CDN（被墙时中文不渲染）。
+  try {
+    final fontAsset = kIsWeb
+        ? 'assets/fonts/NotoSansSC-subset.woff2'
+        : 'assets/fonts/NotoSansSC-subset.ttf';
+    final fontData = await rootBundle.load(fontAsset);
+    final loader = FontLoader('NotoSansSC')
+      ..addFont(Future.value(fontData));
+    await loader.load();
+  } catch (e) {
+    debugPrint('中文字体加载失败: $e');
+  }
   // 边缘绘制 edge-to-edge：内容绘制到状态栏/导航栏区域后方，
   // 系统栏透明叠加（需求：边缘绘制 edge 到 edge；上滑唤出/隐藏由系统手势导航接管）
   if (!kIsWeb) {
@@ -131,10 +154,22 @@ class _BackgroundStack extends StatelessWidget {
         ],
       );
     }
-    // Web/平板宽屏适配：内容居中 + 最大宽度（手机布局不拉伸）
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 560),
+    // Web/平板宽屏适配：内容顶部对齐 + 最大宽度（手机布局不拉伸）。
+    // 修复 v2（Phase 2.2 审查 P3 二次修复）：上一版用
+    // ConstrainedBox(maxWidth:560, maxHeight:viewportH) + SizedBox.expand，
+    // 但 SizedBox.expand 内部是 tightFor(width:∞, height:∞)，与 maxHeight 求交后
+    // 产生矛盾约束（minHeight:∞ > maxHeight:883）。web 无界根约束下 Scaffold
+    // 布局错乱、底部导航浮在视口中部（浏览器实测确认）；widget 测试通过是因为
+    // 测试环境根约束是 tight 有限，矛盾约束在 release 下不 assert、行为未定义。
+    // 解法：改用显式 tight 尺寸（宽度取 min(560, 视口宽)，高度取视口高），
+    // 消除矛盾约束，在 tight（测试/窄屏）与无界（web）两种约束下行为一致。
+    final viewportSize = MediaQuery.sizeOf(context);
+    final contentWidth = viewportSize.width < 560 ? viewportSize.width : 560.0;
+    return Align(
+      alignment: Alignment.topCenter,
+      child: SizedBox(
+        width: contentWidth,
+        height: viewportSize.height,
         child: body,
       ),
     );

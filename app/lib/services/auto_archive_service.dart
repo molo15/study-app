@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -13,9 +15,13 @@ import 'archive_store.dart';
 /// - 保留最近 N 份（默认 5），超出删除最旧（覆盖压缩）；
 /// - 开关与保留份数读自 settings（`auto_archive_enabled` / `auto_archive_keep`）。
 class AutoArchiveService {
+  // Web 端缩短间隔（10 分钟）：浏览器会达比应用更容易关闭，30 分钟太长可能导致未存档即退出（启动加载/可靠性优化）。
   AutoArchiveService({
-    this.interval = const Duration(minutes: 30),
-  });
+    Duration? interval,
+  }) : interval = interval ??
+            (kIsWeb
+                ? const Duration(minutes: 10)
+                : const Duration(minutes: 30));
 
   final Duration interval;
 
@@ -64,7 +70,9 @@ class AutoArchiveService {
     _lifecycle = AppLifecycleListener(
       onStateChange: (state) {
         if (state == AppLifecycleState.paused ||
+            state == AppLifecycleState.hidden ||
             state == AppLifecycleState.detached) {
+          // 启动加载/可靠性优化：web 浏览器标签切走/隐藏时触发存档（hidden 状态）
           _autoTrigger();
         }
       },

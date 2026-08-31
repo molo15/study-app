@@ -32,66 +32,82 @@ class GlassTabBar extends ConsumerWidget {
     final ink = config?.darkMode ?? false;
     final ink2 = ink ? Colors.white70 : const Color(0xFF56647C);
 
-    Widget bar = Container(
-      padding: EdgeInsets.only(top: 10, bottom: 24),
-      decoration: BoxDecoration(
-        // 毛玻璃底栏
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            ink ? const Color(0x88FFFFFF) : const Color(0x7FEAF1FB),
-            ink ? const Color(0xCC0F1418) : const Color(0xC6E5EEFA),
+    // 审查修复（底部 dock 被遮挡：中央圆钮被 ClipRect 裁剪）：
+    // 原实现把中央圆钮放在 ClipRect(BackdropFilter(Row)) 内并用
+    // Transform.translate(0,-30) 上凸，但 ClipRect 会裁剪超出 Row 的部分，
+    // 导致圆钮上凸的 ~30px 被截断、显示不完整（实测圆钮 58px 高仅
+    // y804-830 可见）。改为 Stack 浮层：底层毛玻璃栏（ClipRect 只装
+    // 非圆钮部分）+ 顶层中央圆钮浮层（clipBehavior:none，上凸不裁剪）。
+    final centerButton = GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => onSelect(2),
+      child: Container(
+        width: 58,
+        height: 58,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [accent, Color.lerp(accent, Colors.black, 0.18)!],
+          ),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: accent.withValues(alpha: 0.45),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
           ],
         ),
-        border: Border(
-          top: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
-        ),
+        child: const Icon(Icons.auto_awesome, color: Colors.white, size: 24),
       ),
-      child: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 26, sigmaY: 26),
-          child: Row(
-            children: [
-              _Tab(icon: Icons.today_outlined, label: '今日', on: index == 0, color: accent, ink: ink2, onTap: () => onSelect(0)),
-              _Tab(icon: Icons.folder_outlined, label: '题库', on: index == 1, color: accent, ink: ink2, onTap: () => onSelect(1)),
-              // 中央凸起圆钮：背题
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => onSelect(2),
-                  child: Container(
-                    margin: const EdgeInsets.only(top: -30, bottom: 4),
-                    alignment: Alignment.center,
-                    child: Container(
-                      width: 58,
-                      height: 58,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [accent, Color.lerp(accent, Colors.black, 0.18)!],
-                        ),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: accent.withValues(alpha: 0.45),
-                            blurRadius: 24,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(Icons.auto_awesome, color: Colors.white, size: 24),
-                    ),
-                  ),
+    );
+    Widget bar = Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.topCenter,
+      children: [
+        Container(
+          padding: EdgeInsets.only(top: 10, bottom: 24),
+          decoration: BoxDecoration(
+            // 毛玻璃底栏
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                ink ? const Color(0x88FFFFFF) : const Color(0x7FEAF1FB),
+                ink ? const Color(0xCC0F1418) : const Color(0xC6E5EEFA),
+              ],
+            ),
+            border: Border(
+              top: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
+            ),
+          ),
+          child: ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 26, sigmaY: 26),
+              child: SizedBox(
+                height: 58,
+                child: Row(
+                  children: [
+                    _Tab(icon: Icons.today_outlined, label: '今日', on: index == 0, color: accent, ink: ink2, onTap: () => onSelect(0)),
+                    _Tab(icon: Icons.folder_outlined, label: '题库', on: index == 1, color: accent, ink: ink2, onTap: () => onSelect(1)),
+                    // 中央圆钮位置留位（圆钮本身在上层浮层）
+                    const Expanded(child: SizedBox()),
+                    _Tab(icon: Icons.insights_outlined, label: '统计', on: index == 3, color: accent, ink: ink2, onTap: () => onSelect(3)),
+                    _Tab(icon: Icons.person_outline, label: '我的', on: index == 4, color: accent, ink: ink2, onTap: () => onSelect(4)),
+                  ],
                 ),
               ),
-              _Tab(icon: Icons.insights_outlined, label: '统计', on: index == 3, color: accent, ink: ink2, onTap: () => onSelect(3)),
-              _Tab(icon: Icons.person_outline, label: '我的', on: index == 4, color: accent, ink: ink2, onTap: () => onSelect(4)),
-            ],
+            ),
           ),
         ),
-      ),
+        // 中央圆钮浮层：上凸 20px，不受 ClipRect 裁剪
+        Positioned(
+          top: -20,
+          child: centerButton,
+        ),
+      ],
     );
 
     // 上滑隐藏动画

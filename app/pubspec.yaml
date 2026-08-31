@@ -71,12 +71,12 @@ flutter:
   # 内置题库包（M1 为单 JSON 格式；zip 容器由 M4 打包工具生成）
   assets:
     - assets/banks/
+    # 中文字体保留在 assets（io 端用 FontLoader 运行时加载）；
     - assets/fonts/
 
-  fonts:
-    - family: NotoSansSC
-      fonts:
-        - asset: assets/fonts/NotoSansSC-VF.ttf
+    # 不放入 fonts: 段声明——web 端 Flutter 会预下载 FontManifest 声明的
+    # 全部字体（实测 17.7MB NotoSansSC-VF.ttf 首屏必下载），移出后 web 免下载、
+    # 用系统字体渲染（启动加载优化）。
 
   # To add assets to your application, add an assets section, like this:
   # assets:

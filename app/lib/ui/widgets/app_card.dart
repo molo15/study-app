@@ -166,7 +166,10 @@ class AppCard extends ConsumerWidget {
 
     if (onTap == null) return outer;
     return PressableCard(
-      margin: null,
+      // 审查修复：此前硬编码 margin: null，导致所有带 onTap 的卡片
+      // （如首页题库卡 margin bottom:10）外间距丢失、卡片紧贴粘连。
+      // 与无 onTap 分支的 outer(Container(margin: margin)) 行为保持一致。
+      margin: margin,
       padding: EdgeInsets.zero,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(r),

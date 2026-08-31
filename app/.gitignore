@@ -48,3 +48,6 @@ app.*.map.json
 /android/kaoyan-release.keystore
 /android/key.properties
 *.keystore
+
+# 中文字体源文件（构建仅用子集字体 assets/fonts/NotoSansSC-subset.*）
+/fonts_src/

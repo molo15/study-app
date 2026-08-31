@@ -216,6 +216,8 @@ class AppThemeConfig {
     return ThemeData(
       colorScheme: scheme,
       useMaterial3: true,
+      // Web 端用系统字体栈（中文回退到系统字体），省去 17.7MB NotoSansSC-VF.ttf 首屏下载（启动加载优化）；
+      // io 端保留内置字体统一观感。
       fontFamily: 'NotoSansSC',
       scaffoldBackgroundColor: effectiveBg,
       appBarTheme: AppBarTheme(
