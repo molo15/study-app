@@ -1,5 +1,10 @@
 # 考研刷题 App — 项目进度汇总
 
+> ⚠️ **本文档已过时（截至 2026-09-01）**：记录的是 2026-08-24 及之前的状态。
+> 当前实际版本为 **1.4.0+15**，题库 **v0.14.0 / 4509 题**，DB schema v11，已支持 Android / Windows / Web 三端与多端存档。
+> 最新状态以 `docs/多端存档同步实施方案-v1.6.md`、`docs/审查报告-2026-09-01.md` 及 git log 为准。
+> 下方内容保留为历史记录，请勿作为当前事实基准。
+
 > 更新日期：2026-08-24 18:00 · 项目根目录：D:\study_app
 
 ## 1. 项目概览
@@ -8,9 +13,9 @@
 |---|---|
 | 应用 | 考研刷题（本地离线刷题，学习数据不出设备） |
 | 技术栈 | Flutter（SDK D:\flutter v3.47.x）· Riverpod · SQLite（sqflite）· FSRS 复习调度 |
-| 包名 / 版本 | `dev.kaoyan.quiz_app` · versionCode 1 · versionName 1.0.0 |
+| 包名 / 版本 | `dev.kaoyan.quiz_app` · versionCode 15 · versionName 1.4.0（本文档撰写时为 1.0.0） |
 | 签名 | release: kaoyan-release.keystore（SHA256 `a2fc45ce…`）；debug: ~/.android/debug.keystore（`f2e91c28…`） |
-| 题库 | 5 科 · 内置 0.9.1 · 共 **5037 题**（见 §3） |
+| 题库 | 5 科 · 本文档撰写时内置 0.9.1 / 5037 题；当前 v0.14.0 / 4509 题（见 §3） |
 
 ## 2. 当前版本功能清单（正式版 v1.0.0）
 

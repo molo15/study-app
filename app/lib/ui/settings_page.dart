@@ -478,7 +478,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final repo = await ref.read(quizRepositoryProvider);
     await service.start(repo, FileArchiveStore());
     final path = await service.trigger();
-    _toast(path != null ? '已存档：$path' : '存档失败，请稍后重试');
+    if (path != null) {
+      _toast('已存档：$path');
+    } else if (kIsWeb) {
+      _toast('存档失败：浏览器本地存储可能已满，请使用「导出备份」保存到文件');
+    } else {
+      _toast('存档失败，请检查存储空间后重试');
+    }
     await _load();
   }
 
@@ -845,7 +851,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           color: theme.colorScheme.primary,
                         ),
                         title: const Text('导出备份'),
-                        subtitle: const Text('全部题目/作答/复习进度导出为 JSON 文件'),
+                        subtitle: const Text('导出做题记录/复习进度/背题进度为 zip 存档（不含题库）'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: _exportBackup,
                       ),

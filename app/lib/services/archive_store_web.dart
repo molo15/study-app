@@ -23,7 +23,16 @@ class FileArchiveStore implements ArchiveStore {
     } catch (_) {
       // 容量不足：清掉历史自动存档后重试
       _clearAll();
-      web.window.localStorage.setItem(_key(fileName), b64);
+      try {
+        web.window.localStorage.setItem(_key(fileName), b64);
+      } catch (_) {
+        // 单份存档即超限（base64 膨胀后超 localStorage ~5MB 上限），无法写入。
+        // 抛出友好异常，调用方可提示用户改用手动导出文件备份。
+        throw Exception(
+          '浏览器本地存储容量不足，自动存档失败。'
+          '请使用「导出备份」将数据保存为文件，或清理做题记录后重试。',
+        );
+      }
     }
     return 'localStorage:$fileName';
   }

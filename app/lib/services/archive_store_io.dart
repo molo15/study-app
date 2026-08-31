@@ -11,7 +11,9 @@ class FileArchiveStore implements ArchiveStore {
   /// [basePath] 可注入（测试用临时目录）；默认应用文档目录。
   FileArchiveStore({this._basePath});
 
-  final String? _basePath;  Future<Directory> _dir() async {
+  final String? _basePath;
+
+  Future<Directory> _dir() async {
     final base = _basePath ?? (await getApplicationDocumentsDirectory()).path;
     final dir = Directory(p.join(base, 'archives'));
     if (!await dir.exists()) {

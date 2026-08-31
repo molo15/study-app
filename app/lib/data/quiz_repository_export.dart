@@ -37,8 +37,10 @@ class RestoreResult {
   final List<String> bankMismatches;
 }
 
-/// 当前 App 版本（写入存档 appVersion，供展示；打包时更新）
-const String kArchiveAppVersion = '1.2.0';
+/// 当前 App 版本（写入存档 appVersion 字段，供展示与未来兼容性判断）。
+/// 【发版纪律】每次修改 pubspec.yaml 的 version 后，必须同步更新此常量，
+/// 否则存档 appVersion 与实际版本脱节，未来基于版本的存档迁移会误判。
+const String kArchiveAppVersion = '1.4.0';
 
 /// 数据维护（题库清单/清理归档）、存档导出与恢复、审题标记
 mixin _ExportMixin on RepositoryMixinBase {
