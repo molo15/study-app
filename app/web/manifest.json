@@ -1,11 +1,11 @@
 {
-    "name": "quiz_app",
-    "short_name": "quiz_app",
+    "name": "考研刷题",
+    "short_name": "考研刷题",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0F1214",
+    "theme_color": "#0F1214",
+    "description": "考研刷题 · 五科题库 + 背题 + 模拟卷（本地优先，多端存档）",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

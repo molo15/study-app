@@ -43,6 +43,7 @@ dependencies:
   path_provider: ^2.1.6
   fl_chart: ^1.2.0
   sqflite_common_ffi_web: ^1.1.2
+  web: ^1.1.1
 
 dev_dependencies:
   flutter_test:
@@ -70,6 +71,12 @@ flutter:
   # 内置题库包（M1 为单 JSON 格式；zip 容器由 M4 打包工具生成）
   assets:
     - assets/banks/
+    - assets/fonts/
+
+  fonts:
+    - family: NotoSansSC
+      fonts:
+        - asset: assets/fonts/NotoSansSC-VF.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:

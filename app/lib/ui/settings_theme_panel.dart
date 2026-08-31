@@ -320,50 +320,55 @@ class _ThemePanelPageState extends ConsumerState<_ThemePanelPage> {
                 ),
                 const SizedBox(height: 24),
                 // 背景图片（需求：全局背景图，允许用户自选本地图）
-                const AppSectionHeader(title: '背景图片'),
-                const SizedBox(height: 8),
-                Card(
-                  child: ListTile(
-                    leading: _IconBox(
-                      icon: Icons.image_outlined,
-                      color: theme.colorScheme.secondary,
-                    ),
-                    title: Text(
-                      _config.backgroundImagePath.isEmpty ? '未设置背景图' : '已设置背景图',
-                    ),
-                    subtitle: Text(
-                      _config.backgroundImagePath.isEmpty
-                          ? '选择一张本地图片作为全局背景'
-                          : '点按更换',
-                    ),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: _pickBackgroundImage,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // 背景图透明度（需求：允许用户自己调节）
-                Slider(
-                  value: _config.backgroundOpacity,
-                  min: 0.1,
-                  max: 1.0,
-                  divisions: 9,
-                  label:
-                      '${(_config.backgroundOpacity * 100).toStringAsFixed(0)}%',
-                  onChanged: (v) => setState(
-                    () => _config = _config.copyWith(backgroundOpacity: v),
-                  ),
-                  onChangeEnd: (_) => _apply(_config),
-                ),
-                if (_config.backgroundImagePath.isNotEmpty)
-                  Center(
-                    child: TextButton.icon(
-                      onPressed: () =>
-                          _apply(_config.copyWith(backgroundImagePath: '')),
-                      icon: const Icon(Icons.remove_circle_outline),
-                      label: const Text('移除背景图'),
+                // web 无本地文件路径概念，隐藏整块（Phase 2.2）
+                if (!kIsWeb) ...[
+                  const AppSectionHeader(title: '背景图片'),
+                  const SizedBox(height: 8),
+                  Card(
+                    child: ListTile(
+                      leading: _IconBox(
+                        icon: Icons.image_outlined,
+                        color: theme.colorScheme.secondary,
+                      ),
+                      title: Text(
+                        _config.backgroundImagePath.isEmpty
+                            ? '未设置背景图'
+                            : '已设置背景图',
+                      ),
+                      subtitle: Text(
+                        _config.backgroundImagePath.isEmpty
+                            ? '选择一张本地图片作为全局背景'
+                            : '点按更换',
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: _pickBackgroundImage,
                     ),
                   ),
-                const SizedBox(height: 8),
+                  const SizedBox(height: 8),
+                  // 背景图透明度（需求：允许用户自己调节）
+                  Slider(
+                    value: _config.backgroundOpacity,
+                    min: 0.1,
+                    max: 1.0,
+                    divisions: 9,
+                    label:
+                        '${(_config.backgroundOpacity * 100).toStringAsFixed(0)}%',
+                    onChanged: (v) => setState(
+                      () => _config = _config.copyWith(backgroundOpacity: v),
+                    ),
+                    onChangeEnd: (_) => _apply(_config),
+                  ),
+                  if (_config.backgroundImagePath.isNotEmpty)
+                    Center(
+                      child: TextButton.icon(
+                        onPressed: () =>
+                            _apply(_config.copyWith(backgroundImagePath: '')),
+                        icon: const Icon(Icons.remove_circle_outline),
+                        label: const Text('移除背景图'),
+                      ),
+                    ),
+                  const SizedBox(height: 8),
+                ],
                 // 卡片透明度
                 const AppSectionHeader(title: '卡片透明度'),
                 Slider(

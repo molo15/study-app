@@ -211,9 +211,12 @@ class AppThemeConfig {
         : bg;
     final cardColor = (darkMode ? const Color(0xFF1E2428) : Colors.white)
         .withValues(alpha: cardOpacity);
+    // 中文字体：内置 NotoSansSC（OFL 授权），web 端避免依赖 Google Fonts CDN
+    //（被墙导致文字不渲染，Phase 2.2 修复）；桌面/移动端同样统一观感。
     return ThemeData(
       colorScheme: scheme,
       useMaterial3: true,
+      fontFamily: 'NotoSansSC',
       scaffoldBackgroundColor: effectiveBg,
       appBarTheme: AppBarTheme(
         backgroundColor: effectiveBg,

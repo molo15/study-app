@@ -7,6 +7,7 @@ library;
 import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -881,23 +882,29 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                               : '已关闭（可随时手动导出/立即存档）',
                         ),
                       ),
-                      ListTile(
-                        leading: _IconBox(
-                          icon: Icons.inventory_2_outlined,
-                          color: theme.colorScheme.primary,
+                      if (!kIsWeb)
+                        ListTile(
+                          leading: _IconBox(
+                            icon: Icons.inventory_2_outlined,
+                            color: theme.colorScheme.primary,
+                          ),
+                          title: const Text('保留存档份数'),
+                          subtitle:
+                              Text('本地最多保留 $_autoArchiveKeep 份，超出自动删最旧'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: _pickKeepCount,
                         ),
-                        title: const Text('保留存档份数'),
-                        subtitle: Text('本地最多保留 $_autoArchiveKeep 份，超出自动删最旧'),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: _pickKeepCount,
-                      ),
                       ListTile(
                         leading: _IconBox(
                           icon: Icons.save_outlined,
                           color: theme.colorScheme.primary,
                         ),
                         title: const Text('立即存档'),
-                        subtitle: const Text('手动把当前状态保存到本地 archives/'),
+                        subtitle: Text(
+                          kIsWeb
+                              ? '手动把当前状态保存到浏览器本地'
+                              : '手动把当前状态保存到本地 archives/',
+                        ),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: _triggerAutoArchive,
                       ),
