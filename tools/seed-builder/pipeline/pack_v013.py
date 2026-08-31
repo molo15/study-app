@@ -73,8 +73,30 @@ def norm_chapter(bank, ch):
         return DD_MAP[ch]
     return ch
 
+def _remap_expl_letters(expl, mapping):
+    """把解析文本中的选项字母引用按旧key->新key映射改写。
+    统一处理单字母断言（选X/故选X/故X不选）与整串枚举（故A、B、C项不选/不属于），
+    一次 sub 完成，避免二次改写。"""
+    if not expl or not mapping:
+        return expl
+
+    def remap_letters(s):
+        return ''.join(mapping.get(ch, ch) for ch in s)
+
+    def repl(m):
+        pre, letters = m.group(1), m.group(2)
+        return pre + remap_letters(letters)
+
+    # 前缀（选/故选/答案…/故…）后跟字母序列，字母可带顿号分隔（A、B、C）；
+    # 不匹配"A. 胆怯"式列举（点号后不带空格紧邻）
+    pat = re.compile(r'(选|故选|答案(?:为|是)?|正确选项(?:为|是)?|应为|应选|故|仅|据此选|根据)\s*([ABCDEF](?:、?[ABCDEF]){0,5})(?=$|[，。；、:：\s]|项|正确|错误|对|不对|符合|不符合|有误|表述正确|表述错误|说法|不是|不|属|均|！|？)')
+    return pat.sub(repl, expl)
+
+
+
 def shuffle_options(q, rng):
-    """洗牌选择题；返回洗牌后的正确项文本（v4 编码）。"""
+    """洗牌选择题；返回洗牌后的正确项文本（v4 编码）。
+    洗牌后同步改写解析文本中的选项字母引用（旧key->新key），防止解析与答案错位。"""
     t = q["type"]
     if t not in ("single_choice", "multi_choice"):
         return None
@@ -82,14 +104,30 @@ def shuffle_options(q, rng):
     ans = q["answer"]
     ans_keys = set(ans) if isinstance(ans, list) else {ans}
     ans_texts = [o["text"] for o in opts if o["key"] in ans_keys]
+    # 洗牌前记录 旧key -> 文本
+    old_texts = [o["text"] for o in opts]
+    old_keys = [o["key"] for o in opts]
     rng.shuffle(opts)
-    keys = "ABCDEFGH"[:len(opts)]
+    keys = "ABCDEFGHIJKLMNOP"[:len(opts)]
+    new_by_text = {}
     for o, k in zip(opts, keys):
         o["key"] = k
+        new_by_text[o["text"]] = k
     q["options"] = opts
+    # 建立 旧key -> 新key 映射（按文本对齐）
+    mapping = {}
+    for oldk, txt in zip(old_keys, old_texts):
+        if txt in new_by_text:
+            mapping[oldk] = new_by_text[txt]
+    if mapping:
+        expl = q.get("explanation")
+        if expl:
+            q["explanation"] = _remap_expl_letters(expl, mapping)
     # 记录正确项文本（供 v4 answer 编码）
     q["_ans_texts"] = ans_texts
     return ans_texts
+
+
 
 def encode_answer_v4(q):
     """v4：选择题 answer 存正确项文本。"""
@@ -126,10 +164,20 @@ def validate_basic(q, know_ids, report, bank):
         if not q["answer"]:
             errs.append("缺answer")
     expl = q.get("explanation", "")
-    if not expl or len(expl.strip()) < 20:
-        errs.append(f"解析过短({len(expl.strip())}字)")
+    _expl_len = len(re.sub(r"\s+", "", expl))
+    _min_len = 5 if q["type"] in ("blank", "short_answer") else 20
+    if not expl or _expl_len < _min_len:
+        errs.append(f"解析过短({_expl_len}字)")
     if PLACEHOLDER.search(expl.strip()):
         errs.append("解析占位")
+    # 解析黑名单（出题工作底稿/模板残留）
+    _expl_norm = re.sub(r"\s+", "", expl)
+    if re.search(r"素材块|素材n|正文块|对应素材标题|覆盖缺口|本题答案为|存量题未覆盖|本题属[于]?.{0,12}常考|即可应对同类题目|掌握其概念", _expl_norm):
+        errs.append("解析含工作底稿/模板残留")
+    if re.search(r"[（(](基础|变式|拓展|提升|综合|识记|理解)[）)]$", _expl_norm):
+        errs.append("解析带等级标注尾巴")
+    if re.match(r"^解析[:：]", _expl_norm):
+        errs.append("解析冒号前缀")
     if not q.get("knowledgeId") or q["knowledgeId"] not in know_ids:
         errs.append("knowledgeId缺失/无效")
     return errs
@@ -182,6 +230,18 @@ def main():
             if nq["id"] in report["ids"]:
                 report["bad"].append(f"{nq['id']} [id重复]")
             report["ids"].add(nq["id"])
+            # 保留轨解析黑名单校验（不含 id/knowledgeId 等基础校验）
+            _en = re.sub(r"\s+", "", nq.get("explanation", ""))
+            if re.search(r"素材块|素材n|正文块|对应素材标题|覆盖缺口|本题答案为|存量题未覆盖|本题属[于]?.{0,12}常考|即可应对同类题目|掌握其概念", _en):
+                report["bad"].append(f"{nq['id']} [保留轨解析含工作残留]")
+            if re.search(r"[（(](基础|变式|拓展|提升|综合|识记|理解)[）)]$", _en):
+                report["bad"].append(f"{nq['id']} [保留轨解析带等级尾巴]")
+            if re.match(r"^解析[:：]", _en):
+                report["bad"].append(f"{nq['id']} [保留轨解析冒号前缀]")
+            _el = len(_en)
+            _ml = 5 if nq["type"] in ("blank", "short_answer") else 20
+            if _el and _el < _ml:
+                report["bad"].append(f"{nq['id']} [保留轨解析过短({_el}字)]")
 
         if len(report["ids"]) != len(basic_out) + len(keep_out):
             report["bad"].append(f"id集合不一致")
