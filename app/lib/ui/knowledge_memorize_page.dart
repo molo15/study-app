@@ -14,7 +14,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/quiz_repository.dart';
 import '../models/models.dart';
+import 'theme_controller.dart';
 import 'glass_app_bar.dart';
+import 'widgets/flippable_card.dart';
 
 class KnowledgeMemorizePage extends ConsumerStatefulWidget {
   const KnowledgeMemorizePage({
@@ -257,89 +259,14 @@ class _KnowledgeMemorizePageState
             ),
           ),
         const SizedBox(height: 12),
-        // 知识点卡
-        Card(
-          margin: EdgeInsets.zero,
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    if (kp.hot) ...[
-                      Icon(
-                        Icons.local_fire_department,
-                        size: 18,
-                        color: theme.colorScheme.tertiary,
-                      ),
-                      const SizedBox(width: 4),
-                    ],
-                    Expanded(
-                      child: Text(
-                        kp.name,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          height: 1.3,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '${widget.chapter} · 知识点',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.outline,
-                  ),
-                ),
-                if (kp.summary.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  _HighlightSummary(
-                    text: kp.summary,
-                    term: kp.name,
-                    maxLines: _revealed ? null : 8,
-                  ),
-                ] else ...[
-                  const SizedBox(height: 14),
-                  Text(
-                    '（本章节暂未提炼要点，可直接练习关联题目）',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.outline,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 16),
-                // 关联题入口
-                if (kp.questionCount > 0)
-                  InkWell(
-                    onTap: () => widget.onPracticeQuestions?.call(kp),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.edit_note,
-                            size: 16,
-                            color: theme.colorScheme.primary,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '本章 ${kp.questionCount} 题可练 →',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
+        // 知识点卡（3D 翻转：正面知识点名 → 背面要点）
+        FlippableCard(
+          flipped: _revealed,
+          onTap: _reveal,
+          height: 330,
+          borderRadius: 24,
+          front: _frontCard(theme, kp),
+          back: _backCard(theme, kp),
         ),
         const SizedBox(height: 12),
         // 操作
@@ -385,6 +312,155 @@ class _KnowledgeMemorizePageState
           child: const Text('结束本次背题'),
         ),
       ],
+    );
+  }
+
+  /// 卡正面：知识点名 + 章节 + 轻点提示
+  Widget _frontCard(ThemeData theme, KnowledgePoint kp) {
+    final config = ref.watch(themeControllerProvider).asData?.value;
+    final accent = config?.accent ?? const Color(0xFF4F7CD4);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withValues(alpha: 0.78),
+            Colors.white.withValues(alpha: 0.40),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (kp.hot) ...[
+            Icon(Icons.local_fire_department, size: 20, color: theme.colorScheme.tertiary),
+            const SizedBox(height: 8),
+          ],
+          Text(
+            kp.name,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              height: 1.35,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            '${widget.chapter} · 知识点',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.outline,
+            ),
+          ),
+          const SizedBox(height: 28),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              color: accent.withValues(alpha: 0.12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.touch_app, size: 14, color: accent),
+                const SizedBox(width: 6),
+                Text(
+                  '轻点卡片查看要点',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: accent),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 卡背面：要点完整展开 + 关联题入口
+  Widget _backCard(ThemeData theme, KnowledgePoint kp) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withValues(alpha: 0.80),
+            Colors.white.withValues(alpha: 0.42),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '要点',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w800,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Expanded(
+            child: SingleChildScrollView(
+              child: kp.summary.isNotEmpty
+                  ? _HighlightSummary(text: kp.summary, term: kp.name)
+                  : Text(
+                      '（本章节暂未提炼要点，可直接练习关联题目）',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.outline,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          // 关联题入口
+          if (kp.questionCount > 0)
+            InkWell(
+              onTap: () => widget.onPracticeQuestions?.call(kp),
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.10),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.edit_note, size: 16, color: theme.colorScheme.primary),
+                    const SizedBox(width: 6),
+                    Text(
+                      '本章 ${kp.questionCount} 题可练 →',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            Text(
+              '轻点卡片返回',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -495,12 +571,10 @@ class _HighlightSummary extends StatelessWidget {
   const _HighlightSummary({
     required this.text,
     required this.term,
-    this.maxLines,
   });
 
   final String text;
   final String term;
-  final int? maxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -518,8 +592,6 @@ class _HighlightSummary extends StatelessWidget {
     );
     return Text.rich(
       TextSpan(style: base, children: _buildSpans(hl, termStyle)),
-      maxLines: maxLines,
-      overflow: maxLines == null ? null : TextOverflow.ellipsis,
     );
   }
 

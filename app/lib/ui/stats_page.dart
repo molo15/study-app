@@ -611,14 +611,19 @@ class _ChapterRow extends StatelessWidget {
           const SizedBox(width: 8),
           SizedBox(
             width: 80,
-            child: LinearProgressIndicator(
-              value: stats.accuracy / 100,
-              backgroundColor: theme.colorScheme.surfaceContainerHighest,
-              color: stats.accuracy < 60
-                  ? theme.colorScheme.error
-                  : stats.accuracy < 80
-                      ? Colors.orange
-                      : theme.colorScheme.primary,
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: stats.accuracy / 100),
+              duration: const Duration(milliseconds: 800),
+              curve: Curves.easeOutCubic,
+              builder: (context, v, _) => LinearProgressIndicator(
+                value: v,
+                backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                color: stats.accuracy < 60
+                    ? theme.colorScheme.error
+                    : stats.accuracy < 80
+                        ? Colors.orange
+                        : theme.colorScheme.primary,
+              ),
             ),
           ),
           const SizedBox(width: 8),

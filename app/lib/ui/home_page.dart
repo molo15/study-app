@@ -18,6 +18,7 @@ import '../data/quiz_repository.dart';
 import '../data/seed_loader.dart';
 import '../models/models.dart';
 import '../services/app_log.dart';
+import 'theme_controller.dart';
 import 'glass_app_bar.dart';
 import 'bank_page.dart';
 import 'mock_exam_list_page.dart';
@@ -26,6 +27,7 @@ import 'settings_page.dart';
 import 'wrong_book_page.dart';
 import 'app_routes.dart';
 import 'widgets/app_card.dart';
+import 'widgets/circular_ring.dart';
 import 'widgets/staggered_item.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -338,28 +340,71 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   /// 今日任务卡：三项计数 + 唯一主按钮（禁用逻辑不变）+ 无任务时的次级入口
   Widget _buildTodayCard(ThemeData theme) {
+    final config = ref.watch(themeControllerProvider).asData?.value;
+    final accent = config?.accent ?? const Color(0xFF4F7CD4);
+    final ink2 = theme.colorScheme.onSurfaceVariant;
+    final accuracy = _todayAnswered > 0
+        ? (_todayAccuracy / 100).clamp(0.0, 1.0)
+        : 0.0;
+
     return AppCard(
+      depth: 1,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         child: Column(
           children: [
+            // Hero：今日学习环形进度（今日正确率，生长动画）
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                _StatItem(
-                  label: '待复习',
-                  value: _dueCount,
-                  color: theme.colorScheme.primary,
+                CircularRing(
+                  progress: accuracy,
+                  size: 108,
+                  strokeWidth: 9,
+                  color: accent,
+                  center: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _todayAnswered > 0
+                            ? '${_todayAccuracy.toStringAsFixed(0)}%'
+                            : '--',
+                        style: TextStyle(
+                          fontSize: 21,
+                          fontWeight: FontWeight.w800,
+                          color: accent,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '今日正确率',
+                        style: TextStyle(fontSize: 10, color: ink2),
+                      ),
+                    ],
+                  ),
                 ),
-                _StatItem(
-                  label: '新题',
-                  value: _newCount,
-                  color: theme.colorScheme.tertiary,
-                ),
-                _StatItem(
-                  label: '错题',
-                  value: _wrongCount,
-                  color: theme.colorScheme.error,
+                const SizedBox(width: 20),
+                // 右侧：今日数据竖排
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '今日学习',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _miniStat('待复习', _dueCount, theme.colorScheme.primary),
+                      const SizedBox(height: 8),
+                      _miniStat('新题', _newCount, theme.colorScheme.tertiary),
+                      const SizedBox(height: 8),
+                      _miniStat('错题', _wrongCount, theme.colorScheme.error),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -371,11 +416,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                 onPressed: _dueCount == 0
                     ? null
                     : () => _push(
-                        PracticePage(
-                          mode: PracticeMode.review,
-                          bankId: _currentBankId,
+                          PracticePage(
+                            mode: PracticeMode.review,
+                            bankId: _currentBankId,
+                          ),
                         ),
-                      ),
                 icon: const Icon(Icons.autorenew),
                 label: Text(_dueCount == 0 ? '今日任务已完成' : '开始今日复习（$_dueCount）'),
               ),
@@ -413,6 +458,26 @@ class _HomePageState extends ConsumerState<HomePage> {
           ],
         ),
       ),
+    );
+  }
+
+  /// Hero 竖排数据项
+  Widget _miniStat(String label, int value, Color color) {
+    return Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(label, style: const TextStyle(fontSize: 12.5, color: Color(0xFF56647C))),
+        const Spacer(),
+        Text('$value', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+      ],
     );
   }
 
@@ -678,34 +743,6 @@ class _ErrorView extends StatelessWidget {
 }
 
 /// 统计数字单元：待复习 / 新题 / 错题
-class _StatItem extends StatelessWidget {
-  const _StatItem({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
 
-  final String label;
-  final int value;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      children: [
-        Text(
-          '$value',
-          style: theme.textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(label, style: theme.textTheme.bodySmall),
-      ],
-    );
-  }
-}
 
 /// 题库切换胶囊（多题库，需求）
