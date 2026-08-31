@@ -41,6 +41,8 @@ class _ChapterOverviewPageState extends ConsumerState<ChapterOverviewPage> {
   ChapterOverview? _overview;
   List<KnowledgePoint> _knowledge = const [];
   Map<String, ({int total, int answered, int correct})> _progress = const {};
+  // v11 背题存档：{knowledgeId: MemorizeProgress}
+  Map<String, MemorizeProgress> _memoStates = const {};
 
   @override
   void initState() {
@@ -70,11 +72,18 @@ class _ChapterOverviewPageState extends ConsumerState<ChapterOverviewPage> {
           kp.id,
         );
       }
+      // v11 背题存档：加载本章知识点卡记忆状态（概览页显示进度胶囊）
+      final memoStates = await repo.memorizeStates(
+        bankId: widget.bankId,
+        chapter: widget.chapter,
+        cardType: 'knowledge',
+      );
       if (!mounted) return;
       setState(() {
         _overview = ov;
         _knowledge = knowledge;
         _progress = progress;
+        _memoStates = memoStates;
         _loading = false;
       });
     } catch (e) {
@@ -252,6 +261,7 @@ class _ChapterOverviewPageState extends ConsumerState<ChapterOverviewPage> {
             _KnowledgeCard(
               kp: kp,
               progress: _progress[kp.id],
+              memorize: _memoStates[kp.id],
               onPractice: () => _startKnowledge(kp),
               onMemorize: () => _startMemorize(knowledgeId: kp.id),
             ),
@@ -327,12 +337,16 @@ class _KnowledgeCard extends StatefulWidget {
   const _KnowledgeCard({
     required this.kp,
     required this.progress,
+    this.memorize,
     required this.onPractice,
     required this.onMemorize,
   });
 
   final KnowledgePoint kp;
   final ({int total, int answered, int correct})? progress;
+
+  /// v11 背题存档状态（null=未背）
+  final MemorizeProgress? memorize;
   final VoidCallback onPractice;
   final VoidCallback onMemorize;
 
@@ -381,6 +395,10 @@ class _KnowledgeCardState extends State<_KnowledgeCard> {
                     color: theme.colorScheme.outline,
                   ),
                 ),
+                if (widget.memorize != null) ...[
+                  const SizedBox(width: 6),
+                  _MemorizeBadge(progress: widget.memorize!),
+                ],
               ],
             ),
             if (kp.summary.isNotEmpty) ...[
@@ -454,3 +472,32 @@ class _KnowledgeCardState extends State<_KnowledgeCard> {
   }
 }
 
+
+/// v11 背题存档状态胶囊：已掌握（绿）/ 学习中（橙）
+class _MemorizeBadge extends StatelessWidget {
+  const _MemorizeBadge({required this.progress});
+
+  final MemorizeProgress progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final mastered = progress.mastered;
+    final color = mastered ? const Color(0xFF2E7D32) : Colors.orange.shade800;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Text(
+        mastered ? '已掌握' : '学习中',
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: color,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}

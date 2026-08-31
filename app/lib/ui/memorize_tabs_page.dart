@@ -48,10 +48,33 @@ class MemorizeTabsPage extends ConsumerStatefulWidget {
 class _MemorizeTabsPageState extends ConsumerState<MemorizeTabsPage> {
   late int _tab;
 
+  /// v11 整章知识点卡进度：已掌握数（null=未加载完）
+  int? _kpMastered;
+
   @override
   void initState() {
     super.initState();
     _tab = widget.initialTab;
+    _loadKpProgress();
+  }
+
+  /// 加载整章知识点卡已掌握数（用于顶部汇总进度条）
+  Future<void> _loadKpProgress() async {
+    try {
+      final repo = await ref.read(quizRepositoryProvider);
+      final states = await repo.memorizeStates(
+        bankId: widget.bankId,
+        chapter: widget.chapter,
+        cardType: 'knowledge',
+      );
+      var mastered = 0;
+      for (final kp in widget.knowledge) {
+        final st = states[QuizRepository.kpKey(kp.id)];
+        if (st != null && st.mastered) mastered++;
+      }
+      if (!mounted) return;
+      setState(() => _kpMastered = mastered);
+    } catch (_) {}
   }
 
   /// 跳转某知识点题目背诵
@@ -78,35 +101,70 @@ class _MemorizeTabsPageState extends ConsumerState<MemorizeTabsPage> {
         title: Text(widget.title),
         centerTitle: true,
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(46),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-            child: Container(
-              height: 38,
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withValues(
-                  alpha: 0.6,
+          preferredSize: const Size.fromHeight(46 + 30),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+                child: Container(
+                  height: 38,
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest.withValues(
+                      alpha: 0.6,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: [
+                      _Segment(
+                        label: '知识点卡',
+                        icon: Icons.account_tree_outlined,
+                        selected: _tab == 0,
+                        onTap: () => setState(() => _tab = 0),
+                      ),
+                      _Segment(
+                        label: '题目背诵',
+                        icon: Icons.style_outlined,
+                        selected: _tab == 1,
+                        onTap: () => setState(() => _tab = 1),
+                      ),
+                    ],
+                  ),
                 ),
-                borderRadius: BorderRadius.circular(20),
               ),
-              child: Row(
-                children: [
-                  _Segment(
-                    label: '知识点卡',
-                    icon: Icons.account_tree_outlined,
-                    selected: _tab == 0,
-                    onTap: () => setState(() => _tab = 0),
+              // v11 整章知识点卡进度
+              if (widget.knowledge.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(3),
+                          child: LinearProgressIndicator(
+                            value: widget.knowledge.isEmpty
+                                ? 0
+                                : ((_kpMastered ?? 0) / widget.knowledge.length)
+                                    .clamp(0.0, 1.0),
+                            minHeight: 4,
+                            backgroundColor:
+                                theme.colorScheme.surfaceContainerHighest,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '知识点已掌握 ${_kpMastered ?? 0}/${widget.knowledge.length}',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.outline,
+                        ),
+                      ),
+                    ],
                   ),
-                  _Segment(
-                    label: '题目背诵',
-                    icon: Icons.style_outlined,
-                    selected: _tab == 1,
-                    onTap: () => setState(() => _tab = 1),
-                  ),
-                ],
-              ),
-            ),
+                ),
+            ],
           ),
         ),
       ),

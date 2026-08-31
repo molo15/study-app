@@ -1,19 +1,22 @@
-/// 知识点卡背题模式（P2 · 知识点卡）
+/// 知识点卡背题模式（P2 · 知识点卡，v11 背题存档）
 ///
 /// 「不背单词式」知识点卡片流：每张卡 = 一个知识点（名称 + 提炼要点 summary，
 /// 关键术语高亮），点「背会了/还不会」推进。
 /// - 标「还不会」的知识点进入待背队列，每隔 N 张再推回一次，直到标「会」（会话内循环推送）；
 /// - 不判分、不写 answer_logs、不进错题本、不建立 FSRS 调度（与逐题背题一致，不占复习队列）；
-/// - 不跨会话：每次进入都是全新一轮，无持久状态（用户拍板）；
+/// - 跨会话存档（v11）：记忆状态持久化，自评即时落库；已掌握的不再进队列，
+///   未掌握的进入时优先推送；全部掌握后提供「重新开始」；
 /// - 卡片底部展示该知识点关联的基础题数，可一键跳到「题目背诵」。
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/quiz_repository.dart';
 import '../models/models.dart';
 import 'glass_app_bar.dart';
 
-class KnowledgeMemorizePage extends StatefulWidget {
+class KnowledgeMemorizePage extends ConsumerStatefulWidget {
   const KnowledgeMemorizePage({
     super.key,
     required this.bankId,
@@ -38,45 +41,111 @@ class KnowledgeMemorizePage extends StatefulWidget {
   final void Function(KnowledgePoint kp)? onPracticeQuestions;
 
   @override
-  State<KnowledgeMemorizePage> createState() => _KnowledgeMemorizePageState();
+  ConsumerState<KnowledgeMemorizePage> createState() =>
+      _KnowledgeMemorizePageState();
 }
 
-class _KnowledgeMemorizePageState extends State<KnowledgeMemorizePage> {
+class _KnowledgeMemorizePageState
+    extends ConsumerState<KnowledgeMemorizePage> {
   /// 每隔多少张把「不会」的卡推回队列（不背单词式）
   static const _pushBackInterval = 5;
 
-  late final List<KnowledgePoint> _queue;
+  late final List<KnowledgePoint> _all;
+  List<KnowledgePoint> _queue = []; // 本轮待背（未掌握：学习中+未背）
   final List<KnowledgePoint> _pending = []; // 本轮待再次推送
-  final List<KnowledgePoint> _mastered = []; // 已背会
+  final List<KnowledgePoint> _mastered = []; // 本会话标过「背会」的
   final List<KnowledgePoint> _notYet = []; // 会话结束仍未背会
   int _processed = 0; // 已处理的卡数（含推送）
   bool _revealed = false; // 是否已展开要点（显示完整）
   bool _finished = false;
+  bool _loading = true; // 加载存档中
+  int _preMastered = 0; // 存档中已掌握的知识点数
+  bool _allMastered = false; // 全部已掌握（无需再背）
 
   @override
   void initState() {
     super.initState();
-    _queue = List.of(widget.knowledge);
+    _all = List.of(widget.knowledge);
+    _loadArchive();
+  }
+
+  /// 加载背题存档：排除已掌握的，构建本轮队列（v11）
+  Future<void> _loadArchive() async {
+    try {
+      final repo = await ref.read(quizRepositoryProvider);
+      final states = await repo.memorizeStates(
+        bankId: widget.bankId,
+        chapter: widget.chapter,
+        cardType: 'knowledge',
+      );
+      final notMastered = <KnowledgePoint>[];
+      var preMastered = 0;
+      for (final kp in _all) {
+        final st = states[QuizRepository.kpKey(kp.id)];
+        if (st != null && st.mastered) {
+          preMastered++;
+        } else {
+          notMastered.add(kp);
+        }
+      }
+      if (!mounted) return;
+      setState(() {
+        _preMastered = preMastered;
+        if (notMastered.isEmpty) {
+          _allMastered = true;
+          _finished = true;
+        } else {
+          _queue = notMastered;
+        }
+        _loading = false;
+      });
+    } catch (_) {
+      // 存档读取失败降级为全量队列（原行为）
+      if (!mounted) return;
+      setState(() {
+        _queue = List.of(_all);
+        _loading = false;
+      });
+    }
   }
 
   KnowledgePoint? get _current => _queue.isEmpty ? null : _queue.first;
 
   void _reveal() => setState(() => _revealed = true);
 
-  void _know() {
+  /// 背题存档：自评即时落库（失败不阻断背诵）
+  Future<void> _persist(KnowledgePoint kp, {required bool know}) async {
+    try {
+      final repo = await ref.read(quizRepositoryProvider);
+      await repo.recordMemorize(
+        cardKey: QuizRepository.kpKey(kp.id),
+        bankId: widget.bankId,
+        chapter: widget.chapter,
+        cardType: 'knowledge',
+        knowledgeId: kp.id,
+        know: know,
+      );
+    } catch (_) {
+      // 忽略：存档失败仅丢失本次自评，不影响会话
+    }
+  }
+
+  Future<void> _know() async {
     final kp = _queue.removeAt(0);
     _mastered.add(kp);
     _processed++;
     _revealed = false;
+    await _persist(kp, know: true);
     _advance();
   }
 
-  void _again() {
+  Future<void> _again() async {
     final kp = _queue.removeAt(0);
     _pending.add(kp);
     _notYet.add(kp);
     _processed++;
     _revealed = false;
+    await _persist(kp, know: false);
     _advance();
   }
 
@@ -104,10 +173,40 @@ class _KnowledgeMemorizePageState extends State<KnowledgeMemorizePage> {
   /// 提前结束（未背会的保留在 _notYet，供提示继续）
   void _finishEarly() => setState(() => _finished = true);
 
+  /// 重新开始：重置本章知识点卡全部存档，从头再背一轮
+  Future<void> _restartAll() async {
+    try {
+      final repo = await ref.read(quizRepositoryProvider);
+      await repo.resetMemorize(
+        bankId: widget.bankId,
+        cardType: 'knowledge',
+        chapter: widget.chapter,
+      );
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() {
+      _queue = List.of(_all);
+      _pending.clear();
+      _mastered.clear();
+      _notYet.clear();
+      _processed = 0;
+      _preMastered = 0;
+      _allMastered = false;
+      _finished = false;
+      _revealed = false;
+      _loading = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final body = _finished ? _buildSummary(theme) : _buildCard(theme);
+    final Widget body;
+    if (_loading) {
+      body = const Center(child: CircularProgressIndicator());
+    } else {
+      body = _finished ? _buildSummary(theme) : _buildCard(theme);
+    }
     if (widget.embedded) return body;
     return Scaffold(
       appBar: GlassAppBar(
@@ -122,18 +221,19 @@ class _KnowledgeMemorizePageState extends State<KnowledgeMemorizePage> {
     final kp = _current;
     // 队列为空（极端边界）时回到总结视图，避免强解包崩溃
     if (kp == null) return _buildSummary(theme);
-    final total = widget.knowledge.length;
+    final total = _all.length;
+    final masteredNow = _mastered.length + _preMastered;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
       children: [
-        // 进度
+        // 进度（含存档已掌握 + 本会话新背会）
         Row(
           children: [
             Expanded(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
-                  value: total == 0 ? 0 : _mastered.length / total,
+                  value: total == 0 ? 0 : masteredNow / total,
                   minHeight: 6,
                   backgroundColor: theme.colorScheme.surfaceContainerHighest,
                 ),
@@ -141,7 +241,7 @@ class _KnowledgeMemorizePageState extends State<KnowledgeMemorizePage> {
             ),
             const SizedBox(width: 10),
             Text(
-              '已会 ${_mastered.length} / $total',
+              '已会 $masteredNow / $total',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.outline,
               ),
@@ -289,8 +389,8 @@ class _KnowledgeMemorizePageState extends State<KnowledgeMemorizePage> {
   }
 
   Widget _buildSummary(ThemeData theme) {
-    final total = widget.knowledge.length;
-    final mastered = _mastered.length;
+    final total = _all.length;
+    final mastered = _mastered.length + _preMastered;
     final ratio = total == 0 ? 0.0 : mastered / total;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 96),
@@ -301,20 +401,22 @@ class _KnowledgeMemorizePageState extends State<KnowledgeMemorizePage> {
             child: Column(
               children: [
                 Icon(
-                  Icons.emoji_events_outlined,
+                  _allMastered
+                      ? Icons.workspace_premium_outlined
+                      : Icons.emoji_events_outlined,
                   size: 48,
                   color: theme.colorScheme.primary,
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  '本轮知识点背题完成',
+                  _allMastered ? '本章知识点已全部背会' : '本轮知识点背题完成',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '背会 $mastered / $total 个 · ${(ratio * 100).toStringAsFixed(0)}%',
+                  '已掌握 $mastered / $total · ${(ratio * 100).toStringAsFixed(0)}%',
                   style: theme.textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 8),
@@ -326,6 +428,15 @@ class _KnowledgeMemorizePageState extends State<KnowledgeMemorizePage> {
                     backgroundColor: theme.colorScheme.surfaceContainerHighest,
                   ),
                 ),
+                if (_allMastered) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    '进度已存档，之后进入无需重背',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.outline,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -333,7 +444,7 @@ class _KnowledgeMemorizePageState extends State<KnowledgeMemorizePage> {
         if (_notYet.isNotEmpty) ...[
           const SizedBox(height: 16),
           Text(
-            '本次尚未背会（下次进入可继续）',
+            '本次尚未背会（已存档，下次进入继续）',
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w700,
             ),
@@ -361,6 +472,15 @@ class _KnowledgeMemorizePageState extends State<KnowledgeMemorizePage> {
             ),
         ],
         const SizedBox(height: 20),
+        if (_allMastered) ...[
+          // 全部掌握：提供重新开始（重置存档）
+          OutlinedButton.icon(
+            onPressed: _restartAll,
+            icon: const Icon(Icons.replay),
+            label: const Text('重新背一遍（重置存档）'),
+          ),
+          const SizedBox(height: 8),
+        ],
         FilledButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('完成'),

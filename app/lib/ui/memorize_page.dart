@@ -1,14 +1,16 @@
-/// 背题模式（P2）
+/// 背题模式（P2，v11 背题存档）
 ///
 /// 「不背单词式」卡片流：题干 → 点「显示答案」→ 看答案+解析 → 标「会/不会」→ 下一张。
 /// - 标「不会」的卡进入待背队列，每隔 N 张再推回一次，直到标「会」（会话内循环推送）；
 /// - 不判分、不写 answer_logs、不进错题本、不建立 FSRS 调度（用户拍板：不占用复习队列）；
-/// - 会话结束：已背会数量统计；未背会的仅会话内保留（可继续本次会话）。
+/// - 跨会话存档（v11）：记忆状态持久化，自评即时落库；已掌握的不再进队列，
+///   未掌握的进入时优先推送；全部掌握后提供「重新开始」。
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/quiz_repository.dart';
 import '../models/models.dart';
 import 'glass_app_bar.dart';
 
@@ -38,18 +40,63 @@ class _MemorizePageState extends ConsumerState<MemorizePage> {
   /// 每隔多少张把「不会」的卡推回队列（不背单词式）
   static const _pushBackInterval = 5;
 
-  late final List<Question> _queue;
+  late final List<Question> _all;
+  List<Question> _queue = []; // 本轮待背（未掌握：学习中+未背）
   final List<Question> _pending = []; // 本轮待再次推送
-  final List<Question> _mastered = []; // 已背会
+  final List<Question> _mastered = []; // 本会话标过「背会」的
   final List<Question> _notYet = []; // 会话结束仍未背会
   int _processed = 0; // 已处理的卡数（含推送）
   bool _revealed = false; // 是否已显示答案
   bool _finished = false;
+  bool _loading = true; // 加载存档中
+  int _preMastered = 0; // 存档中已掌握的题数
+  bool _allMastered = false; // 全部已掌握（无需再背）
 
   @override
   void initState() {
     super.initState();
-    _queue = List.of(widget.questions);
+    _all = List.of(widget.questions);
+    _loadArchive();
+  }
+
+  /// 加载背题存档：排除已掌握的，构建本轮队列（v11）
+  Future<void> _loadArchive() async {
+    try {
+      final repo = await ref.read(quizRepositoryProvider);
+      final states = await repo.memorizeStates(
+        bankId: widget.bankId,
+        chapter: widget.chapter,
+        cardType: 'question',
+      );
+      final notMastered = <Question>[];
+      var preMastered = 0;
+      for (final q in _all) {
+        final st = states[QuizRepository.qKey(q.id)];
+        if (st != null && st.mastered) {
+          preMastered++;
+        } else {
+          notMastered.add(q);
+        }
+      }
+      if (!mounted) return;
+      setState(() {
+        _preMastered = preMastered;
+        if (notMastered.isEmpty) {
+          _allMastered = true;
+          _finished = true;
+        } else {
+          _queue = notMastered;
+        }
+        _loading = false;
+      });
+    } catch (_) {
+      // 存档读取失败降级为全量队列（原行为）
+      if (!mounted) return;
+      setState(() {
+        _queue = List.of(_all);
+        _loading = false;
+      });
+    }
   }
 
   Question? get _current => _queue.isEmpty ? null : _queue.first;
@@ -58,20 +105,40 @@ class _MemorizePageState extends ConsumerState<MemorizePage> {
     setState(() => _revealed = true);
   }
 
-  void _know() {
+  /// 背题存档：自评即时落库（失败不阻断背诵）
+  Future<void> _persist(Question q, {required bool know}) async {
+    try {
+      final repo = await ref.read(quizRepositoryProvider);
+      await repo.recordMemorize(
+        cardKey: QuizRepository.qKey(q.id),
+        bankId: widget.bankId,
+        chapter: widget.chapter,
+        cardType: 'question',
+        questionId: q.id,
+        knowledgeId: q.knowledgeId,
+        know: know,
+      );
+    } catch (_) {
+      // 忽略：存档失败仅丢失本次自评，不影响会话
+    }
+  }
+
+  Future<void> _know() async {
     final q = _queue.removeAt(0);
     _mastered.add(q);
     _processed++;
     _revealed = false;
+    await _persist(q, know: true);
     _advance();
   }
 
-  void _again() {
+  Future<void> _again() async {
     final q = _queue.removeAt(0);
     _pending.add(q);
     _notYet.add(q);
     _processed++;
     _revealed = false;
+    await _persist(q, know: false);
     _advance();
   }
 
@@ -101,10 +168,40 @@ class _MemorizePageState extends ConsumerState<MemorizePage> {
     setState(() => _finished = true);
   }
 
+  /// 重新开始：重置本章题目卡全部存档，从头再背一轮
+  Future<void> _restartAll() async {
+    try {
+      final repo = await ref.read(quizRepositoryProvider);
+      await repo.resetMemorize(
+        bankId: widget.bankId,
+        cardType: 'question',
+        chapter: widget.chapter,
+      );
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() {
+      _queue = List.of(_all);
+      _pending.clear();
+      _mastered.clear();
+      _notYet.clear();
+      _processed = 0;
+      _preMastered = 0;
+      _allMastered = false;
+      _finished = false;
+      _revealed = false;
+      _loading = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final body = _finished ? _buildSummary(theme) : _buildCard(theme);
+    final Widget body;
+    if (_loading) {
+      body = const Center(child: CircularProgressIndicator());
+    } else {
+      body = _finished ? _buildSummary(theme) : _buildCard(theme);
+    }
     if (widget.embedded) return body;
     return Scaffold(
       appBar: GlassAppBar(
@@ -119,18 +216,19 @@ class _MemorizePageState extends ConsumerState<MemorizePage> {
     final q = _current;
     // 队列为空（极端边界）时回到总结视图，避免强解包崩溃（UI 审查 P2-6）
     if (q == null) return _buildSummary(theme);
-    final total = widget.questions.length;
+    final total = _all.length;
+    final masteredNow = _mastered.length + _preMastered;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
       children: [
-        // 进度
+        // 进度（含存档已掌握 + 本会话新背会）
         Row(
           children: [
             Expanded(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
-                  value: total == 0 ? 0 : _mastered.length / total,
+                  value: total == 0 ? 0 : masteredNow / total,
                   minHeight: 6,
                   backgroundColor: theme.colorScheme.surfaceContainerHighest,
                 ),
@@ -138,7 +236,7 @@ class _MemorizePageState extends ConsumerState<MemorizePage> {
             ),
             const SizedBox(width: 10),
             Text(
-              '已会 ${_mastered.length} / $total',
+              '已会 $masteredNow / $total',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.outline,
               ),
@@ -243,8 +341,8 @@ class _MemorizePageState extends ConsumerState<MemorizePage> {
   }
 
   Widget _buildSummary(ThemeData theme) {
-    final total = widget.questions.length;
-    final mastered = _mastered.length;
+    final total = _all.length;
+    final mastered = _mastered.length + _preMastered;
     final ratio = total == 0 ? 0.0 : mastered / total;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 96),
@@ -255,20 +353,22 @@ class _MemorizePageState extends ConsumerState<MemorizePage> {
             child: Column(
               children: [
                 Icon(
-                  Icons.emoji_events_outlined,
+                  _allMastered
+                      ? Icons.workspace_premium_outlined
+                      : Icons.emoji_events_outlined,
                   size: 48,
                   color: theme.colorScheme.primary,
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  '本轮背题完成',
+                  _allMastered ? '本章题目已全部背会' : '本轮背题完成',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '背会 $mastered / $total 张 · ${(ratio * 100).toStringAsFixed(0)}%',
+                  '已掌握 $mastered / $total · ${(ratio * 100).toStringAsFixed(0)}%',
                   style: theme.textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 8),
@@ -280,6 +380,15 @@ class _MemorizePageState extends ConsumerState<MemorizePage> {
                     backgroundColor: theme.colorScheme.surfaceContainerHighest,
                   ),
                 ),
+                if (_allMastered) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    '进度已存档，之后进入无需重背',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.outline,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -287,7 +396,7 @@ class _MemorizePageState extends ConsumerState<MemorizePage> {
         if (_notYet.isNotEmpty) ...[
           const SizedBox(height: 16),
           Text(
-            '本次尚未背会（下次进入可继续）',
+            '本次尚未背会（已存档，下次进入继续）',
             style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w700,
             ),
@@ -309,6 +418,15 @@ class _MemorizePageState extends ConsumerState<MemorizePage> {
             ),
         ],
         const SizedBox(height: 20),
+        if (_allMastered) ...[
+          // 全部掌握：提供重新开始（重置存档）
+          OutlinedButton.icon(
+            onPressed: _restartAll,
+            icon: const Icon(Icons.replay),
+            label: const Text('重新背一遍（重置存档）'),
+          ),
+          const SizedBox(height: 8),
+        ],
         FilledButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('完成'),
@@ -355,7 +473,6 @@ class _AnswerCard extends StatelessWidget {
   const _AnswerCard({required this.question});
 
   final Question question;
-
 
   /// 正确项选项（防脏数据）：单选最多返回 1 项（优先 key 精确匹配，无则按文本取第一个）；
   /// 多选按选项顺序取 answer 命中的 key（去重），key 全不命中时按文本兜底。

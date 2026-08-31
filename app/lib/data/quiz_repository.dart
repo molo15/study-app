@@ -21,6 +21,7 @@ import 'srs_service.dart';
 part 'quiz_repository_settings.dart';
 part 'quiz_repository_questions.dart';
 part 'quiz_repository_knowledge.dart';
+part 'quiz_repository_memorize.dart';
 part 'quiz_repository_srs.dart';
 part 'quiz_repository_mock.dart';
 part 'quiz_repository_export.dart';
@@ -60,10 +61,19 @@ class QuizRepository extends RepositoryMixinBase with
     _SettingsMixin,
     _QuestionsMixin,
     _KnowledgeMixin,
+    _MemorizeMixin,
     _SrsMixin,
     _MockMixin,
     _ExportMixin {
   QuizRepository(super._db);
+
+  // ---------- 背题存档 key（v11）----------
+
+  /// 知识点卡 key
+  static String kpKey(String knowledgeId) => 'kp:$knowledgeId';
+
+  /// 题目卡 key
+  static String qKey(String questionId) => 'q:$questionId';
 
   // 与 UI 约定的静态常量/键（定义在 QuizRepository 上，供上层静态访问）
   static const practiceTimerVisibleKey = 'show_practice_timer';

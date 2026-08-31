@@ -6,7 +6,7 @@ import 'package:path/path.dart';
 
 class AppDatabase {
   static const _dbName = 'quiz_app.db';
-  static const _dbVersion = 10;
+  static const _dbVersion = 11;
 
   /// 用 Future 缓存而不是单个 Database，避免并发访问时重复 open
   static Future<Database>? _instance;
@@ -125,6 +125,12 @@ class AppDatabase {
         await db.execute('ALTER TABLE answer_logs ADD COLUMN user_answer TEXT');
       }
     }
+    if (oldVersion < 11) {
+      // v11: 背题存档 —— memorize_progress 记录知识点卡/题目卡的记忆状态（跨会话）
+      await db.execute(_memorizeProgressDdl);
+      await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_memo_chapter ON memorize_progress(bank_id, chapter, card_type)');
+    }
   }
 
   /// v7：审题标记表（用户逐题审查时标记"需修改/待复核"）
@@ -163,6 +169,23 @@ class AppDatabase {
       summary TEXT,
       version TEXT NOT NULL,
       PRIMARY KEY (bank_id, chapter)
+    )
+  ''';
+
+  /// v11：背题存档 —— 每张记忆卡一条记录（知识点卡 kp:xx / 题目卡 q:xx）
+  static const _memorizeProgressDdl = '''
+    CREATE TABLE IF NOT EXISTS memorize_progress(
+      card_key TEXT PRIMARY KEY,
+      bank_id TEXT NOT NULL,
+      chapter TEXT NOT NULL,
+      card_type TEXT NOT NULL,
+      knowledge_id TEXT,
+      question_id TEXT,
+      state TEXT NOT NULL DEFAULT 'learning',
+      correct_streak INTEGER DEFAULT 0,
+      reviewed_count INTEGER DEFAULT 0,
+      last_reviewed_at INTEGER,
+      updated_at INTEGER
     )
   ''';
 
@@ -294,6 +317,11 @@ class AppDatabase {
     await db.execute(_chapterOverviewsDdl);
     await db.execute(
         'CREATE INDEX IF NOT EXISTS idx_questions_knowledge ON questions(knowledge_id)');
+
+    // 背题存档（v11）
+    await db.execute(_memorizeProgressDdl);
+    await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_memo_chapter ON memorize_progress(bank_id, chapter, card_type)');
 
     // 键值设置（desired_retention、每日新题数、题库包导入版本等）
     await db.execute('''
