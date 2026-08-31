@@ -13,6 +13,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/quiz_repository.dart';
 import '../data/seed_loader.dart';
 import '../models/models.dart';
+import '../services/archive_store.dart';
+import '../services/auto_archive_service.dart';
 import '../services/export_helper.dart';
 import 'theme_controller.dart';
 import 'glass_app_bar.dart';
@@ -41,6 +43,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   bool _showPracticeTimer = false;
   bool _reviewEnabled = false; // 审题标记开关（默认关）
   StudyGoal _studyGoal = const StudyGoal();
+  bool _autoArchiveEnabled = true; // 自动存档开关（默认开）
+  int _autoArchiveKeep = 5; // 自动存档保留份数
+  int _autoArchiveCount = 0; // 本地已有自动存档份数
 
   @override
   void initState() {
@@ -57,6 +62,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       final showPracticeTimer = await repo.practiceTimerVisible();
       final reviewEnabled = await repo.reviewModeEnabled();
       final studyGoal = await repo.studyGoal() ?? const StudyGoal();
+      final autoEnabled =
+          (await repo.setting('auto_archive_enabled')) != 'false';
+      final autoKeep =
+          int.tryParse(await repo.setting('auto_archive_keep') ?? '') ?? 5;
+      final autoCount = (await FileArchiveStore().listAutoArchives()).length;
       if (!mounted) return;
       setState(() {
         _banks = banks;
@@ -64,6 +74,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _showPracticeTimer = showPracticeTimer;
         _reviewEnabled = reviewEnabled;
         _studyGoal = studyGoal;
+        _autoArchiveEnabled = autoEnabled;
+        _autoArchiveKeep = autoKeep;
+        _autoArchiveCount = autoCount;
         _loading = false;
       });
     } catch (e) {
@@ -413,6 +426,59 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     } catch (e) {
       _toast('导入存档失败：$e');
     }
+  }
+
+  /// 切换自动存档开关（写设置 + 重启服务）
+  Future<void> _toggleAutoArchive(bool enabled) async {
+    setState(() => _autoArchiveEnabled = enabled);
+    final service = ref.read(autoArchiveServiceProvider);
+    await service.setEnabled(enabled);
+    if (enabled) {
+      final repo = await ref.read(quizRepositoryProvider);
+      await service.start(repo, FileArchiveStore());
+    } else {
+      service.stop();
+    }
+  }
+
+  /// 选择保留份数
+  Future<void> _pickKeepCount() async {
+    final choices = [3, 5, 10];
+    final picked = await showDialog<int>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('保留存档份数'),
+        children: [
+          for (final n in choices)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(ctx, n),
+              child: Text(
+                '$n 份',
+                style: TextStyle(
+                  fontWeight:
+                      n == _autoArchiveKeep ? FontWeight.w700 : FontWeight.normal,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+    if (picked == null) return;
+    setState(() => _autoArchiveKeep = picked);
+    final service = ref.read(autoArchiveServiceProvider);
+    await service.setKeepCount(picked);
+    _toast('已设置：本地最多保留 $picked 份');
+    await _load();
+  }
+
+  /// 立即存档一次
+  Future<void> _triggerAutoArchive() async {
+    final service = ref.read(autoArchiveServiceProvider);
+    final repo = await ref.read(quizRepositoryProvider);
+    await service.start(repo, FileArchiveStore());
+    final path = await service.trigger();
+    _toast(path != null ? '已存档：$path' : '存档失败，请稍后重试');
+    await _load();
   }
 
   /// 关于：题库导入格式说明弹窗
@@ -788,10 +854,52 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           icon: Icons.restore_outlined,
                           color: theme.colorScheme.primary,
                         ),
-                        title: const Text('导入备份'),
-                        subtitle: const Text('从导出的 JSON 备份恢复全部数据（覆盖当前）'),
+                        title: const Text('导入存档'),
+                        subtitle: const Text('从存档文件（.zip/.json）恢复全部用户状态，题库以本机为准'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: _importBackup,
+                      ),
+                      const Divider(height: 1, indent: 16, endIndent: 16),
+                      ListTile(
+                        leading: _IconBox(
+                          icon: Icons.schedule_outlined,
+                          color: theme.colorScheme.primary,
+                        ),
+                        title: Row(
+                          children: [
+                            const Text('自动存档'),
+                            const Spacer(),
+                            Switch(
+                              value: _autoArchiveEnabled,
+                              onChanged: _toggleAutoArchive,
+                            ),
+                          ],
+                        ),
+                        subtitle: Text(
+                          _autoArchiveEnabled
+                              ? '每 30 分钟 + 退出时自动保存到本地，已存 $_autoArchiveCount 份'
+                              : '已关闭（可随时手动导出/立即存档）',
+                        ),
+                      ),
+                      ListTile(
+                        leading: _IconBox(
+                          icon: Icons.inventory_2_outlined,
+                          color: theme.colorScheme.primary,
+                        ),
+                        title: const Text('保留存档份数'),
+                        subtitle: Text('本地最多保留 $_autoArchiveKeep 份，超出自动删最旧'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: _pickKeepCount,
+                      ),
+                      ListTile(
+                        leading: _IconBox(
+                          icon: Icons.save_outlined,
+                          color: theme.colorScheme.primary,
+                        ),
+                        title: const Text('立即存档'),
+                        subtitle: const Text('手动把当前状态保存到本地 archives/'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: _triggerAutoArchive,
                       ),
                       if (_reviewEnabled)
                         ListTile(

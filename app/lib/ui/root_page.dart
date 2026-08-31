@@ -6,7 +6,11 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/quiz_repository.dart';
+import '../services/archive_store.dart';
+import '../services/auto_archive_service.dart';
 import 'bank_home_page.dart';
 import 'home_page.dart';
 import 'memorize_home_page.dart';
@@ -14,16 +18,33 @@ import 'settings_page.dart';
 import 'stats_page.dart';
 import 'widgets/glass_tab_bar.dart';
 
-class RootPage extends StatefulWidget {
+class RootPage extends ConsumerStatefulWidget {
   const RootPage({super.key});
 
   @override
-  State<RootPage> createState() => _RootPageState();
+  ConsumerState<RootPage> createState() => _RootPageState();
 }
 
-class _RootPageState extends State<RootPage> {
+class _RootPageState extends ConsumerState<RootPage> {
   int _index = 0;
   bool _navVisible = true; // 上滑隐藏底栏、下滑显示（需求）
+
+  @override
+  void initState() {
+    super.initState();
+    _startAutoArchive();
+  }
+
+  /// 挂载自动存档服务（定时 + 生命周期暂停触发；开关读设置）
+  Future<void> _startAutoArchive() async {
+    try {
+      final repo = await ref.read(quizRepositoryProvider);
+      final service = ref.read(autoArchiveServiceProvider);
+      await service.start(repo, FileArchiveStore());
+    } catch (e) {
+      debugPrint('自动存档启动失败: $e');
+    }
+  }
 
   /// 监听页面滚动：手指上滑（内容下滚）隐藏底栏，下滑（内容上滚）显示
   bool _onScroll(ScrollNotification notification) {
