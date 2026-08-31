@@ -15,6 +15,7 @@ import '../models/models.dart';
 import '../services/app_log.dart';
 import 'app_routes.dart';
 import 'glass_app_bar.dart';
+import 'widgets/circular_ring.dart';
 import 'mock_review_page.dart';
 import 'practice_page.dart' show typeColor, typeLabel;
 
@@ -43,6 +44,7 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
   String? _error;
   List<Question> _questions = const [];
   final Map<String, Set<String>> _answers = {};
+  final Set<String> _flagged = {}; // 存疑标记（答题卡待回看）
   int _index = 0;
   Timer? _timer;
   DateTime? _startedAt;
@@ -136,6 +138,13 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
     });
   }
 
+  /// 存疑标记开关（UI v2 · 模拟考）：标记不确定的题，交卷前回看
+  void _toggleFlag(String questionId) {
+    setState(() {
+      if (!_flagged.remove(questionId)) _flagged.add(questionId);
+    });
+  }
+
   /// 交卷：判分汇总 → 写日志（mode=mock, session_id）→ 成绩单存档
   /// （审查 P0-2：_submitting 同步置位防并发双交卷；P1-4：单事务原子写入）
   Future<void> _submitAll() async {
@@ -198,16 +207,53 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              '得分：$score / $full',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
+            // 分数环（UI v2）：得分 / 满分 + 生长动画
+            Center(
+              child: CircularRing(
+                progress: full == 0 ? 0 : (score / full).clamp(0.0, 1.0),
+                size: 128,
+                strokeWidth: 12,
                 color: Theme.of(context).colorScheme.primary,
+                center: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '$score',
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w800,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    Text(
+                      '/ $full',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Center(
+              child: Text(
+                '得分：$score / $full',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             ),
             const SizedBox(height: 8),
-            Text('正确 $correct · 部分正确 $partial · 错误 $wrong · 未答 $skipped'),
+            Center(
+              child: Text(
+                '正确 $correct · 部分正确 $partial · 错误 $wrong · 未答 $skipped',
+                textAlign: TextAlign.center,
+              ),
+            ),
           ],
         ),
         actions: [
@@ -323,6 +369,23 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
                     color: Theme.of(context).colorScheme.outline,
                   ),
                   overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              // 存疑标记（◆ 菱形，答题卡虚线待回看）
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _toggleFlag(q.id),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Icon(
+                    _flagged.contains(q.id)
+                        ? Icons.diamond
+                        : Icons.diamond_outlined,
+                    size: 18,
+                    color: _flagged.contains(q.id)
+                        ? const Color(0xFFE0A13C)
+                        : Theme.of(context).colorScheme.outline,
+                  ),
                 ),
               ),
             ],
@@ -447,6 +510,13 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
                                     .colorScheme
                                     .surfaceContainerHighest,
                             shape: BoxShape.circle,
+                            border: _flagged.contains(_questions[i].id)
+                                ? Border.all(
+                                    color: const Color(0xFFE0A13C),
+                                    width: 1.6,
+                                    style: BorderStyle.solid,
+                                  )
+                                : null,
                           ),
                           child: Text(
                             '${i + 1}',

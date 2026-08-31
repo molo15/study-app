@@ -341,13 +341,20 @@ class _KnowledgeMemorizePageState
             Icon(Icons.local_fire_department, size: 20, color: theme.colorScheme.tertiary),
             const SizedBox(height: 8),
           ],
-          Text(
-            kp.name,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-              height: 1.35,
-              color: theme.colorScheme.onSurface,
+          // 长知识点名保护：最多 4 行，超出省略
+          Flexible(
+            child: SingleChildScrollView(
+              child: Text(
+                kp.name,
+                textAlign: TextAlign.center,
+                maxLines: 6,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  height: 1.35,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 10),

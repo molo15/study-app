@@ -366,7 +366,11 @@ class _OptionTileState extends State<_OptionTile>
             ),
           ),
           child: Material(
-            color: fillColor ?? Colors.transparent,
+            // UI v2：未选中未提交时半透明白底（玻璃质感），深色模式保持透明
+            color: fillColor ??
+                (theme.brightness == Brightness.light
+                    ? Colors.white.withValues(alpha: 0.42)
+                    : Colors.transparent),
             borderRadius: BorderRadius.circular(13),
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 52),
