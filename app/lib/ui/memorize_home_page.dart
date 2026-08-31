@@ -148,7 +148,7 @@ class _MemorizeHomePageState extends ConsumerState<MemorizeHomePage> {
                 children: [
                   Text(bank.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 4),
-                  Text('${bank.active} 个知识点卡 · ${bank.version}', style: TextStyle(fontSize: 11, color: ink2)),
+                  Text('${bank.active} 题可背 · ${bank.version}', style: TextStyle(fontSize: 11, color: ink2)),
                 ],
               ),
             ),

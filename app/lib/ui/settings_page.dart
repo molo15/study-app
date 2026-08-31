@@ -19,6 +19,7 @@ import 'glass_app_bar.dart';
 import 'question_manage_page.dart';
 import 'widgets/app_section_header.dart';
 import 'widgets/app_state_view.dart';
+import 'widgets/app_card.dart';
 import 'app_toast.dart';
 import 'app_routes.dart';
 
@@ -134,6 +135,70 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   /// 学习目标设置卡：启用开关 + 考试日期 + 每日新题/复习（计划倒排为建议，用户可自由覆盖）
+  /// 个人卡（UI v2 · 我的）：头像 + 身份 + 象征性考试倒计时
+  Widget _buildProfileCard(ThemeData theme) {
+    final config = ref.watch(themeControllerProvider).asData?.value;
+    final accent = config?.accent ?? const Color(0xFF4F7CD4);
+    final ink2 = theme.colorScheme.onSurfaceVariant;
+    final days = _studyGoal.daysUntilExam(DateTime.now());
+
+    return AppCard(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        child: Row(
+          children: [
+            // 头像
+            Container(
+              width: 54,
+              height: 54,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color.lerp(accent, Colors.white, 0.3)!, accent],
+                ),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.7), width: 2),
+              ),
+              alignment: Alignment.center,
+              child: const Icon(Icons.school_outlined, color: Colors.white, size: 26),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('考研人', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 3),
+                  Text('学科语文 · 五科备考', style: TextStyle(fontSize: 12, color: ink2)),
+                ],
+              ),
+            ),
+            // 象征性考试倒计时
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                gradient: LinearGradient(
+                  colors: [accent.withValues(alpha: 0.14), accent.withValues(alpha: 0.24)],
+                ),
+              ),
+              child: Text(
+                days != null ? '距考试 $days 天' : '未设考试日期',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: accent,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildStudyGoalCard(ThemeData theme) {
     final goal = _studyGoal;
     return Card(
@@ -503,7 +568,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final theme = Theme.of(context);
     // 标题居中（需求）；保留状态栏 inset，避免标题顶到打孔摄像头区域
     return Scaffold(
-      appBar: GlassAppBar(title: const Text('设置'), centerTitle: true),
+      appBar: GlassAppBar(title: const Text('我的'), centerTitle: true),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
@@ -512,6 +577,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               // 底部留 96 安全空间，防沉浸式导航遮挡（需求）
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
               children: [
+                // ---------- 个人卡（UI v2 · 我的） ----------
+                _buildProfileCard(theme),
+                const SizedBox(height: 6),
                 // ---------- 学习目标（P2） ----------
                 const AppSectionHeader(
                   title: '学习目标',

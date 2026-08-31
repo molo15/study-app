@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'ui/root_page.dart';
 import 'ui/theme_controller.dart';
+import 'ui/widgets/frost_background.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -58,7 +59,10 @@ class QuizApp extends ConsumerWidget {
   }
 }
 
-/// 全局背景层：支持背景图（本地文件）+ 透明度可调 + 渐变遮罩（需求：全局背景）
+/// 全局背景层（UI v2 沉浸原则）：放在 Navigator 最底层，
+/// 所有 Tab 页与二级页（push 路由）共享同一背景，切换不跳背景。
+///
+/// 优先级：冷磨砂（渐变+光斑） > 背景图（+遮罩） > 纯色垫底。
 class _BackgroundStack extends StatelessWidget {
   const _BackgroundStack({required this.config, required this.child});
 
@@ -68,6 +72,10 @@ class _BackgroundStack extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasImage = config.backgroundImagePath.isNotEmpty;
+    if (config.frost && !hasImage) {
+      // 冷磨砂：渐变 + 漂浮光斑（全局共享，Tab 页与二级页统一）
+      return FrostBackground(config: config, child: child);
+    }
     if (!hasImage) {
       // 无背景图：垫一层不透明底色，保证转场淡出/透明处底色统一（不闪白/黑）
       return Stack(

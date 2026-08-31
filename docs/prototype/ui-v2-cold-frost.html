@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>考研刷题 · UI v2 冷磨砂全貌</title>
+<style>
+  :root{
+    --bg-1:#e2e9f3;
+    --bg-2:#c6d3e6;
+    --glass:linear-gradient(152deg,rgba(255,255,255,.74),rgba(255,255,255,.40));
+    --glass-2:linear-gradient(152deg,rgba(255,255,255,.60),rgba(255,255,255,.26));
+    --glass-3:linear-gradient(152deg,rgba(255,255,255,.46),rgba(255,255,255,.18));
+    --line:rgba(255,255,255,.68);
+    --line-2:rgba(255,255,255,.45);
+    --shadow:0 14px 44px rgba(38,58,92,.15);
+    --shadow-sm:0 6px 20px rgba(38,58,92,.10);
+    --ink:#1e2a3c;
+    --ink-2:#56647c;
+    --ink-3:#8b98ae;
+    --accent:#4f7cd4;
+    --accent-2:#7aa2ee;
+    --ok:#3fa88a;
+    --warn:#e0a13c;
+    --err:#d4646a;
+    --r-lg:26px; --r-md:18px; --r-sm:13px;
+    --ease:cubic-bezier(.2,.75,.2,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+    min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:28px 16px;
+    background:
+      radial-gradient(900px 500px at 12% -5%, rgba(255,255,255,.9), transparent 60%),
+      radial-gradient(800px 600px at 105% 8%, rgba(135,170,235,.4), transparent 55%),
+      radial-gradient(700px 700px at 50% 112%, rgba(120,150,210,.32), transparent 60%),
+      linear-gradient(160deg,var(--bg-1),var(--bg-2));
+    color:var(--ink);
+  }
+  .stage{font-size:13px;color:var(--ink-3);letter-spacing:.5px;font-weight:500}
+
+  /* ===== 手机 ===== */
+  .phone{position:relative;width:392px;height:820px;border-radius:56px;padding:14px;
+    background:linear-gradient(160deg,#eef2f8,#d9e2ef);
+    box-shadow:0 34px 90px rgba(40,60,100,.38),inset 0 0 0 1px rgba(255,255,255,.62);overflow:hidden}
+  .phone::before{content:"";position:absolute;top:27px;left:50%;transform:translateX(-50%);width:118px;height:30px;border-radius:20px;background:rgba(20,28,44,.85);z-index:90}
+  .screen{position:absolute;inset:14px;border-radius:42px;overflow:hidden;
+    background:
+      radial-gradient(560px 320px at 12% -3%, rgba(255,255,255,.92), transparent 55%),
+      radial-gradient(430px 400px at 106% 16%, rgba(122,162,238,.34), transparent 55%),
+      radial-gradient(560px 460px at 6% 108%, rgba(120,150,210,.30), transparent 60%),
+      linear-gradient(165deg,#e7eef7,#c9d7ea)}
+  /* 背景光斑 —— 沉浸：所有页面共享，永不跳动 */
+  .blob{position:absolute;border-radius:50%;filter:blur(48px);opacity:.55;pointer-events:none;transition:transform 1.2s var(--ease)}
+  .blob.b1{width:210px;height:210px;background:#b6cdf3;top:-45px;left:-35px}
+  .blob.b2{width:180px;height:180px;background:#a9c1ec;bottom:-35px;right:-45px}
+  .blob.b3{width:130px;height:130px;background:#e9f0fb;top:44%;left:62%;opacity:.75}
+  .blob.b4{width:90px;height:90px;background:#c3d6f6;top:70%;left:6%;opacity:.5}
+
+  /* ===== 页面框架 ===== */
+  .pages{position:absolute;inset:0;z-index:2}
+  .page{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;visibility:hidden;transform:translateY(16px);transition:opacity .38s var(--ease),transform .38s var(--ease),visibility 0s .38s}
+  .page.on{opacity:1;visibility:visible;transform:none;transition:opacity .42s var(--ease),transform .42s var(--ease),visibility 0s}
+  .scroll{flex:1;overflow-y:auto;padding:136px 22px 118px;scrollbar-width:none}
+  .scroll::-webkit-scrollbar{display:none}
+  /* 答题页纵向流：子项禁止被 flex 压缩（防止题干卡被裁切） */
+  .scroll.fcol{display:flex;flex-direction:column}
+  .scroll.fcol>*{flex-shrink:0}
+
+  /* 级联浮现（流动） */
+  .page .pop{opacity:0;transform:translateY(18px);transition:opacity .5s var(--ease),transform .5s var(--ease)}
+  .page.on .pop{opacity:1;transform:none}
+  .page.on .pop:nth-child(1){transition-delay:.05s}.page.on .pop:nth-child(2){transition-delay:.12s}
+  .page.on .pop:nth-child(3){transition-delay:.19s}.page.on .pop:nth-child(4){transition-delay:.26s}
+  .page.on .pop:nth-child(5){transition-delay:.33s}.page.on .pop:nth-child(6){transition-delay:.40s}
+  .page.on .pop:nth-child(7){transition-delay:.47s}
+
+  /* ===== 玻璃 ===== */
+  .glass{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(24px) saturate(170%);-webkit-backdrop-filter:blur(24px) saturate(170%);box-shadow:var(--shadow)}
+  .glass-sm{background:var(--glass-2);border:1px solid var(--line-2);backdrop-filter:blur(16px) saturate(150%);-webkit-backdrop-filter:blur(16px) saturate(150%)}
+  .glass-3{background:var(--glass-3);border:1px solid var(--line-2);backdrop-filter:blur(12px) saturate(140%);-webkit-backdrop-filter:blur(12px) saturate(140%)}
+  .hl{border-top:1px solid rgba(255,255,255,.85)} /* 顶部高光 = 质感 */
+
+  /* ===== 顶栏 ===== */
+  .topbar{position:absolute;top:0;left:0;right:0;z-index:30;padding:58px 22px 16px;display:flex;align-items:flex-end;justify-content:space-between;
+    background:linear-gradient(180deg,rgba(231,238,247,.9),rgba(231,238,247,.6) 55%,rgba(231,238,247,0));
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+  .topbar .date{font-size:12px;color:var(--ink-3);font-weight:600;letter-spacing:.4px}
+  .topbar .hello{font-size:25px;font-weight:800;letter-spacing:.5px;margin-top:4px}
+  .avatar{width:40px;height:40px;border-radius:14px;background:linear-gradient(140deg,#8fb1f0,#5b7fd0);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;box-shadow:var(--shadow-sm);border:1px solid rgba(255,255,255,.55)}
+
+  /* ===== 首页 ===== */
+  .hero{border-radius:var(--r-lg);padding:22px;display:flex;align-items:center;gap:16px;margin-bottom:20px;position:relative;overflow:hidden}
+  .hero::after{content:"";position:absolute;top:-36px;right:-36px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(130,165,240,.38),transparent 65%)}
+  .hero .lbl{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:1.2px;text-transform:uppercase}
+  .hero h2{font-size:20px;font-weight:800;margin:6px 0 4px;letter-spacing:.3px}
+  .hero .sub{font-size:12.5px;color:var(--ink-2);line-height:1.55}
+  .hero .btn{margin-top:15px;display:inline-flex;align-items:center;gap:7px;background:linear-gradient(140deg,var(--accent-2),var(--accent));color:#fff;font-size:13px;font-weight:700;padding:10px 20px;border-radius:14px;box-shadow:0 10px 26px rgba(79,124,212,.4);border:1px solid rgba(255,255,255,.4);cursor:pointer;transition:transform .2s var(--ease)}
+  .hero .btn:active{transform:scale(.95)}
+  .ring{position:relative;width:78px;height:78px;flex:none}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:17px;font-weight:800}
+  .ring .cap{font-size:8.5px;color:var(--ink-3);font-weight:600}
+
+  .sec{font-size:13px;font-weight:700;color:var(--ink-2);margin:6px 2px 12px;display:flex;justify-content:space-between;align-items:center}
+  .sec a{font-size:11.5px;color:var(--accent);font-weight:600;text-decoration:none;cursor:pointer}
+  .qrow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px}
+  .qcard{border-radius:var(--r-md);padding:16px;display:flex;flex-direction:column;gap:3px;position:relative;overflow:hidden;cursor:pointer;transition:transform .2s var(--ease)}
+  .qcard:active{transform:scale(.96)}
+  .qcard .ic{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:7px}
+  .qcard .t{font-size:14px;font-weight:800}
+  .qcard .d{font-size:11.5px;color:var(--ink-3);font-weight:500}
+  .qcard .n{font-size:27px;font-weight:800;letter-spacing:.5px}
+  .ic.rv{background:linear-gradient(140deg,rgba(224,161,60,.28),rgba(224,161,60,.12));color:#c88a2c}
+  .ic.nw{background:linear-gradient(140deg,rgba(63,168,138,.28),rgba(63,168,138,.12));color:#2f8f74}
+  .ic.pk{background:linear-gradient(140deg,rgba(79,124,212,.28),rgba(79,124,212,.12));color:var(--accent)}
+
+  .quick3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin-bottom:22px}
+  .quick{border-radius:var(--r-md);padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:transform .2s var(--ease)}
+  .quick:active{transform:scale(.95)}
+  .quick .qi{width:40px;height:40px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:19px}
+  .quick .qt{font-size:11.5px;font-weight:700;color:var(--ink-2)}
+
+  .bankrow{display:flex;gap:11px;overflow-x:auto;padding:2px 2px 14px;scrollbar-width:none}
+  .bankrow::-webkit-scrollbar{display:none}
+  .bank{border-radius:var(--r-md);padding:14px;min-width:106px;flex:none;cursor:pointer;transition:transform .2s var(--ease)}
+  .bank:active{transform:scale(.95)}
+  .bank .dot{width:28px;height:28px;border-radius:10px;margin-bottom:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:800}
+  .bank .bn{font-size:12.5px;font-weight:800}
+  .bank .bc{font-size:10.5px;color:var(--ink-3);font-weight:500;margin-top:3px}
+
+  .datagrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin-bottom:20px}
+  .dcell{border-radius:var(--r-md);padding:14px 10px;text-align:center}
+  .dcell .v{font-size:20px;font-weight:800;letter-spacing:.3px}
+  .dcell .k{font-size:10.5px;color:var(--ink-3);font-weight:600;margin-top:3px}
+
+  /* ===== 底部导航 ===== */
+  .tabbar{position:absolute;bottom:0;left:0;right:0;z-index:50;display:flex;justify-content:space-around;align-items:center;padding:12px 10px 24px;
+    background:linear-gradient(180deg,rgba(238,244,252,.5),rgba(229,238,250,.8));
+    backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);border-top:1px solid rgba(255,255,255,.5)}
+  .tab{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 14px;border-radius:14px;cursor:pointer;color:var(--ink-3);transition:all .25s var(--ease);border:none;background:transparent;font-family:inherit}
+  .tab .ic{font-size:20px;transition:transform .25s var(--ease)}
+  .tab .lb{font-size:10px;font-weight:600;letter-spacing:.3px}
+  .tab.on{color:var(--accent)}
+  .tab.on .ic{transform:translateY(-1px);filter:drop-shadow(0 4px 10px rgba(79,124,212,.5))}
+  .tab.center{width:58px;height:58px;margin-top:-30px;border-radius:21px;background:linear-gradient(140deg,var(--accent-2),var(--accent));color:#fff;box-shadow:0 12px 30px rgba(79,124,212,.45);border:2px solid rgba(255,255,255,.6);justify-content:center;font-size:23px}
+  .tab.center .lb{display:none}
+
+  /* ===== 二级页 ===== */
+  .substack{position:absolute;inset:0;z-index:60;pointer-events:none}
+  .subpage{position:absolute;inset:0;display:flex;flex-direction:column;background:
+    radial-gradient(520px 300px at 12% -2%, rgba(255,255,255,.9), transparent 55%),
+    radial-gradient(420px 380px at 106% 16%, rgba(122,162,238,.3), transparent 55%),
+    linear-gradient(165deg,#e7eef7,#c9d7ea);
+    transform:translateX(100%);opacity:.4;transition:transform .46s var(--ease),opacity .4s var(--ease);pointer-events:none}
+  .subpage.open{transform:none;opacity:1;pointer-events:auto}
+  .subnav{display:flex;align-items:center;gap:14px;padding:62px 20px 14px}
+  .subnav .bk{width:36px;height:36px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--ink-2);cursor:pointer;transition:transform .2s var(--ease)}
+  .subnav .bk:active{transform:scale(.9)}
+  .subnav .tt{font-size:16px;font-weight:800}
+  .subnav .ss{font-size:11px;color:var(--ink-3);font-weight:600;margin-top:2px}
+  .sub-scroll{flex:1;overflow-y:auto;padding:8px 22px 90px;scrollbar-width:none}
+  .sub-scroll::-webkit-scrollbar{display:none}
+
+  /* ===== 题库页 ===== */
+  .search{display:flex;align-items:center;gap:10px;border-radius:16px;padding:13px 16px;margin-bottom:18px}
+  .search .si{color:var(--ink-3);font-size:16px}
+  .search .ph{font-size:13px;color:var(--ink-3);font-weight:500}
+  .mockbanner{border-radius:var(--r-lg);padding:20px;display:flex;align-items:center;gap:14px;margin-bottom:18px;position:relative;overflow:hidden;cursor:pointer;transition:transform .2s var(--ease)}
+  .mockbanner:active{transform:scale(.97)}
+  .mockbanner::after{content:"";position:absolute;top:-30px;right:-20px;width:130px;height:130px;border-radius:50%;background:radial-gradient(circle,rgba(79,124,212,.3),transparent 62%)}
+  .mockbanner .mi{width:48px;height:48px;border-radius:16px;background:linear-gradient(140deg,var(--accent-2),var(--accent));display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;box-shadow:0 8px 22px rgba(79,124,212,.4);flex:none}
+  .mockbanner .mt{font-size:15.5px;font-weight:800}
+  .mockbanner .md{font-size:11.5px;color:var(--ink-3);font-weight:500;margin-top:3px}
+  .mockbanner .go{margin-left:auto;font-size:13px;color:var(--accent);font-weight:800}
+
+  .banklist{display:flex;flex-direction:column;gap:12px}
+  .bankitem{border-radius:var(--r-md);padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:transform .2s var(--ease)}
+  .bankitem:active{transform:scale(.97)}
+  .bankitem .bd{width:46px;height:46px;border-radius:15px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:800;flex:none}
+  .bankitem .info{flex:1}
+  .bankitem .bn{font-size:15px;font-weight:800}
+  .bankitem .bs{font-size:11px;color:var(--ink-3);font-weight:500;margin-top:3px}
+  .bankitem .pbar{height:5px;border-radius:3px;background:rgba(160,175,200,.35);margin-top:9px;overflow:hidden}
+  .bankitem .pfill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent-2),var(--accent));box-shadow:0 0 8px rgba(79,124,212,.5)}
+  .bankitem .pr{font-size:12px;font-weight:800;color:var(--accent);flex:none}
+
+  /* ===== 背题总览 ===== */
+  .memhero{border-radius:var(--r-lg);padding:22px;margin-bottom:20px;position:relative;overflow:hidden}
+  .memhero::after{content:"";position:absolute;top:-40px;right:-30px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(63,168,138,.3),transparent 62%)}
+  .memhero .lbl{font-size:11px;font-weight:800;color:var(--ok);letter-spacing:1.2px}
+  .memhero h2{font-size:21px;font-weight:800;margin:6px 0 5px}
+  .memhero p{font-size:12px;color:var(--ink-2);line-height:1.6}
+  .memhero .chip{display:inline-flex;gap:5px;align-items:center;font-size:11px;font-weight:700;color:var(--ok);padding:6px 12px;border-radius:10px;background:linear-gradient(140deg,rgba(63,168,138,.22),rgba(63,168,138,.08));border:1px solid rgba(63,168,138,.3);margin-top:12px}
+  .memlist{display:flex;flex-direction:column;gap:12px}
+  .memitem{border-radius:var(--r-md);padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:transform .2s var(--ease)}
+  .memitem:active{transform:scale(.97)}
+  .memitem .ring2{position:relative;width:52px;height:52px;flex:none}
+  .memitem .ring2 .val2{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800}
+  .memitem .info{flex:1}
+  .memitem .bn{font-size:14.5px;font-weight:800}
+  .memitem .bs{font-size:11px;color:var(--ink-3);font-weight:500;margin-top:3px}
+  .memitem .go{color:var(--ink-3);font-size:13px}
+
+  /* ===== 背题卡 ===== */
+  .seg{display:flex;gap:4px;padding:0 22px;margin:2px 0 4px}
+  .seg i{height:4px;flex:1;border-radius:3px;background:rgba(255,255,255,.62)}
+  .seg i.done{background:var(--accent);box-shadow:0 0 8px rgba(79,124,212,.5)}
+  .seg i.cur{background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+  .kcardwrap{flex:1;display:flex;align-items:center;justify-content:center;padding:8px 26px;perspective:1500px}
+  .kcard{position:relative;width:100%;max-width:334px;aspect-ratio:5/6;transform-style:preserve-3d;transition:transform .7s var(--ease);cursor:pointer}
+  .kcard.flip{transform:rotateY(180deg)}
+  .kface{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:var(--r-lg);padding:28px;display:flex;flex-direction:column;
+    background:linear-gradient(155deg,rgba(255,255,255,.82),rgba(255,255,255,.44));border:1px solid var(--line);box-shadow:var(--shadow);
+    backdrop-filter:blur(26px) saturate(160%);-webkit-backdrop-filter:blur(26px) saturate(160%)}
+  .kface.back{transform:rotateY(180deg)}
+  .ktag{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;font-size:10.5px;font-weight:800;color:var(--accent);padding:6px 12px;border-radius:9px;background:linear-gradient(140deg,rgba(122,162,238,.26),rgba(122,162,238,.1));border:1px solid rgba(122,162,238,.35)}
+  .kname{font-size:23px;font-weight:800;letter-spacing:.5px;margin:16px 0 7px;line-height:1.3}
+  .kcount{font-size:11.5px;color:var(--ink-3);font-weight:600}
+  .khint{margin-top:auto;font-size:11px;color:var(--ink-3);text-align:center;font-weight:500}
+  .khint .rot{display:inline-block;animation:wiggle 2.4s ease-in-out infinite}
+  @keyframes wiggle{0%,100%{transform:rotate(0)}10%,32%{transform:rotate(-20deg)}20%,42%{transform:rotate(16deg)}52%{transform:rotate(0)}}
+  .kbody{font-size:13.5px;line-height:1.8;color:var(--ink-2);font-weight:500;margin-top:14px;flex:1;overflow:auto}
+  .kbody b{color:var(--ink);font-weight:800}
+  .kbar{display:flex;gap:12px;padding:10px 22px 18px}
+  .kbtn{flex:1;padding:15px;border-radius:16px;font-size:14px;font-weight:800;border:1px solid var(--line-2);cursor:pointer;transition:all .2s var(--ease);background:var(--glass-2);color:var(--ink-2);backdrop-filter:blur(12px);font-family:inherit}
+  .kbtn:active{transform:scale(.96)}
+  .kbtn.dont{background:linear-gradient(140deg,rgba(212,100,106,.16),rgba(212,100,106,.06));color:#c25258;border-color:rgba(212,100,106,.35)}
+  .kbtn.know{background:linear-gradient(140deg,var(--accent-2),var(--accent));color:#fff;border:none;box-shadow:0 10px 26px rgba(79,124,212,.4)}
+  .kfoot{text-align:center;font-size:10.5px;color:var(--ink-3);padding-bottom:2px}
+
+  /* ===== 统计页 ===== */
+  .stathero{border-radius:var(--r-lg);padding:22px;display:flex;align-items:center;gap:18px;margin-bottom:18px;position:relative;overflow:hidden}
+  .stathero::after{content:"";position:absolute;bottom:-40px;left:-30px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(122,162,238,.3),transparent 62%)}
+  .stathero .ring.big{width:104px;height:104px}
+  .stathero .ring.big .val{font-size:23px}
+  .stathero .st{font-size:14px;font-weight:800}
+  .stathero .ss2{font-size:11.5px;color:var(--ink-3);line-height:1.7;margin-top:4px}
+  .stathero .ss2 b{color:var(--ink-2)}
+  .bars{display:flex;flex-direction:column;gap:14px;margin-bottom:22px}
+  .brow .bl{display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:6px}
+  .brow .bl .p{color:var(--accent)}
+  .brow .track{height:9px;border-radius:5px;background:rgba(160,175,200,.3);overflow:hidden}
+  .brow .fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--accent-2),var(--accent));box-shadow:0 0 10px rgba(79,124,212,.4);width:0;transition:width 1s var(--ease)}
+  .page.on .brow .fill{width:var(--w)}
+  .stat2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px}
+  .scard{border-radius:var(--r-md);padding:16px}
+  .scard .sk{font-size:11px;color:var(--ink-3);font-weight:600}
+  .scard .sv{font-size:21px;font-weight:800;margin-top:5px}
+  .scard .sd{font-size:10.5px;color:var(--ink-3);margin-top:4px}
+  /* 迷你柱状图 */
+  .spark{display:flex;align-items:flex-end;gap:5px;height:52px;margin-top:8px}
+  .spark i{flex:1;border-radius:4px 4px 2px 2px;background:linear-gradient(180deg,rgba(122,162,238,.75),rgba(122,162,238,.35));height:var(--h);transition:height 1s var(--ease)}
+
+  /* ===== 我的页 ===== */
+  .mecard{border-radius:var(--r-lg);padding:22px;display:flex;align-items:center;gap:16px;margin-bottom:20px;position:relative;overflow:hidden}
+  .mecard::after{content:"";position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:radial-gradient(circle,rgba(130,165,240,.3),transparent 62%)}
+  .meavatar{width:58px;height:58px;border-radius:20px;background:linear-gradient(140deg,#8fb1f0,#5b7fd0);display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;font-weight:800;box-shadow:var(--shadow-sm);border:1px solid rgba(255,255,255,.6);flex:none}
+  .meinfo .mn{font-size:18px;font-weight:800}
+  .meinfo .ms{font-size:11.5px;color:var(--ink-3);font-weight:500;margin-top:4px;line-height:1.6}
+  .mestats{display:flex;gap:18px;margin-top:12px}
+  .mestats .mv{font-size:16px;font-weight:800}
+  .mestats .mk{font-size:10px;color:var(--ink-3);font-weight:600}
+  .meitems{display:flex;flex-direction:column;gap:10px}
+  .meitem{border-radius:var(--r-md);padding:15px 17px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:transform .2s var(--ease)}
+  .meitem:active{transform:scale(.98)}
+  .meitem .mi{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:16px;flex:none}
+  .meitem .mt{font-size:13.5px;font-weight:700;flex:1}
+  .meitem .msub{font-size:10.5px;color:var(--ink-3);font-weight:500}
+  .meitem .mg{color:var(--ink-3);font-size:13px}
+  .switch{width:44px;height:26px;border-radius:14px;background:rgba(160,175,200,.45);position:relative;transition:background .25s;flex:none;cursor:pointer}
+  .switch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2);transition:left .25s var(--ease)}
+  .switch.on{background:linear-gradient(140deg,var(--accent-2),var(--accent))}
+  .switch.on::after{left:21px}
+  .ver{text-align:center;font-size:10.5px;color:var(--ink-3);margin-top:20px;font-weight:500}
+
+  /* ===== 章节概览 ===== */
+  .chaphead{border-radius:var(--r-lg);padding:18px 20px;display:flex;align-items:center;gap:14px;margin-bottom:16px}
+  .chaphead .ring2{position:relative;width:58px;height:58px;flex:none}
+  .chaphead .ci{flex:1}
+  .chaphead .ct{font-size:16px;font-weight:800}
+  .chaphead .cs{font-size:11px;color:var(--ink-3);font-weight:500;margin-top:3px}
+  .chaps{display:flex;flex-direction:column;gap:10px}
+  .chapitem{border-radius:var(--r-md);padding:14px 16px;cursor:pointer;transition:transform .2s var(--ease)}
+  .chapitem:active{transform:scale(.98)}
+  .chapitem .row{display:flex;align-items:center;justify-content:space-between}
+  .chapitem .cn{font-size:13.5px;font-weight:800}
+  .chapitem .cp{font-size:11px;font-weight:800;color:var(--accent)}
+  .chapitem .cd{font-size:10.5px;color:var(--ink-3);font-weight:500;margin-top:4px}
+  .chapitem .pbar{height:4px;border-radius:2px;background:rgba(160,175,200,.3);margin-top:10px;overflow:hidden}
+  .chapitem .pfill{height:100%;background:linear-gradient(90deg,var(--accent-2),var(--accent));border-radius:2px}
+  .knows{margin-top:12px;display:none;flex-direction:column;gap:9px}
+  .know{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:13px}
+  .know .kd{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex:none}
+  .know .kn{font-size:12.5px;font-weight:700;flex:1}
+  .know .ks{font-size:10px;color:var(--ink-3);font-weight:500}
+
+  /* ===== 模拟卷 / 错题本 ===== */
+  .mockcard{border-radius:var(--r-lg);padding:22px;margin-bottom:16px;position:relative;overflow:hidden}
+  .mockcard::after{content:"";position:absolute;top:-34px;right:-28px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(122,162,238,.32),transparent 62%)}
+  .mockcard .ml{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:1px}
+  .mockcard h3{font-size:20px;font-weight:800;margin:7px 0 6px}
+  .mockcard .md{font-size:12px;color:var(--ink-2);line-height:1.7}
+  .mockcard .start{width:100%;margin-top:18px;padding:15px;border-radius:16px;font-size:14px;font-weight:800;color:#fff;background:linear-gradient(140deg,var(--accent-2),var(--accent));border:none;box-shadow:0 10px 26px rgba(79,124,212,.4);cursor:pointer;transition:transform .2s var(--ease);font-family:inherit}
+  .mockcard .start:active{transform:scale(.97)}
+  .history{display:flex;flex-direction:column;gap:10px}
+  .hitem{border-radius:var(--r-md);padding:14px 16px;display:flex;align-items:center;gap:13px}
+  .hitem .hd{font-size:13px;font-weight:800;flex:1}
+  .hitem .hs{font-size:11px;color:var(--ink-3);font-weight:500}
+  .hitem .score{font-size:16px;font-weight:800;color:var(--ok)}
+  .filter{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none}
+  .filter .f{flex:none;font-size:11.5px;font-weight:700;color:var(--ink-2);padding:8px 15px;border-radius:11px;cursor:pointer;transition:all .2s var(--ease)}
+  .filter .f.on{color:#fff;background:linear-gradient(140deg,var(--accent-2),var(--accent));box-shadow:0 6px 16px rgba(79,124,212,.35)}
+  .wrongitem{border-radius:var(--r-md);padding:15px 16px;margin-bottom:11px}
+  .wrongitem .wt{font-size:13px;font-weight:650;line-height:1.6}
+  .wrongitem .wb{font-size:11px;margin-top:9px;display:flex;align-items:center;gap:6px}
+  .wrongitem .wb .tag{font-size:10px;font-weight:800;padding:3px 9px;border-radius:7px}
+
+  /* ===== 答题页 ===== */
+  .qcard-main{border-radius:var(--r-lg);padding:17px 18px 18px;margin-bottom:13px;position:relative;overflow:hidden}
+  .qcard-main::after{content:"";position:absolute;top:-40px;right:-40px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(130,165,240,.25),transparent 65%)}
+  .qtype{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;color:var(--accent);padding:4px 10px;border-radius:8px;background:rgba(122,162,238,.16);border:1px solid rgba(122,162,238,.32);margin-bottom:10px}
+  .qtype .n{color:var(--ink-3);font-weight:600}
+  .qtext{font-size:14.5px;font-weight:650;line-height:1.6;letter-spacing:.1px}
+  .opts{display:flex;flex-direction:column;gap:9px}
+  .opt{display:flex;align-items:center;gap:11px;padding:11px 14px;border-radius:var(--r-md);border:1px solid var(--line-2);cursor:pointer;transition:all .2s var(--ease);background:var(--glass-2);backdrop-filter:blur(14px)}
+  .opt .o{width:24px;height:24px;flex:none;border-radius:8px;background:rgba(255,255,255,.75);border:1px solid rgba(160,175,200,.45);display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800;color:var(--ink-2)}
+  .opt .t{font-size:13px;font-weight:550;color:var(--ink-2);line-height:1.5}
+  .opt.sel{border-color:rgba(79,124,212,.7);background:linear-gradient(140deg,rgba(122,162,238,.22),rgba(122,162,238,.08));box-shadow:0 8px 22px rgba(79,124,212,.16)}
+  .opt.sel .o{background:linear-gradient(140deg,var(--accent-2),var(--accent));color:#fff;border:none}
+  .opt.sel .t{color:var(--ink)}
+  .opt.right{border-color:rgba(63,168,138,.7);background:linear-gradient(140deg,rgba(63,168,138,.22),rgba(63,168,138,.08))}
+  .opt.right .o{background:linear-gradient(140deg,#6fc6ac,#3fa88a);color:#fff;border:none}
+  .opt.wrong{border-color:rgba(212,100,106,.7);background:linear-gradient(140deg,rgba(212,100,106,.18),rgba(212,100,106,.06))}
+  .opt.wrong .o{background:linear-gradient(140deg,#e08a8e,#d4646a);color:#fff;border:none}
+  .opt.lock{cursor:default}
+  .explain{margin-top:14px;border-radius:var(--r-md);padding:16px 17px;display:none}
+  .explain.show{display:block;animation:pageIn .4s var(--ease)}
+  .explain .el{font-size:10.5px;font-weight:800;letter-spacing:1px;margin-bottom:7px}
+  .explain .et{font-size:12.5px;line-height:1.75;color:var(--ink-2)}
+  .explain .et b{color:var(--ink)}
+  .explain .chiprow{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
+  .explain .chip2{font-size:10px;font-weight:700;padding:4px 10px;border-radius:8px}
+  .quizbar{display:flex;gap:10px;padding:12px 22px 22px}
+  .qbtn{flex:1;padding:14px;border-radius:15px;font-size:13px;font-weight:800;border:1px solid var(--line-2);cursor:pointer;transition:all .2s var(--ease);background:var(--glass-2);color:var(--ink-2);backdrop-filter:blur(12px);font-family:inherit}
+  .qbtn:active{transform:scale(.96)}
+  .qbtn.sheet{display:flex;align-items:center;justify-content:center;gap:6px;flex:none;width:auto;padding:14px 18px}
+  .qbtn.submit{background:linear-gradient(140deg,var(--accent-2),var(--accent));color:#fff;border:none;box-shadow:0 10px 26px rgba(79,124,212,.4)}
+
+  /* ===== 答题卡 ===== */
+  .sheet-head{border-radius:var(--r-lg);padding:18px 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+  .sheet-head .sh-t{font-size:14px;font-weight:800}
+  .sheet-head .sh-s{font-size:11px;color:var(--ink-3);font-weight:600;margin-top:3px}
+  .sheet-head .sh-score{font-size:17px;font-weight:800;color:var(--ok)}
+  .legend{display:flex;gap:14px;margin-bottom:16px;padding:0 4px}
+  .legend .lg{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-3);font-weight:600}
+  .legend .dot2{width:11px;height:11px;border-radius:4px}
+  .grid12{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+  .gn{border-radius:14px;padding:13px 0;text-align:center;font-size:14px;font-weight:800;cursor:pointer;transition:all .2s var(--ease);border:1px solid var(--line-2);background:var(--glass-3);color:var(--ink-2)}
+  .gn:active{transform:scale(.92)}
+  .gn.done{background:linear-gradient(140deg,rgba(63,168,138,.26),rgba(63,168,138,.1));color:var(--ok);border-color:rgba(63,168,138,.4)}
+  .gn.cur{background:linear-gradient(140deg,var(--accent-2),var(--accent));color:#fff;border:none;box-shadow:0 8px 22px rgba(79,124,212,.4)}
+  .gn.wrong{background:linear-gradient(140deg,rgba(212,100,106,.26),rgba(212,100,106,.1));color:var(--err);border-color:rgba(212,100,106,.4)}
+  .gn.mark{border-style:dashed;border-color:rgba(79,124,212,.7)}
+
+  /* ===== 模拟考 ===== */
+  .exam-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .exam-top .timer{display:inline-flex;align-items:center;gap:8px;padding:8px 15px;border-radius:13px;font-size:13.5px;font-weight:800;color:var(--err)}
+  .exam-top .timer.warn{animation:blink 1s steps(2) infinite}
+  @keyframes blink{50%{opacity:.55}}
+  .exam-top .etag{font-size:11px;font-weight:700;color:var(--ink-2);padding:8px 15px;border-radius:13px}
+  .exam-progress{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .exam-progress .tr{flex:1;height:6px;border-radius:3px;background:rgba(160,175,200,.35);overflow:hidden}
+  .exam-progress .fl{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent-2),var(--accent))}
+  .exam-progress .num{font-size:12px;font-weight:800;color:var(--ink-2)}
+  .exambar{display:flex;gap:10px;padding:12px 22px 22px}
+  .markbtn{display:flex;align-items:center;justify-content:center;gap:6px;padding:14px 16px;border-radius:15px;font-size:12.5px;font-weight:800;border:1px dashed rgba(79,124,212,.6);color:var(--accent);background:rgba(122,162,238,.1);cursor:pointer;font-family:inherit}
+  .markbtn.on{background:linear-gradient(140deg,rgba(224,161,60,.26),rgba(224,161,60,.1));color:#c88a2c;border-color:rgba(224,161,60,.5)}
+
+  /* ===== 结果页 ===== */
+  .result-hero{border-radius:var(--r-lg);padding:26px 22px;display:flex;flex-direction:column;align-items:center;margin-bottom:18px;position:relative;overflow:hidden}
+  .result-hero::after{content:"";position:absolute;top:-40px;right:-30px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(63,168,138,.28),transparent 62%)}
+  .result-hero .ring.big{width:118px;height:118px;margin-bottom:14px}
+  .result-hero .val{font-size:30px}
+  .result-hero .rs{font-size:16px;font-weight:800;margin-bottom:4px}
+  .result-hero .rd{font-size:11.5px;color:var(--ink-3);font-weight:600}
+  .result-tags{display:flex;gap:10px;margin-bottom:18px}
+  .rtag{flex:1;border-radius:var(--r-md);padding:14px 10px;text-align:center}
+  .rtag .rv{font-size:17px;font-weight:800}
+  .rtag .rk{font-size:10.5px;color:var(--ink-3);font-weight:600;margin-top:3px}
+  .rsec{font-size:13px;font-weight:700;color:var(--ink-2);margin:6px 2px 12px}
+  .rbar{margin-bottom:13px}
+  .rbar .rl{display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:6px}
+  .rbar .track{height:8px;border-radius:4px;background:rgba(160,175,200,.3);overflow:hidden}
+  .rbar .fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent-2),var(--accent));width:var(--w)}
+  .result-actions{display:flex;flex-direction:column;gap:11px}
+  .ract{width:100%;padding:15px;border-radius:16px;font-size:14px;font-weight:800;border:1px solid var(--line-2);cursor:pointer;transition:all .2s var(--ease);background:var(--glass-2);color:var(--ink-2);font-family:inherit}
+  .ract:active{transform:scale(.98)}
+  .ract.primary{background:linear-gradient(140deg,var(--accent-2),var(--accent));color:#fff;border:none;box-shadow:0 10px 26px rgba(79,124,212,.4)}
+
+  .stage-note{max-width:392px;text-align:center;font-size:12px;color:#6a7890;line-height:1.9}
+  .stage-note b{color:#44536c}
+</style>
+</head>
+<body>
+
+  <div class="stage">考研刷题 · UI v2 · 流动 / 沉浸 / 质感</div>
+
+  <div class="phone">
+    <div class="screen">
+      <!-- 共享背景光斑（沉浸：永不跳动） -->
+      <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div>
+
+      <!-- ================= 主页面 ================= -->
+      <div class="pages">
+
+        <!-- ===== 今日 ===== -->
+        <div class="page on" id="p-home">
+          <div class="topbar">
+            <div>
+              <div class="date">8月31日 周一 · 距考研 128 天</div>
+              <div class="hello">早安，考研人</div>
+            </div>
+            <div class="avatar" onclick="go('me')">研</div>
+          </div>
+          <div class="scroll">
+            <div class="hero glass hl pop" onclick="push('chapter')">
+              <div style="flex:1">
+                <div class="lbl">今日学习流</div>
+                <h2>继续上次 · 现代汉语</h2>
+                <div class="sub">第三章 修辞 · 词语的锤炼<br>已学 12 / 28 个知识点</div>
+                <div class="btn">继续学习 <span style="font-size:14px">→</span></div>
+              </div>
+              <div class="ring">
+                <svg width="78" height="78" viewBox="0 0 78 78">
+                  <circle cx="39" cy="39" r="33" fill="none" stroke="rgba(150,170,205,.35)" stroke-width="7.5"/>
+                  <circle cx="39" cy="39" r="33" fill="none" stroke="url(#g1)" stroke-width="7.5" stroke-linecap="round" stroke-dasharray="207" stroke-dashoffset="120"/>
+                  <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7aa2ee"/><stop offset="1" stop-color="#4f7cd4"/></linearGradient></defs>
+                </svg>
+                <div class="val">42%<span class="cap">本章</span></div>
+              </div>
+            </div>
+
+            <div class="sec pop">今日队列 <a onclick="push('mock')">查看全部</a></div>
+            <div class="qrow">
+              <div class="qcard glass-sm pop">
+                <div class="ic rv">↻</div>
+                <div class="t">到期复习</div>
+                <div class="n">8 <span style="font-size:12px;color:var(--ink-3)">道</span></div>
+                <div class="d">现代汉语 · 古代汉语</div>
+              </div>
+              <div class="qcard glass-sm pop">
+                <div class="ic nw">＋</div>
+                <div class="t">可新学</div>
+                <div class="n">3 <span style="font-size:12px;color:var(--ink-3)">章</span></div>
+                <div class="d">当代文学 · 古代文学</div>
+              </div>
+            </div>
+
+            <div class="quick3">
+              <div class="quick glass-sm pop" onclick="push('mock')">
+                <div class="qi" style="background:linear-gradient(140deg,rgba(79,124,212,.26),rgba(79,124,212,.1));color:var(--accent)">◷</div>
+                <div class="qt">模拟卷</div>
+              </div>
+              <div class="quick glass-sm pop" onclick="push('wrong')">
+                <div class="qi" style="background:linear-gradient(140deg,rgba(224,161,60,.26),rgba(224,161,60,.1));color:#c88a2c">✕</div>
+                <div class="qt">错题本</div>
+              </div>
+              <div class="quick glass-sm pop" onclick="go('mem')">
+                <div class="qi" style="background:linear-gradient(140deg,rgba(63,168,138,.26),rgba(63,168,138,.1));color:var(--ok)">♻</div>
+                <div class="qt">背题卡</div>
+              </div>
+            </div>
+
+            <div class="sec pop">五科题库</div>
+            <div class="bankrow">
+              <div class="bank glass-sm pop" onclick="push('chapter')">
+                <div class="dot" style="background:linear-gradient(140deg,#8fb1f0,#5b7fd0)">汉</div>
+                <div class="bn">现代汉语</div><div class="bc">1100 题</div>
+              </div>
+              <div class="bank glass-sm pop">
+                <div class="dot" style="background:linear-gradient(140deg,#7fc4b2,#4ba38c)">古</div>
+                <div class="bn">古代汉语</div><div class="bc">1000 题</div>
+              </div>
+              <div class="bank glass-sm pop">
+                <div class="dot" style="background:linear-gradient(140deg,#e8b26b,#d08a3e)">现</div>
+                <div class="bn">现代文学</div><div class="bc">800 题</div>
+              </div>
+              <div class="bank glass-sm pop">
+                <div class="dot" style="background:linear-gradient(140deg,#b78fe0,#8a5fc4)">当</div>
+                <div class="bn">当代文学</div><div class="bc">800 题</div>
+              </div>
+              <div class="bank glass-sm pop">
+                <div class="dot" style="background:linear-gradient(140deg,#e08fb0,#c45f8a)">古</div>
+                <div class="bn">古代文学</div><div class="bc">1000 题</div>
+              </div>
+            </div>
+
+            <div class="sec pop">学习数据</div>
+            <div class="datagrid">
+              <div class="dcell glass-sm pop"><div class="v" style="color:var(--accent)">32</div><div class="k">今日已学</div></div>
+              <div class="dcell glass-sm pop"><div class="v" style="color:var(--ok)">86%</div><div class="k">正确率</div></div>
+              <div class="dcell glass-sm pop"><div class="v" style="color:var(--warn)">5</div><div class="k">连续天数</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 题库 ===== -->
+        <div class="page" id="p-bank">
+          <div class="topbar">
+            <div>
+              <div class="date">题库 · 五科 + 综合卷</div>
+              <div class="hello">选择题库</div>
+            </div>
+            <div class="avatar">库</div>
+          </div>
+          <div class="scroll">
+            <div class="search glass-sm pop"><span class="si">⌕</span><span class="ph">搜索题目 / 知识点 / 章节</span></div>
+
+            <div class="mockbanner glass pop" onclick="push('mock')">
+              <div class="mi">◷</div>
+              <div>
+                <div class="mt">综合模拟卷</div>
+                <div class="md">5 科随机组卷 · 以现代汉语 / 古代汉语为主</div>
+              </div>
+              <div class="go">→</div>
+            </div>
+
+            <div class="sec pop">五科题库</div>
+            <div class="banklist">
+              <div class="bankitem glass-sm pop" onclick="push('chapter')">
+                <div class="bd" style="background:linear-gradient(140deg,#8fb1f0,#5b7fd0)">汉</div>
+                <div class="info">
+                  <div class="bn">现代汉语</div>
+                  <div class="bs">第三章 修辞 · 进行中</div>
+                  <div class="pbar"><div class="pfill" style="width:65%"></div></div>
+                </div>
+                <div class="pr">65%</div>
+              </div>
+              <div class="bankitem glass-sm pop">
+                <div class="bd" style="background:linear-gradient(140deg,#7fc4b2,#4ba38c)">古</div>
+                <div class="info">
+                  <div class="bn">古代汉语</div>
+                  <div class="bs">第一编 绪论 · 进行中</div>
+                  <div class="pbar"><div class="pfill" style="width:48%"></div></div>
+                </div>
+                <div class="pr">48%</div>
+              </div>
+              <div class="bankitem glass-sm pop">
+                <div class="bd" style="background:linear-gradient(140deg,#e8b26b,#d08a3e)">现</div>
+                <div class="info">
+                  <div class="bn">现代文学</div>
+                  <div class="bs">未开始 · 800 题</div>
+                  <div class="pbar"><div class="pfill" style="width:32%"></div></div>
+                </div>
+                <div class="pr">32%</div>
+              </div>
+              <div class="bankitem glass-sm pop">
+                <div class="bd" style="background:linear-gradient(140deg,#b78fe0,#8a5fc4)">当</div>
+                <div class="info">
+                  <div class="bn">当代文学</div>
+                  <div class="bs">未开始 · 800 题</div>
+                  <div class="pbar"><div class="pfill" style="width:20%"></div></div>
+                </div>
+                <div class="pr">20%</div>
+              </div>
+              <div class="bankitem glass-sm pop">
+                <div class="bd" style="background:linear-gradient(140deg,#e08fb0,#c45f8a)">古</div>
+                <div class="info">
+                  <div class="bn">古代文学</div>
+                  <div class="bs">未开始 · 1000 题</div>
+                  <div class="pbar"><div class="pfill" style="width:12%"></div></div>
+                </div>
+                <div class="pr">12%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 背题总览 ===== -->
+        <div class="page" id="p-mem">
+          <div class="topbar">
+            <div>
+              <div class="date">背题模式 · 只推不考</div>
+              <div class="hello">知识点卡</div>
+            </div>
+            <div class="avatar">背</div>
+          </div>
+          <div class="scroll">
+            <div class="memhero glass pop">
+              <div class="lbl">不背单词式</div>
+              <h2>背到会为止</h2>
+              <p>不会的卡每隔 5 张推回一次，直到背会。<br>不占复习队列，自评即存档，随时重新开始。</p>
+              <span class="chip">✳ 进度跨会话保存</span>
+            </div>
+
+            <div class="sec pop">选择科目</div>
+            <div class="memlist">
+              <div class="memitem glass-sm pop" onclick="openMemCard()">
+                <div class="ring2">
+                  <svg width="52" height="52" viewBox="0 0 52 52">
+                    <circle cx="26" cy="26" r="21" fill="none" stroke="rgba(150,170,205,.35)" stroke-width="5"/>
+                    <circle cx="26" cy="26" r="21" fill="none" stroke="url(#m1)" stroke-width="5" stroke-linecap="round" stroke-dasharray="132" stroke-dashoffset="76"/>
+                    <defs><linearGradient id="m1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7aa2ee"/><stop offset="1" stop-color="#4f7cd4"/></linearGradient></defs>
+                  </svg>
+                  <div class="val2">43%</div>
+                </div>
+                <div class="info">
+                  <div class="bn">现代汉语 · 修辞</div>
+                  <div class="bs">12 / 28 个知识点已掌握 · 点击继续</div>
+                </div>
+                <div class="go">→</div>
+              </div>
+              <div class="memitem glass-sm pop">
+                <div class="ring2">
+                  <svg width="52" height="52" viewBox="0 0 52 52">
+                    <circle cx="26" cy="26" r="21" fill="none" stroke="rgba(150,170,205,.35)" stroke-width="5"/>
+                    <circle cx="26" cy="26" r="21" fill="none" stroke="url(#m2)" stroke-width="5" stroke-linecap="round" stroke-dasharray="132" stroke-dashoffset="98"/>
+                    <defs><linearGradient id="m2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7fc4b2"/><stop offset="1" stop-color="#4ba38c"/></linearGradient></defs>
+                  </svg>
+                  <div class="val2">26%</div>
+                </div>
+                <div class="info">
+                  <div class="bn">古代汉语 · 绪论</div>
+                  <div class="bs">5 / 20 个知识点已掌握</div>
+                </div>
+                <div class="go">→</div>
+              </div>
+              <div class="memitem glass-sm pop">
+                <div class="ring2">
+                  <svg width="52" height="52" viewBox="0 0 52 52">
+                    <circle cx="26" cy="26" r="21" fill="none" stroke="rgba(150,170,205,.35)" stroke-width="5"/>
+                    <circle cx="26" cy="26" r="21" fill="none" stroke="url(#m3)" stroke-width="5" stroke-linecap="round" stroke-dasharray="132" stroke-dashoffset="116"/>
+                    <defs><linearGradient id="m3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e8b26b"/><stop offset="1" stop-color="#d08a3e"/></linearGradient></defs>
+                  </svg>
+                  <div class="val2">12%</div>
+                </div>
+                <div class="info">
+                  <div class="bn">现代文学 · 第一个十年</div>
+                  <div class="bs">2 / 15 个知识点已掌握</div>
+                </div>
+                <div class="go">→</div>
+              </div>
+              <div class="memitem glass-sm pop">
+                <div class="ring2">
+                  <svg width="52" height="52" viewBox="0 0 52 52">
+                    <circle cx="26" cy="26" r="21" fill="none" stroke="rgba(150,170,205,.35)" stroke-width="5"/>
+                    <circle cx="26" cy="26" r="21" fill="none" stroke="url(#m4)" stroke-width="5" stroke-linecap="round" stroke-dasharray="132" stroke-dashoffset="126"/>
+                    <defs><linearGradient id="m4" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b78fe0"/><stop offset="1" stop-color="#8a5fc4"/></linearGradient></defs>
+                  </svg>
+                  <div class="val2">4%</div>
+                </div>
+                <div class="info">
+                  <div class="bn">当代文学 · 十七年</div>
+                  <div class="bs">1 / 20 个知识点已掌握</div>
+                </div>
+                <div class="go">→</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 统计 ===== -->
+        <div class="page" id="p-stats">
+          <div class="topbar">
+            <div>
+              <div class="date">学习数据 · 全科</div>
+              <div class="hello">掌握度分析</div>
+            </div>
+            <div class="avatar">析</div>
+          </div>
+          <div class="scroll">
+            <div class="stathero glass pop">
+              <div class="ring big">
+                <svg width="104" height="104" viewBox="0 0 104 104">
+                  <circle cx="52" cy="52" r="44" fill="none" stroke="rgba(150,170,205,.35)" stroke-width="9"/>
+                  <circle cx="52" cy="52" r="44" fill="none" stroke="url(#s1)" stroke-width="9" stroke-linecap="round" stroke-dasharray="276" stroke-dashoffset="152"/>
+                  <defs><linearGradient id="s1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7aa2ee"/><stop offset="1" stop-color="#4f7cd4"/></linearGradient></defs>
+                </svg>
+                <div class="val">45%<span class="cap">总掌握度</span></div>
+              </div>
+              <div>
+                <div class="st">已练 4700 题 · 错 640</div>
+                <div class="ss2" style="margin-top:6px">累计学习 <b>23 天</b> · 今日 <b>32 题</b><br>距考研 <b>128 天</b> · 继续保持</div>
+              </div>
+            </div>
+
+            <div class="sec pop">各科掌握度</div>
+            <div class="bars">
+              <div class="brow pop" style="--w:65%"><div class="bl"><span>现代汉语</span><span class="p">65%</span></div><div class="track"><div class="fill"></div></div></div>
+              <div class="brow pop" style="--w:48%"><div class="bl"><span>古代汉语</span><span class="p">48%</span></div><div class="track"><div class="fill"></div></div></div>
+              <div class="brow pop" style="--w:38%"><div class="bl"><span>现代文学</span><span class="p">38%</span></div><div class="track"><div class="fill"></div></div></div>
+              <div class="brow pop" style="--w:25%"><div class="bl"><span>当代文学</span><span class="p">25%</span></div><div class="track"><div class="fill"></div></div></div>
+              <div class="brow pop" style="--w:18%"><div class="bl"><span>古代文学</span><span class="p">18%</span></div><div class="track"><div class="fill"></div></div></div>
+            </div>
+
+            <div class="sec pop">近 7 日练习</div>
+            <div class="scard glass-sm pop">
+              <div class="sk">每日刷题量</div>
+              <div class="spark">
+                <i style="--h:35%"></i><i style="--h:58%"></i><i style="--h:42%"></i><i style="--h:80%"></i><i style="--h:66%"></i><i style="--h:92%"></i><i style="--h:70%"></i>
+              </div>
+            </div>
+
+            <div class="stat2">
+              <div class="scard glass-sm pop"><div class="sk">正确率</div><div class="sv" style="color:var(--ok)">86%</div><div class="sd">较上周 ↑ 4%</div></div>
+              <div class="scard glass-sm pop"><div class="sk">平均做题时长</div><div class="sv">42s</div><div class="sd">单选 / 题</div></div>
+              <div class="scard glass-sm pop"><div class="sk">错题本</div><div class="sv" style="color:var(--warn)">37</div><div class="sd">待复刷</div></div>
+              <div class="scard glass-sm pop"><div class="sk">连续学习</div><div class="sv" style="color:var(--accent)">5 天</div><div class="sd">最佳 12 天</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 我的 ===== -->
+        <div class="page" id="p-me">
+          <div class="topbar">
+            <div>
+              <div class="date">设置 · 个人中心</div>
+              <div class="hello">我的</div>
+            </div>
+            <div class="avatar">我</div>
+          </div>
+          <div class="scroll">
+            <div class="mecard glass pop">
+              <div class="meavatar">研</div>
+              <div class="meinfo">
+                <div class="mn">考研人</div>
+                <div class="ms">目标：陕西师大 · 学科语文<br>2027 考研 · 已备考 128 天</div>
+                <div class="mestats">
+                  <div><div class="mv">23</div><div class="mk">学习天数</div></div>
+                  <div><div class="mv">5</div><div class="mk">连续天数</div></div>
+                  <div><div class="mv">4700</div><div class="mk">已练题</div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="sec pop">学习</div>
+            <div class="meitems">
+              <div class="meitem glass-sm pop">
+                <div class="mi" style="background:linear-gradient(140deg,rgba(79,124,212,.26),rgba(79,124,212,.1));color:var(--accent)">◷</div>
+                <div>
+                  <div class="mt">考试倒计时</div>
+                  <div class="msub">距 2027 考研 · 128 天</div>
+                </div>
+                <span class="mg">›</span>
+              </div>
+              <div class="meitem glass-sm pop">
+                <div class="mi" style="background:linear-gradient(140deg,rgba(63,168,138,.26),rgba(63,168,138,.1));color:var(--ok)">☾</div>
+                <div>
+                  <div class="mt">每日提醒</div>
+                  <div class="msub">晚上 21:00 提醒刷题</div>
+                </div>
+                <div class="switch on" onclick="this.classList.toggle('on')"></div>
+              </div>
+            </div>
+
+            <div class="sec pop">题库</div>
+            <div class="meitems">
+              <div class="meitem glass-sm pop">
+                <div class="mi" style="background:linear-gradient(140deg,rgba(122,162,238,.26),rgba(122,162,238,.1));color:#5b7fd0">▤</div>
+                <div>
+                  <div class="mt">题库包管理</div>
+                  <div class="msub">5 个默认题库 · 可编辑</div>
+                </div>
+                <span class="mg">›</span>
+              </div>
+              <div class="meitem glass-sm pop">
+                <div class="mi" style="background:linear-gradient(140deg,rgba(224,161,60,.26),rgba(224,161,60,.1));color:#c88a2c">◐</div>
+                <div>
+                  <div class="mt">主题定制</div>
+                  <div class="msub">冷磨砂 · 默认主题</div>
+                </div>
+                <span class="mg">›</span>
+              </div>
+            </div>
+
+            <div class="sec pop">通用</div>
+            <div class="meitems">
+              <div class="meitem glass-sm pop">
+                <div class="mi" style="background:linear-gradient(140deg,rgba(63,168,138,.26),rgba(63,168,138,.1));color:var(--ok)">⇪</div>
+                <div>
+                  <div class="mt">导出备份</div>
+                  <div class="msub">学习进度 · 错题 · 背题存档</div>
+                </div>
+                <span class="mg">›</span>
+              </div>
+              <div class="meitem glass-sm pop">
+                <div class="mi" style="background:linear-gradient(140deg,rgba(79,124,212,.26),rgba(79,124,212,.1));color:var(--accent)">⇩</div>
+                <div>
+                  <div class="mt">导入备份</div>
+                  <div class="msub">从备份文件恢复</div>
+                </div>
+                <span class="mg">›</span>
+              </div>
+              <div class="meitem glass-sm pop">
+                <div class="mi" style="background:linear-gradient(140deg,rgba(183,143,224,.26),rgba(183,143,224,.1));color:#8a5fc4">ⅰ</div>
+                <div>
+                  <div class="mt">关于 · 题库导入格式</div>
+                  <div class="msub">版本 1.4.0 · 格式说明</div>
+                </div>
+                <span class="mg">›</span>
+              </div>
+            </div>
+            <div class="ver">考研刷题 v2.0 · 冷磨砂</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= 二级页（push） ================= -->
+      <div class="substack">
+
+        <!-- 章节概览 -->
+        <div class="subpage" id="sub-chapter">
+          <div class="subnav">
+            <div class="bk glass-sm" onclick="pop()">←</div>
+            <div>
+              <div class="tt">现代汉语</div>
+              <div class="ss">第三章 修辞 · 28 个知识点</div>
+            </div>
+            <div class="ring2" style="margin-left:auto">
+              <svg width="52" height="52" viewBox="0 0 52 52">
+                <circle cx="26" cy="26" r="21" fill="none" stroke="rgba(150,170,205,.35)" stroke-width="5"/>
+                <circle cx="26" cy="26" r="21" fill="none" stroke="url(#c1)" stroke-width="5" stroke-linecap="round" stroke-dasharray="132" stroke-dashoffset="76"/>
+                <defs><linearGradient id="c1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7aa2ee"/><stop offset="1" stop-color="#4f7cd4"/></linearGradient></defs>
+              </svg>
+            </div>
+          </div>
+          <div class="sub-scroll">
+            <div class="chaphead glass">
+              <div class="ci">
+                <div class="ct">第三章 · 修辞</div>
+                <div class="cs">已学 12 / 28 · 掌握 43%</div>
+              </div>
+            </div>
+            <div class="chaps">
+              <div class="chapitem glass-sm" onclick="this.querySelector('.knows').style.display = this.querySelector('.knows').style.display==='flex'?'none':'flex'">
+                <div class="row"><span class="cn">3.1 词语的锤炼</span><span class="cp">60%</span></div>
+                <div class="cd">4 个知识点 · 6 道基础题</div>
+                <div class="pbar"><div class="pfill" style="width:60%"></div></div>
+                <div class="knows">
+                  <div class="know glass-3" onclick="push('quiz')"><div class="kd" style="background:linear-gradient(140deg,rgba(63,168,138,.3),rgba(63,168,138,.12));color:var(--ok)">✓</div><span class="kn">意义的锤炼</span><span class="ks">去练习 →</span></div>
+                  <div class="know glass-3" onclick="push('quiz')"><div class="kd" style="background:linear-gradient(140deg,rgba(63,168,138,.3),rgba(63,168,138,.12));color:var(--ok)">✓</div><span class="kn">声音的锤炼</span><span class="ks">去练习 →</span></div>
+                  <div class="know glass-3" onclick="push('quiz')"><div class="kd" style="background:linear-gradient(140deg,rgba(224,161,60,.3),rgba(224,161,60,.12));color:#c88a2c">◔</div><span class="kn">词语锤炼与语境</span><span class="ks">去练习 →</span></div>
+                </div>
+              </div>
+              <div class="chapitem glass-sm" onclick="this.querySelector('.knows').style.display = this.querySelector('.knows').style.display==='flex'?'none':'flex'">
+                <div class="row"><span class="cn">3.2 句式的选择</span><span class="cp">40%</span></div>
+                <div class="cd">3 个知识点 · 5 道基础题</div>
+                <div class="pbar"><div class="pfill" style="width:40%"></div></div>
+                <div class="knows">
+                  <div class="know glass-3" onclick="push('quiz')"><div class="kd" style="background:linear-gradient(140deg,rgba(63,168,138,.3),rgba(63,168,138,.12));color:var(--ok)">✓</div><span class="kn">长句与短句</span><span class="ks">去练习 →</span></div>
+                  <div class="know glass-3" onclick="push('quiz')"><div class="kd" style="background:linear-gradient(140deg,rgba(224,161,60,.3),rgba(224,161,60,.12));color:#c88a2c">◔</div><span class="kn">整句与散句</span><span class="ks">去练习 →</span></div>
+                </div>
+              </div>
+              <div class="chapitem glass-sm" onclick="this.querySelector('.knows').style.display = this.querySelector('.knows').style.display==='flex'?'none':'flex'">
+                <div class="row"><span class="cn">3.3 修辞格的综合运用</span><span class="cp">20%</span></div>
+                <div class="cd">3 个知识点 · 4 道基础题</div>
+                <div class="pbar"><div class="pfill" style="width:20%"></div></div>
+                <div class="knows">
+                  <div class="know glass-3" onclick="push('quiz')"><div class="kd" style="background:linear-gradient(140deg,rgba(224,161,60,.3),rgba(224,161,60,.12));color:#c88a2c">◔</div><span class="kn">比喻的运用</span><span class="ks">去练习 →</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 模拟卷 -->
+        <div class="subpage" id="sub-mock">
+          <div class="subnav">
+            <div class="bk glass-sm" onclick="pop()">←</div>
+            <div>
+              <div class="tt">综合模拟卷</div>
+              <div class="ss">5 科随机组卷 · 全简答</div>
+            </div>
+          </div>
+          <div class="sub-scroll">
+            <div class="mockcard glass">
+              <div class="ml">综合卷 · 100 分</div>
+              <h3>随机抽取一套</h3>
+              <div class="md">现代汉语 / 古代汉语为主，结合文学史。<br>每次点击重新组卷 · 客观题 + 简答题<br>完成后自动判分、逐题解析</div>
+              <button class="start" onclick="push('exam')">开始模拟考 →</button>
+            </div>
+            <div class="sec" style="padding:0 2px">历史成绩</div>
+            <div class="history">
+              <div class="hitem glass-sm"><span class="hd">8月28日 综合卷</span><span class="hs">86 题</span><span class="score">82</span></div>
+              <div class="hitem glass-sm"><span class="hd">8月25日 综合卷</span><span class="hs">86 题</span><span class="score">74</span></div>
+              <div class="hitem glass-sm"><span class="hd">8月22日 综合卷</span><span class="hs">86 题</span><span class="score">69</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 错题本 -->
+        <div class="subpage" id="sub-wrong">
+          <div class="subnav">
+            <div class="bk glass-sm" onclick="pop()">←</div>
+            <div>
+              <div class="tt">错题本</div>
+              <div class="ss">37 道待复刷</div>
+            </div>
+          </div>
+          <div class="sub-scroll">
+            <div class="filter">
+              <span class="f on">全部</span><span class="f">现代汉语</span><span class="f">古代汉语</span><span class="f">现代文学</span><span class="f">当代文学</span><span class="f">古代文学</span>
+            </div>
+            <div class="wrongitem glass-sm">
+              <div class="wt">下列属于「词语锤炼·意义锤炼」示例的是：</div>
+              <div class="wb"><span class="tag" style="background:rgba(212,100,106,.16);color:#c25258">单选</span><span class="tag" style="background:rgba(79,124,212,.16);color:var(--accent)">现代汉语</span><span style="color:var(--ink-3)">错 2 次 · 8月30日</span></div>
+            </div>
+            <div class="wrongitem glass-sm">
+              <div class="wt">「互文见义」在古汉语中的典型用例是：</div>
+              <div class="wb"><span class="tag" style="background:rgba(212,100,106,.16);color:#c25258">多选</span><span class="tag" style="background:rgba(63,168,138,.16);color:var(--ok)">古代汉语</span><span style="color:var(--ink-3)">错 1 次 · 8月30日</span></div>
+            </div>
+            <div class="wrongitem glass-sm">
+              <div class="wt">鲁迅《狂人日记》在文学史上的地位与意义：</div>
+              <div class="wb"><span class="tag" style="background:rgba(212,100,106,.16);color:#c25258">简答</span><span class="tag" style="background:rgba(232,178,107,.16);color:#c88a2c">现代文学</span><span style="color:var(--ink-3)">错 3 次 · 8月28日</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 背题卡（翻转） -->
+        <div class="subpage" id="sub-memcard">
+          <div class="topbar" style="justify-content:flex-start">
+            <div class="subnav" style="padding-top:0">
+              <div class="bk glass-sm" onclick="popMem()">←</div>
+              <div>
+                <div class="tt">现代汉语 · 修辞</div>
+                <div class="ss">知识点卡 · 3 / 8</div>
+              </div>
+            </div>
+          </div>
+          <div class="seg" style="margin-top:104px">
+            <i class="done"></i><i class="done"></i><i class="cur"></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <div class="kcardwrap">
+            <div class="kcard" id="kcard" onclick="this.classList.toggle('flip')">
+              <div class="kface">
+                <span class="ktag">知识点 · 现代汉语</span>
+                <div class="kname">词语的锤炼</div>
+                <div class="kcount">关联基础题 4 道 · 掌握度 60%</div>
+                <div class="khint"><span class="rot">⟳</span> 轻点卡片 · 查看要点</div>
+              </div>
+              <div class="kface back">
+                <span class="ktag" style="color:var(--ok);background:linear-gradient(140deg,rgba(63,168,138,.22),rgba(63,168,138,.08));border-color:rgba(63,168,138,.3)">要点</span>
+                <div class="kbody">
+                  词语锤炼指对词语进行<b>选择推敲</b>，一般从两方面入手：<br><br>
+                  <b>① 意义的锤炼</b>——准确、鲜明、生动；<br>
+                  <b>② 声音的锤炼</b>——音节匀称、声调平仄、韵脚和谐。
+                </div>
+                <div class="khint">↻ 点击翻回 · 背面要点已记下</div>
+              </div>
+            </div>
+          </div>
+          <div class="kbar">
+            <button class="kbtn dont">还不会</button>
+            <button class="kbtn know">背会了</button>
+          </div>
+          <div class="kfoot">进度已存档 · 下次进入继续</div>
+        </div>
+
+        <!-- 答题页（练习） -->
+        <div class="subpage" id="sub-quiz">
+          <div class="topbar" style="flex-direction:column;align-items:stretch;gap:12px">
+            <div style="display:flex;align-items:center;gap:14px">
+              <div class="bk glass-sm" onclick="pop()">←</div>
+              <div>
+                <div class="tt">词语的锤炼 · 练习</div>
+                <div class="ss">现代汉语 · 第三章</div>
+              </div>
+            </div>
+            <div class="seg" style="padding:0">
+              <i class="done"></i><i class="done"></i><i class="done"></i><i class="cur"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+            </div>
+          </div>
+          <div class="scroll fcol" style="padding-top:150px">
+            <div class="qcard-main glass">
+              <span class="qtype">单选 <span class="n" id="quizQno">3 / 12</span></span>
+              <div class="qtext" id="quizQtext">下列诗句中，属于「词语的锤炼 · 意义锤炼」典型示例的是：</div>
+            </div>
+            <div class="opts" id="quizOpts" style="padding:0 4px">
+              <div class="opt" onclick="pickOpt(this)"><span class="o">A</span><span class="t">把「红杏枝头春意闹」的「闹」字换成「浓」</span></div>
+              <div class="opt" onclick="pickOpt(this)"><span class="o">B</span><span class="t">「春风又绿江南岸」的「绿」字由形容词活用为动词</span></div>
+              <div class="opt" onclick="pickOpt(this)"><span class="o">C</span><span class="t">「大江东去」以「大」修饰「江」凸显气势</span></div>
+              <div class="opt" onclick="pickOpt(this)"><span class="o">D</span><span class="t">「明月别枝惊鹊」调整「明月」与「别枝」的语序</span></div>
+            </div>
+            <div class="explain glass-sm" id="quizExplain">
+              <div class="el" style="color:var(--ok)" id="quizEl">✓ 回答正确 · 意义锤炼</div>
+              <div class="et" id="quizEt">意义锤炼要求用词<b>准确、鲜明、生动</b>。B 中「绿」字由形容词活用为动词，使江南春色跃然纸上，是<b>意义锤炼</b>的典型用例；A、C 侧重声音/气势，D 属句式调整。</div>
+              <div class="chiprow">
+                <span class="chip2" style="background:rgba(63,168,138,.16);color:var(--ok)">词语的锤炼</span>
+                <span class="chip2" style="background:rgba(79,124,212,.14);color:var(--accent)">现代汉语</span>
+                <span class="chip2" style="background:rgba(224,161,60,.16);color:#c88a2c">基础题</span>
+              </div>
+            </div>
+          </div>
+          <div class="quizbar">
+            <button class="qbtn sheet" onclick="push('sheet')">▦ 答题卡</button>
+            <button class="qbtn submit" id="quizSubmit" onclick="submitQuiz()">提交答案</button>
+          </div>
+        </div>
+
+        <!-- 答题卡 -->
+        <div class="subpage" id="sub-sheet">
+          <div class="subnav">
+            <div class="bk glass-sm" onclick="pop()">←</div>
+            <div>
+              <div class="tt">答题卡</div>
+              <div class="ss">词语的锤炼 · 12 题</div>
+            </div>
+          </div>
+          <div class="sub-scroll">
+            <div class="sheet-head glass">
+              <div>
+                <div class="sh-t">答题进度</div>
+                <div class="sh-s">已答 8 / 12 · 剩余 4 题</div>
+              </div>
+              <div class="sh-score">答对 7</div>
+            </div>
+            <div class="legend">
+              <span class="lg"><span class="dot2" style="background:linear-gradient(140deg,var(--accent-2),var(--accent))"></span>当前</span>
+              <span class="lg"><span class="dot2" style="background:rgba(63,168,138,.5)"></span>已答</span>
+              <span class="lg"><span class="dot2" style="background:rgba(212,100,106,.5)"></span>答错</span>
+              <span class="lg"><span class="dot2" style="background:rgba(160,175,200,.45)"></span>未答</span>
+            </div>
+            <div class="grid12">
+              <div class="gn done" onclick="jumpSheet()">1</div>
+              <div class="gn done" onclick="jumpSheet()">2</div>
+              <div class="gn done" onclick="jumpSheet()">3</div>
+              <div class="gn cur" onclick="jumpSheet()">4</div>
+              <div class="gn done" onclick="jumpSheet()">5</div>
+              <div class="gn done" onclick="jumpSheet()">6</div>
+              <div class="gn wrong" onclick="jumpSheet()">7</div>
+              <div class="gn" onclick="jumpSheet()">8</div>
+              <div class="gn done" onclick="jumpSheet()">9</div>
+              <div class="gn" onclick="jumpSheet()">10</div>
+              <div class="gn mark" onclick="jumpSheet()">11</div>
+              <div class="gn" onclick="jumpSheet()">12</div>
+            </div>
+            <button class="ract primary" onclick="pop()">返回继续作答</button>
+          </div>
+        </div>
+
+        <!-- 模拟考答题 -->
+        <div class="subpage" id="sub-exam">
+          <div class="topbar" style="flex-direction:column;align-items:stretch;gap:11px">
+            <div style="display:flex;align-items:center;gap:14px">
+              <div class="bk glass-sm" onclick="pop()">←</div>
+              <div>
+                <div class="tt">综合模拟卷</div>
+                <div class="ss">客观题部分</div>
+              </div>
+              <div class="bk glass-sm" style="margin-left:auto" onclick="push('sheet')">▦</div>
+            </div>
+            <div class="exam-top" style="margin-bottom:0">
+              <span class="timer glass-sm" id="examTimer">⏱ 44:56</span>
+              <span class="etag glass-sm" id="examTag">第 3 题 / 共 86 题</span>
+            </div>
+            <div class="exam-progress" style="margin-bottom:0">
+              <div class="tr"><div class="fl" id="examFill" style="width:3.5%"></div></div>
+              <span class="num" id="examPct">3%</span>
+            </div>
+          </div>
+          <div class="scroll fcol" style="padding-top:202px">
+            <div class="qcard-main glass">
+              <span class="qtype">单选 <span class="n">· 古代汉语</span></span>
+              <div class="qtext" id="examQtext">「不虞君之涉吾地也」中「虞」的含义是：</div>
+            </div>
+            <div class="opts" id="examOpts" style="padding:0 4px">
+              <div class="opt" onclick="pickOpt(this)"><span class="o">A</span><span class="t">料到、预料</span></div>
+              <div class="opt" onclick="pickOpt(this)"><span class="o">B</span><span class="t">忧虑、担心</span></div>
+              <div class="opt" onclick="pickOpt(this)"><span class="o">C</span><span class="t">欺骗、隐瞒</span></div>
+              <div class="opt" onclick="pickOpt(this)"><span class="o">D</span><span class="t">猜测、揣度</span></div>
+            </div>
+          </div>
+          <div class="exambar">
+            <button class="markbtn" onclick="this.classList.toggle('on');this.textContent=this.textContent.startsWith('✓')?'◆ 标记':'✓ 已标记'">◆ 标记</button>
+            <button class="qbtn" onclick="prevExam()">上一题</button>
+            <button class="qbtn" onclick="nextExam()">下一题</button>
+            <button class="qbtn submit" style="flex:.7" onclick="push('result')">交卷</button>
+          </div>
+        </div>
+
+        <!-- 结果页 -->
+        <div class="subpage" id="sub-result">
+          <div class="subnav">
+            <div class="bk glass-sm" onclick="pop()">←</div>
+            <div>
+              <div class="tt">本卷成绩</div>
+              <div class="ss">综合模拟卷 · 8月31日</div>
+            </div>
+          </div>
+          <div class="sub-scroll">
+            <div class="result-hero glass">
+              <div class="ring big">
+                <svg width="118" height="118" viewBox="0 0 118 118">
+                  <circle cx="59" cy="59" r="49" fill="none" stroke="rgba(150,170,205,.35)" stroke-width="10"/>
+                  <circle cx="59" cy="59" r="49" fill="none" stroke="url(#r1)" stroke-width="10" stroke-linecap="round" stroke-dasharray="308" stroke-dashoffset="55"/>
+                  <defs><linearGradient id="r1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6fc6ac"/><stop offset="1" stop-color="#3fa88a"/></linearGradient></defs>
+                </svg>
+                <div class="val" style="color:var(--ok)">82</div>
+              </div>
+              <div class="rs">做得不错，继续加油！</div>
+              <div class="rd">综合模拟卷 · 满分 100 · 用时 46 分钟</div>
+            </div>
+            <div class="result-tags">
+              <div class="rtag glass-sm"><div class="rv" style="color:var(--ok)">82%</div><div class="rk">正确率</div></div>
+              <div class="rtag glass-sm"><div class="rv" style="color:var(--accent)">46′</div><div class="rk">用时</div></div>
+              <div class="rtag glass-sm"><div class="rv" style="color:var(--warn)">3</div><div class="rk">待复盘</div></div>
+            </div>
+            <div class="rsec">各科得分</div>
+            <div class="rbar">
+              <div class="rl"><span>现代汉语</span><span style="color:var(--ok)">26 / 30</span></div>
+              <div class="track"><div class="fill" style="--w:87%;background:linear-gradient(90deg,#6fc6ac,#3fa88a)"></div></div>
+            </div>
+            <div class="rbar">
+              <div class="rl"><span>古代汉语</span><span style="color:var(--ok)">24 / 30</span></div>
+              <div class="track"><div class="fill" style="--w:80%;background:linear-gradient(90deg,#6fc6ac,#3fa88a)"></div></div>
+            </div>
+            <div class="rbar">
+              <div class="rl"><span>现代文学</span><span style="color:var(--ok)">12 / 15</span></div>
+              <div class="track"><div class="fill" style="--w:80%;background:linear-gradient(90deg,#6fc6ac,#3fa88a)"></div></div>
+            </div>
+            <div class="rbar">
+              <div class="rl"><span>当代文学</span><span style="color:var(--warn)">9 / 13</span></div>
+              <div class="track"><div class="fill" style="--w:69%;background:linear-gradient(90deg,#e8b26b,#d08a3e)"></div></div>
+            </div>
+            <div class="rbar">
+              <div class="rl"><span>古代文学</span><span style="color:var(--warn)">11 / 12</span></div>
+              <div class="track"><div class="fill" style="--w:92%;background:linear-gradient(90deg,#e8b26b,#d08a3e)"></div></div>
+            </div>
+            <div class="result-actions">
+              <button class="ract primary" onclick="pop()">逐题复盘</button>
+              <button class="ract" onclick="pop()">只看错题</button>
+              <button class="ract" onclick="pop()">再来一套</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 底部导航 -->
+      <div class="tabbar">
+        <button class="tab on" data-p="home"><span class="ic">◈</span><span class="lb">今日</span></button>
+        <button class="tab" data-p="bank"><span class="ic">▤</span><span class="lb">题库</span></button>
+        <button class="tab center" data-p="mem"><span class="ic">♻</span><span class="lb"></span></button>
+        <button class="tab" data-p="stats"><span class="ic">◔</span><span class="lb">统计</span></button>
+        <button class="tab" data-p="me"><span class="ic">☰</span><span class="lb">我的</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage-note">
+    <b>全貌预览：</b>今日信息流 · 题库 · 背题总览(中央圆钮) · 统计 · <b>我的(替代设置)</b> + 答题全流程<br>
+    <b>答题流：</b>章节概览 → 点知识点 → 答题页(选答案→提交看解析) → <b>答题卡</b>(题号跳转)<br>
+    <b>模拟考：</b>题库→综合模拟卷→开始→(倒计时/标记/交卷)→成绩页<br>
+    <b>背题：</b>中央圆钮 → 背题总览 → 点击科目 → <b>点卡片 3D 翻转</b>
+  </div>
+
+<script>
+  // —— 主页面切换（流动：淡入上移 + 级联）——
+  const tabs=document.querySelectorAll('.tab');
+  const pages=['home','bank','mem','stats','me'];
+  function go(name){
+    pages.forEach(p=>document.getElementById('p-'+p).classList.toggle('on',p===name));
+    tabs.forEach(t=>{
+      const on=t.dataset.p===name;
+      t.classList.toggle('on',on);
+      if(on&&t.classList.contains('center')){/* 中央钮高亮 */}
+    });
+    // 统计页：触发条形填充动画
+    if(name==='stats'){setTimeout(()=>{},50);}
+  }
+  tabs.forEach(t=>t.addEventListener('click',()=>go(t.dataset.p)));
+
+  // —— 二级页 push/pop（栈式：支持多级跳转）——
+  const stack=[];
+  function push(id){
+    stack.push(id);
+    document.getElementById('sub-'+id).classList.add('open');
+  }
+  function pop(){
+    if(!stack.length) return;
+    const id=stack.pop();
+    document.getElementById('sub-'+id).classList.remove('open');
+  }
+  function openMemCard(){ push('memcard'); }
+  function popMem(){ pop(); }
+  // 答题：选项选择
+  function pickOpt(el){
+    const box=el.closest('.opts');
+    if(box.dataset.lock==='1') return; // 已提交锁定
+    box.querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));
+    el.classList.add('sel');
+  }
+  // 答题：提交 → 揭示解析
+  let quizIdx=0;
+  const quizData=[
+    {q:'下列诗句中，属于「词语的锤炼 · 意义锤炼」典型示例的是：',opts:['把「红杏枝头春意闹」的「闹」字换成「浓」','「春风又绿江南岸」的「绿」字由形容词活用为动词','「大江东去」以「大」修饰「江」凸显气势','「明月别枝惊鹊」调整「明月」与「别枝」的语序'],ans:1,title:'意义锤炼',expl:'意义锤炼要求用词<b>准确、鲜明、生动</b>。B 中「绿」字由形容词活用为动词，使江南春色跃然纸上，是<b>意义锤炼</b>的典型用例；A、C 侧重声音/气势，D 属句式调整。'},
+    {q:'下列属于「声音的锤炼」的是：',opts:['选用叠音词以增强音律','把主语提前以突出焦点','将长句拆为短句','改用被动句以强调受事'],ans:0,title:'声音的锤炼',expl:'声音的锤炼指<b>音节匀称、声调平仄、韵脚和谐</b>。A 中叠音词的运用增强了音律美，属声音锤炼；其余三项分属句式选择与语序调整。'},
+    {q:'「白发三千丈，缘愁似个长」主要运用了哪种修辞格？',opts:['比喻','夸张','拟人','借代'],ans:1,title:'夸张',expl:'“三千丈”以极度夸大的方式突出愁绪之深，属<b>夸张</b>修辞；比喻须有本体喻体相似点，此句为整体夸张抒情。'}
+  ];
+  function submitQuiz(){
+    const box=document.getElementById('quizOpts');
+    const sel=box.querySelector('.opt.sel');
+    const ex=document.getElementById('quizExplain');
+    if(!sel){ ex.classList.add('show'); return; }
+    box.dataset.lock='1';
+    const btns=box.querySelectorAll('.opt');
+    btns.forEach(o=>o.classList.add('lock'));
+    const d=quizData[quizIdx];
+    btns[d.ans].classList.add('right');
+    if(sel!==btns[d.ans]) sel.classList.add('wrong');
+    const ok=sel===btns[d.ans];
+    document.getElementById('quizEl').textContent = (ok?'✓ 回答正确 · ':'✗ 回答错误 · ')+d.title;
+    document.getElementById('quizEl').style.color = ok?'var(--ok)':'var(--err)';
+    document.getElementById('quizEt').innerHTML = d.expl;
+    ex.classList.add('show');
+    const sb=document.getElementById('quizSubmit');
+    sb.textContent= quizIdx<quizData.length-1 ? '下一题 →' : '完成 ✓';
+    sb.onclick= function(){
+      quizIdx=(quizIdx+1)%quizData.length;
+      const d2=quizData[quizIdx];
+      document.getElementById('quizQtext').textContent=d2.q;
+      document.getElementById('quizQno').textContent=(quizIdx+1)+' / '+quizData.length;
+      btns.forEach((o,i)=>{o.querySelector('.t').textContent=d2.opts[i];o.classList.remove('sel','right','wrong','lock');});
+      box.dataset.lock='';
+      ex.classList.remove('show');
+      sb.textContent='提交答案'; sb.onclick=submitQuiz;
+      // 归位：滚动回顶部
+      const sc=document.getElementById('sub-quiz').querySelector('.scroll');
+      if(sc) sc.scrollTo({top:0,behavior:'smooth'});
+    };
+  }
+  // 答题卡：点击题号返回
+  function jumpSheet(){ pop(); }
+  // 模拟考：上一题/下一题（换题 + 归位）
+  let examIdx=2;
+  const examData=[
+    {q:'「不虞君之涉吾地也」中「虞」的含义是：',opts:['料到、预料','忧虑、担心','欺骗、隐瞒','猜测、揣度']},
+    {q:'下列属于「使动用法」的句子是：',opts:['项伯杀人，臣活之','君将哀而生之乎','孔子登东山而小鲁','吾妻之美我者，私我也'],opts2:['项伯杀人，臣活之','求木之长者，必固其根本','既来之，则安之','孔子登东山而小鲁']},
+    {q:'《左传》属于下列哪一类史书？',opts:['编年体','国别体','纪传体','典志体']},
+    {q:'「敏于事而慎于言」中「敏」的意思是：',opts:['勤勉','敏捷','聪慧','敏感']}
+  ];
+  function renderExam(i){
+    const d=examData[i];
+    document.getElementById('examQtext').textContent=d.q;
+    const box=document.getElementById('examOpts');
+    box.querySelectorAll('.opt').forEach((o,idx)=>{o.querySelector('.t').textContent=d.opts[idx];o.classList.remove('sel','right','wrong','lock');});
+    box.dataset.lock='';
+    const total=86, filled=2+i;
+    document.getElementById('examTag').textContent='第 '+(i+1)+' 题 / 共 86 题';
+    document.getElementById('examFill').style.width=(filled/total*100).toFixed(1)+'%';
+    document.getElementById('examPct').textContent=Math.round(filled/total*100)+'%';
+    const sc=document.getElementById('sub-exam').querySelector('.scroll');
+    if(sc) sc.scrollTo({top:0,behavior:'smooth'});
+  }
+  function nextExam(){ examIdx=Math.min(examIdx+1,examData.length-1); renderExam(examIdx); }
+  function prevExam(){ examIdx=Math.max(examIdx-1,0); renderExam(examIdx); }
+  // 模拟考倒计时
+  let examLeft=2696;
+  setInterval(()=>{
+    if(examLeft<=0) return;
+    examLeft--;
+    const t=document.getElementById('examTimer');
+    if(!t) return;
+    const m=String(Math.floor(examLeft/60)).padStart(2,'0');
+    const s=String(examLeft%60).padStart(2,'0');
+    t.textContent='⏱ '+m+':'+s;
+    if(examLeft<300) t.classList.add('warn');
+  },1000);
+  // 筛选 chips
+  document.querySelectorAll('.filter .f').forEach(f=>f.addEventListener('click',()=>{
+    document.querySelectorAll('.filter .f').forEach(x=>x.classList.remove('on'));
+    f.classList.add('on');
+  }));
+  // 初始：背题卡自动翻转演示一次
+  setTimeout(()=>{const c=document.getElementById('kcard');if(c&&!c.classList.contains('flip')){c.classList.add('flip');setTimeout(()=>c.classList.remove('flip'),1500);}},1500);
+</script>
+</body>
+</html>

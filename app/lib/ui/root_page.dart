@@ -12,7 +12,6 @@ import 'home_page.dart';
 import 'memorize_home_page.dart';
 import 'settings_page.dart';
 import 'stats_page.dart';
-import 'widgets/frost_background.dart';
 import 'widgets/glass_tab_bar.dart';
 
 class RootPage extends StatefulWidget {
@@ -44,12 +43,11 @@ class _RootPageState extends State<RootPage> {
     return Scaffold(
       // 沉浸式融合：body 内容延伸到底部导航区域下方（需求）
       extendBody: true,
-      body: FrostBackground(
-        // 冷磨砂背景：所有 Tab 共享同一背景层（沉浸原则，切换不露背景）
-        child: NotificationListener<ScrollNotification>(
-          onNotification: _onScroll,
-          // IndexedStack 常驻五页（状态保留、切换零重建）+ 慢速轻微上滑过渡（v1.1.3）
-          child: _SmoothTabView(
+      body: NotificationListener<ScrollNotification>(
+        onNotification: _onScroll,
+        // IndexedStack 常驻五页（状态保留、切换零重建）+ 慢速轻微上滑过渡（v1.1.3）
+        // 背景由 main.dart _BackgroundStack 统一提供（冷磨砂渐变+光斑全局共享）
+        child: _SmoothTabView(
             index: _index,
             children: const [
               HomePage(),      // 今日信息流
@@ -60,7 +58,6 @@ class _RootPageState extends State<RootPage> {
             ],
           ),
         ),
-      ),
       bottomNavigationBar: IgnorePointer(
         // 隐藏时（动画到透明）忽略点击，防止透明区域仍可命中（需求：导航隐藏不可点击）
         ignoring: !_navVisible,
