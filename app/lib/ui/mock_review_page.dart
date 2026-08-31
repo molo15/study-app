@@ -37,6 +37,7 @@ class MockReviewPage extends StatefulWidget {
     required this.questions,
     required this.answers,
     this.onlyWrong = false,
+    this.flagged = const <String>{},
   });
 
   final List<Question> questions;
@@ -44,6 +45,9 @@ class MockReviewPage extends StatefulWidget {
 
   /// 初始是否只看错题（历史成绩入口可传入）
   final bool onlyWrong;
+
+  /// 被存疑标记的题（交卷时从模拟考带入，复盘高亮）
+  final Set<String> flagged;
 
   @override
   State<MockReviewPage> createState() => _MockReviewPageState();
@@ -177,6 +181,7 @@ class _MockReviewPageState extends State<MockReviewPage> {
                     Grade.skip => ('未答', theme.colorScheme.outline),
                   };
                   final bank = mockBankLabel(q.bankId);
+                  final isFlagged = widget.flagged.contains(q.id);
                   return Card(
                     margin: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
@@ -213,7 +218,15 @@ class _MockReviewPageState extends State<MockReviewPage> {
                           color: theme.colorScheme.outline,
                         ),
                       ),
-                      trailing: const Icon(Icons.chevron_right),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (isFlagged)
+                            const Icon(Icons.diamond, size: 18, color: Color(0xFFE0A13C)),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.chevron_right),
+                        ],
+                      ),
                       onTap: () => _showDetail(context, index),
                     ),
                   );

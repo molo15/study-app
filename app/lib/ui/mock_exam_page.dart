@@ -265,6 +265,7 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
                   builder: (_) => MockReviewPage(
                     questions: _questions,
                     answers: _answers,
+                    flagged: _flagged,
                   ),
                 ),
               );

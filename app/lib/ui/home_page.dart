@@ -409,52 +409,115 @@ class _HomePageState extends ConsumerState<HomePage> {
               ],
             ),
             const SizedBox(height: 16),
-            // 页面唯一主行动：开始今日复习（FilledButton 样式与禁用逻辑不变）
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: _dueCount == 0
-                    ? null
-                    : () => _push(
-                          PracticePage(
-                            mode: PracticeMode.review,
-                            bankId: _currentBankId,
-                          ),
+            // 今日队列（信息流）：到期复习 + 可新学，点击进入对应模式
+            Row(
+              children: [
+                Expanded(
+                  child: _queueCard(
+                    theme: theme,
+                    title: '到期复习',
+                    count: _dueCount,
+                    icon: Icons.autorenew,
+                    color: theme.colorScheme.primary,
+                    done: _dueCount == 0,
+                    onTap: _dueCount == 0
+                        ? null
+                        : () => _push(
+                              PracticePage(
+                                mode: PracticeMode.review,
+                                bankId: _currentBankId,
+                              ),
+                            ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _queueCard(
+                    theme: theme,
+                    title: '可新学',
+                    count: _newCount,
+                    icon: Icons.bolt_outlined,
+                    color: theme.colorScheme.tertiary,
+                    done: _newCount == 0,
+                    // 取"新题"（尚未建立调度记录）作为本轮范围，与卡片题量一致；
+                    // 否则会刷整库全部 active 题，把已做过的题混进来（审查修复）
+                    onTap: () async {
+                      final repo = await ref.read(quizRepositoryProvider);
+                      final questions = await repo.newQuestions(
+                        bankId: _currentBankId,
+                        limit: _newCount,
+                      );
+                      if (!mounted || questions.isEmpty) return;
+                      _push(
+                        PracticePage(
+                          mode: PracticeMode.learn,
+                          bankId: _currentBankId,
+                          // 固定顺序刷题记住进度：当前题库下「新题顺序刷」范围
+                          progressKey: 'home-new:${_currentBankId ?? 'all'}',
+                          questions: questions,
                         ),
-                icon: const Icon(Icons.autorenew),
-                label: Text(_dueCount == 0 ? '今日任务已完成' : '开始今日复习（$_dueCount）'),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 今日队列卡：标题 + 数量/状态，点击进入
+  Widget _queueCard({
+    required ThemeData theme,
+    required String title,
+    required int count,
+    required IconData icon,
+    required Color color,
+    required bool done,
+    VoidCallback? onTap,
+  }) {
+    final ink2 = theme.colorScheme.onSurfaceVariant;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: color.withValues(alpha: 0.10),
+          border: Border.all(color: color.withValues(alpha: 0.28)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 15, color: done ? const Color(0xFF3FA88A) : color),
+                const SizedBox(width: 6),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: ink2,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 7),
+            Text(
+              done
+                  ? (title == '到期复习' ? '已完成' : '暂无新题')
+                  : '$count 道',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: done
+                    ? const Color(0xFF3FA88A)
+                    : theme.colorScheme.onSurface,
               ),
             ),
-            // 无待复习但仍有新题：给出次级「刷新题」入口（设计方案 §3.2 空态）
-            if (_dueCount == 0 && _newCount > 0) ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  // 取"新题"（尚未建立调度记录）作为本轮范围，与按钮题量一致；
-                  // 否则会刷整库全部 active 题，把已做过的题混进来（审查修复）
-                  onPressed: () async {
-                    final repo = await ref.read(quizRepositoryProvider);
-                    final questions = await repo.newQuestions(
-                      bankId: _currentBankId,
-                      limit: _newCount,
-                    );
-                    if (!mounted || questions.isEmpty) return;
-                    _push(
-                      PracticePage(
-                        mode: PracticeMode.learn,
-                        bankId: _currentBankId,
-                        // 固定顺序刷题记住进度：当前题库下「新题顺序刷」范围
-                        progressKey: 'home-new:${_currentBankId ?? 'all'}',
-                        questions: questions,
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.bolt_outlined),
-                  label: Text('刷 $_newCount 道新题'),
-                ),
-              ),
-            ],
           ],
         ),
       ),
