@@ -1,15 +1,19 @@
-/// 应用根：底部导航（首页 / 统计 / 设置）
+/// 应用根（UI v2 · 冷磨砂）：今日 / 题库 / [背题] / 统计 / 我的。
 ///
 /// 沉浸式交互（需求）：
-/// - edge-to-edge 边缘绘制（main.dart 设置），body 内容延伸到底部区域
+/// - FrostBackground 共享冷磨砂背景，所有 Tab 共用同一背景层，切换不露背景
 /// - 上滑滚动内容时隐藏底栏（滑出屏幕底部），下滑时显示（滑回）
 library;
 
 import 'package:flutter/material.dart';
 
+import 'bank_home_page.dart';
 import 'home_page.dart';
+import 'memorize_home_page.dart';
 import 'settings_page.dart';
 import 'stats_page.dart';
+import 'widgets/frost_background.dart';
+import 'widgets/glass_tab_bar.dart';
 
 class RootPage extends StatefulWidget {
   const RootPage({super.key});
@@ -40,58 +44,37 @@ class _RootPageState extends State<RootPage> {
     return Scaffold(
       // 沉浸式融合：body 内容延伸到底部导航区域下方（需求）
       extendBody: true,
-      body: NotificationListener<ScrollNotification>(
-        onNotification: _onScroll,
-        // IndexedStack 常驻三页（状态保留、切换零重建）+ 慢速轻微上滑过渡（v1.1.3）
-        child: _SmoothTabView(
-          index: _index,
-          children: const [
-            HomePage(),
-            StatsPage(),
-            SettingsPage(),
-          ],
+      body: FrostBackground(
+        // 冷磨砂背景：所有 Tab 共享同一背景层（沉浸原则，切换不露背景）
+        child: NotificationListener<ScrollNotification>(
+          onNotification: _onScroll,
+          // IndexedStack 常驻五页（状态保留、切换零重建）+ 慢速轻微上滑过渡（v1.1.3）
+          child: _SmoothTabView(
+            index: _index,
+            children: const [
+              HomePage(),      // 今日信息流
+              BankHomePage(),  // 题库
+              MemorizeHomePage(), // 背题（中央圆钮入口）
+              StatsPage(),     // 统计
+              SettingsPage(),  // 我的（替代设置）
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: IgnorePointer(
         // 隐藏时（动画到透明）忽略点击，防止透明区域仍可命中（需求：导航隐藏不可点击）
         ignoring: !_navVisible,
-        child: AnimatedSlide(
-          // 上滑隐藏：底栏滑出屏幕底部（需求）
-          offset: _navVisible ? Offset.zero : const Offset(0, 1.2),
-          duration: const Duration(milliseconds: 260),
-          curve: Curves.easeOutCubic,
-          child: AnimatedOpacity(
-            opacity: _navVisible ? 1 : 0,
-            duration: const Duration(milliseconds: 200),
-            child: NavigationBar(
-              selectedIndex: _index,
-              onDestinationSelected: (i) => setState(() => _index = i),
-              destinations: const [
-                NavigationDestination(
-                  icon: Icon(Icons.home_outlined),
-                  selectedIcon: Icon(Icons.home_outlined),
-                  label: '首页',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.bar_chart_outlined),
-                  selectedIcon: Icon(Icons.bar_chart),
-                  label: '统计',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.settings_outlined),
-                  selectedIcon: Icon(Icons.settings_outlined),
-                  label: '设置',
-                ),
-              ],
-            ),
-          ),
+        child: GlassTabBar(
+          index: _index,
+          hidden: !_navVisible,
+          onSelect: (i) => setState(() => _index = i),
         ),
       ),
     );
   }
 }
 
-/// Tab 切换容器：IndexedStack 常驻三页（状态保留、切换零重建）+ 慢速淡入上滑过渡。
+/// Tab 切换容器：IndexedStack 常驻五页（状态保留、切换零重建）+ 慢速淡入上滑过渡。
 ///
 /// 相比 AnimatedSwitcher + ValueKey 重建整页，IndexedStack 避免切 Tab 时
 /// 重复读库/重建，动画期间无卡顿；切换时新页轻微上滑（300ms 慢速档，

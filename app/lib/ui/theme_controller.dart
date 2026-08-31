@@ -26,15 +26,20 @@ String colorToHex(Color color) =>
 
 class AppThemeConfig {
   const AppThemeConfig({
-    this.primaryColor = '#00696D',
-    this.backgroundColor = '#F4F7F6',
+    this.primaryColor = '#4F7CD4',
+    this.backgroundColor = '#E7EEF7',
     this.backgroundImagePath = '',
     this.backgroundOpacity = 0.55,
-    this.cardOpacity = 1.0,
-    this.cornerRadius = 16.0,
+    this.cardOpacity = 0.72,
+    this.cornerRadius = 18.0,
     this.darkMode = false,
     this.hideStatusBar = false,
     this.reduceMotion = false,
+    this.frost = true,
+    this.frostBgTop = '#E7EEF7',
+    this.frostBgBottom = '#C9D7EA',
+    this.frostAccent = '#4F7CD4',
+    this.glassOpacity = 0.62,
   });
 
   final String primaryColor;
@@ -56,35 +61,72 @@ class AppThemeConfig {
   /// 仅保留判题颜色反馈，照顾低性能设备与专注用户。默认关。
   final bool reduceMotion;
 
+  /// 冷磨砂（UI v2）：开启后背景用渐变+光斑（FrostBackground），
+  /// 卡片用毛玻璃（GlassCard），关闭则回退纯色/背景图旧逻辑。默认开。
+  final bool frost;
+
+  /// 冷磨砂背景渐变端点色（顶部 / 底部）
+  final String frostBgTop;
+  final String frostBgBottom;
+
+  /// 冷磨砂强调色（冷青蓝）
+  final String frostAccent;
+
+  /// 玻璃强度（0~1，BackdropFilter 半透明层不透明度，供 GlassCard 使用）
+  final double glassOpacity;
+
   Color get primary => parseHexColor(primaryColor);
 
   Color get background =>
-      parseHexColor(backgroundColor, fallback: const Color(0xFFF4F7F6));
+      parseHexColor(backgroundColor, fallback: const Color(0xFFE7EEF7));
 
-  factory AppThemeConfig.defaults() => const AppThemeConfig();
+  Color get frostTop =>
+      parseHexColor(frostBgTop, fallback: const Color(0xFFE7EEF7));
 
-  /// P1 主题预设：一键切换整套主题（墨绿/纸米/经典蓝/夜间）
+  Color get frostBottom =>
+      parseHexColor(frostBgBottom, fallback: const Color(0xFFC9D7EA));
+
+  Color get accent => parseHexColor(frostAccent, fallback: const Color(0xFF4F7CD4));
+
+  /// UI v2 默认：冷磨砂
+  factory AppThemeConfig.defaults() => AppThemeConfig();
+
+  /// P1 主题预设：一键切换整套主题（冷磨砂/墨绿/纸米/经典蓝/夜间）
   static const List<(String, AppThemeConfig)> presets = [
+    ('冷磨砂', AppThemeConfig(
+      primaryColor: '#4F7CD4',
+      backgroundColor: '#E7EEF7',
+      frostBgTop: '#E7EEF7',
+      frostBgBottom: '#C9D7EA',
+      frostAccent: '#4F7CD4',
+      glassOpacity: 0.62,
+      cornerRadius: 18,
+      frost: true,
+    )),
     ('墨绿', AppThemeConfig(
       primaryColor: '#00696D',
       backgroundColor: '#F4F7F6',
       cornerRadius: 16,
+      frost: false,
     )),
     ('纸米', AppThemeConfig(
       primaryColor: '#8B6F47',
       backgroundColor: '#F5EFE3',
       cornerRadius: 18,
+      frost: false,
     )),
     ('经典蓝', AppThemeConfig(
       primaryColor: '#1A56DB',
       backgroundColor: '#F5F7FA',
       cornerRadius: 14,
+      frost: false,
     )),
     ('夜间', AppThemeConfig(
       primaryColor: '#4DB6AC',
       backgroundColor: '#101418',
       darkMode: true,
       cornerRadius: 16,
+      frost: false,
     )),
   ];
 
@@ -98,6 +140,11 @@ class AppThemeConfig {
     bool? darkMode,
     bool? hideStatusBar,
     bool? reduceMotion,
+    bool? frost,
+    String? frostBgTop,
+    String? frostBgBottom,
+    String? frostAccent,
+    double? glassOpacity,
   }) => AppThemeConfig(
     primaryColor: primaryColor ?? this.primaryColor,
     backgroundColor: backgroundColor ?? this.backgroundColor,
@@ -108,6 +155,11 @@ class AppThemeConfig {
     darkMode: darkMode ?? this.darkMode,
     hideStatusBar: hideStatusBar ?? this.hideStatusBar,
     reduceMotion: reduceMotion ?? this.reduceMotion,
+    frost: frost ?? this.frost,
+    frostBgTop: frostBgTop ?? this.frostBgTop,
+    frostBgBottom: frostBgBottom ?? this.frostBgBottom,
+    frostAccent: frostAccent ?? this.frostAccent,
+    glassOpacity: glassOpacity ?? this.glassOpacity,
   );
 
   Map<String, dynamic> toJson() => {
@@ -120,18 +172,28 @@ class AppThemeConfig {
     'darkMode': darkMode,
     'hideStatusBar': hideStatusBar,
     'reduceMotion': reduceMotion,
+    'frost': frost,
+    'frostBgTop': frostBgTop,
+    'frostBgBottom': frostBgBottom,
+    'frostAccent': frostAccent,
+    'glassOpacity': glassOpacity,
   };
 
   factory AppThemeConfig.fromJson(Map<String, dynamic> json) => AppThemeConfig(
-    primaryColor: json['primaryColor'] as String? ?? '#00696D',
-    backgroundColor: json['backgroundColor'] as String? ?? '#F4F7F6',
+    primaryColor: json['primaryColor'] as String? ?? '#4F7CD4',
+    backgroundColor: json['backgroundColor'] as String? ?? '#E7EEF7',
     backgroundImagePath: json['backgroundImagePath'] as String? ?? '',
     backgroundOpacity: (json['backgroundOpacity'] as num?)?.toDouble() ?? 0.55,
-    cardOpacity: (json['cardOpacity'] as num?)?.toDouble() ?? 1.0,
-    cornerRadius: (json['cornerRadius'] as num?)?.toDouble() ?? 16.0,
+    cardOpacity: (json['cardOpacity'] as num?)?.toDouble() ?? 0.72,
+    cornerRadius: (json['cornerRadius'] as num?)?.toDouble() ?? 18.0,
     darkMode: json['darkMode'] as bool? ?? false,
     hideStatusBar: json['hideStatusBar'] as bool? ?? false,
     reduceMotion: json['reduceMotion'] as bool? ?? false,
+    frost: json['frost'] as bool? ?? false,
+    frostBgTop: json['frostBgTop'] as String? ?? '#E7EEF7',
+    frostBgBottom: json['frostBgBottom'] as String? ?? '#C9D7EA',
+    frostAccent: json['frostAccent'] as String? ?? '#4F7CD4',
+    glassOpacity: (json['glassOpacity'] as num?)?.toDouble() ?? 0.62,
   );
 
   /// 由配置构建 ThemeData（迁移自 app_theme.dart，支持深色）
@@ -143,8 +205,8 @@ class AppThemeConfig {
       surface: darkMode ? const Color(0xFF121212) : const Color(0xFFFAFDFC),
     );
     final bg = darkMode ? const Color(0xFF101418) : background;
-    // 审查 P1-2：有背景图时 Scaffold 用透明，让 main.dart 的背景层可见
-    final effectiveBg = backgroundImagePath.isNotEmpty
+    // 冷磨砂或背景图时 Scaffold 用透明，让 FrostBackground/main.dart 背景层可见
+    final effectiveBg = (frost || backgroundImagePath.isNotEmpty)
         ? Colors.transparent
         : bg;
     final cardColor = (darkMode ? const Color(0xFF1E2428) : Colors.white)
