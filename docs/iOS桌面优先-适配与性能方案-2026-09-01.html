@@ -72,9 +72,9 @@
       <tr><td>iOS WebKit 政策</td><td><b>未添加到主屏幕的 Web 内容，连续 7 天不访问会被系统清除网站数据（含 IndexedDB）</b>——ITP 清理策略，无 API 可禁用</td></tr>
       <tr><td>影响</td><td>iOS 用户若用 Safari 直接打开（不添加到主屏幕），7 天不用 → <b>刷题进度 / 错题 / 成绩 / 存档全部丢失</b></td></tr>
       <tr><td>现有缓解</td><td><span class="pill yes">已有</span>自动存档（auto_archive_service）+ 设置页「备份/导出」入口（export_helper）</td></tr>
-      <tr><td><b>缺口</b></td><td>iOS 端无「添加到主屏幕」引导（standalone 模式下 WebKit <b>不清理</b>数据，且全屏无地址栏，体验等同原生）</td></tr>
+      <tr><td><b>缺口</b></td><td><span class="pill yes">已修复</span>新增 iOS 引导（首次启动弹「添加到主屏幕，数据更安全」对话框 + 设置页「我的」顶部常驻提示条；仅 iOS Web 显示）</td></tr>
     </table>
-    <div class="note red"><b>建议（待确认后实现）</b>：① iOS 检测（<code>kIsWeb && defaultTargetPlatform == iOS</code>）首次启动弹「添加到主屏幕以获得数据持久化」引导；② 设置页常驻 iOS 专属提示条 + 备份入口置顶。此为功能改动，需你确认后再做。</div>
+    <div class="note ok"><b>已实现（commit 14313ad）</b>：新建 <code>widgets/ios_install_guide.dart</code> —— <code>isIosWeb</code> 检测（<code>kIsWeb &amp;&amp; defaultTargetPlatform == iOS</code>）；<code>maybeShowIosInstallGuide()</code> 首次启动弹玻璃化引导对话框（「已看过」标记写入设置表，跨会话持久、DB 未就绪静默跳过）；设置页顶部常驻提示条。<b>桌面端验证通过（无引导/无提示条，无回归）；iOS 分支需真机 Safari 验证</b>（本地 CDP 无法模拟 iOS UA）。</div>
   </div>
 
   <!-- 第3项：压缩部署 -->
@@ -129,7 +129,7 @@ server {
     <table>
       <tr><th>项</th><th>结论</th><th>状态</th></tr>
       <tr><td>① iOS 字体跳过</td><td>不可行（canvaskit 无系统字体桥 + 文言生僻字不可裁）→ 替代：字体 preload 并行下载</td><td><span class="pill yes">已证伪</span>替代已实施</td></tr>
-      <tr><td>② iOS 持久化</td><td>IndexedDB + iOS 7 天清理风险确认；已有自动存档/备份；缺口 = 无「添加到主屏幕」引导</td><td><span class="pill warn">待确认</span>引导功能待你批准</td></tr>
+      <tr><td>② iOS 持久化</td><td>IndexedDB + iOS 7 天清理风险确认；已有自动存档/备份；缺口 = 无「添加到主屏幕」引导</td><td><span class="pill yes">已实现</span>首次启动引导 + 设置页提示条</td></tr>
       <tr><td>③ gzip/brotli 部署</td><td>关键资源 -49%（12.3→6.3MB）；nginx 配置已交付</td><td><span class="pill warn">部署层</span>需生产环境执行</td></tr>
     </table>
   </div>
