@@ -7,6 +7,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'widgets/app_card.dart';
+import 'responsive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/quiz_repository.dart';
@@ -90,10 +91,27 @@ class _ChapterOverviewListPageState
                   : ListView(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                       children: [
-                        for (final ov in _overviews) ...[
-                          _ChapterOverviewCard(overview: ov, onTap: () => _openChapter(ov)),
-                          const SizedBox(height: 10),
-                        ],
+                        if (isWideScreen(context))
+                          // 宽屏（平板/桌面）章节两列（P3 对齐原型 chaps）
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: [
+                              for (final ov in _overviews)
+                                SizedBox(
+                                  width: (effectiveContentWidth(context) - 32 - 12) / 2,
+                                  child: _ChapterOverviewCard(
+                                    overview: ov,
+                                    onTap: () => _openChapter(ov),
+                                  ),
+                                ),
+                            ],
+                          )
+                        else
+                          for (final ov in _overviews) ...[
+                            _ChapterOverviewCard(overview: ov, onTap: () => _openChapter(ov)),
+                            const SizedBox(height: 10),
+                          ],
                       ],
                     ),
     );

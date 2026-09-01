@@ -165,7 +165,17 @@ class _BackgroundStack extends StatelessWidget {
     // 解法：改用显式 tight 尺寸（宽度取 min(560, 视口宽)，高度取视口高），
     // 消除矛盾约束，在 tight（测试/窄屏）与无界（web）两种约束下行为一致。
     final viewportSize = MediaQuery.sizeOf(context);
-    final contentWidth = effectiveContentWidth(context);
+    final viewport = viewportSize.width;
+    // 内容限宽需容纳侧边栏（平板 66 / 桌面 232），否则侧边栏挤占后内容区过窄，
+    // 宽屏双列布局放不下会退回单列（P5 浏览器实测：题库双列退回单列）。
+    // 手机（compact）无侧边栏，维持原 560/视口 限宽。
+    final sidebarW = switch (appLayoutFromWidth(viewport)) {
+      AppLayout.compact => 0.0,
+      AppLayout.medium => 66.0,
+      AppLayout.expanded => 232.0,
+    };
+    final baseW = contentWidthFromWidth(viewport) + sidebarW;
+    final contentWidth = viewport < baseW ? viewport : baseW;
     return Align(
       alignment: Alignment.topCenter,
       child: SizedBox(
