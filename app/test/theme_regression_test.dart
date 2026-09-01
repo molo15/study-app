@@ -61,18 +61,18 @@ void main() {
       final config = AppThemeConfig.defaults();
       final theme = config.buildThemeData();
 
-      final dlg = theme.dialogTheme!;
+      final dlg = theme.dialogTheme;
       expect(dlg.backgroundColor, isNotNull, reason: 'dialog 背景已设置');
       expect(dlg.backgroundColor!.a, lessThan(1.0), reason: 'dialog 半透明（非纯实色）');
       expect(dlg.backgroundColor!.a, greaterThan(0.7), reason: 'dialog 不透明度过低会不可读');
       expect(dlg.surfaceTintColor, Colors.transparent, reason: '去掉 M3 彩色 tint');
 
-      final sheet = theme.bottomSheetTheme!;
+      final sheet = theme.bottomSheetTheme;
       expect(sheet.backgroundColor, isNotNull, reason: 'bottomSheet 背景已设置');
       expect(sheet.backgroundColor!.a, lessThan(1.0), reason: 'bottomSheet 半透明');
       expect(sheet.elevation, 0, reason: 'bottomSheet 无阴影（悬浮玻璃）');
 
-      final dp = theme.datePickerTheme!;
+      final dp = theme.datePickerTheme;
       expect(dp.backgroundColor, isNotNull, reason: 'datePicker 背景已设置');
 
       // 圆角：dialog 圆角应与配置 cornerRadius 一致（M3 默认 28 已被覆盖）
@@ -88,8 +88,8 @@ void main() {
       expect(night.darkMode, isTrue);
       final theme = night.buildThemeData();
       expect(theme.brightness, Brightness.dark);
-      expect(theme.dialogTheme?.backgroundColor, isNotNull);
-      expect(theme.bottomSheetTheme?.backgroundColor, isNotNull);
+      expect(theme.dialogTheme.backgroundColor, isNotNull);
+      expect(theme.bottomSheetTheme.backgroundColor, isNotNull);
     });
   });
 

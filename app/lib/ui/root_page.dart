@@ -1,8 +1,12 @@
-/// 应用根（UI v2 · 冷磨砂）：今日 / 题库 / [背题] / 统计 / 我的。
+﻿/// 应用根（UI v2 · 冷磨砂）：今日 / 题库 / [背题] / 统计 / 我的。
 ///
 /// 沉浸式交互（需求）：
 /// - FrostBackground 共享冷磨砂背景，所有 Tab 共用同一背景层，切换不露背景
 /// - 上滑滚动内容时隐藏底栏（滑出屏幕底部），下滑时显示（滑回）
+///
+/// 多端导航（P1 侧边栏）：compact（手机）用底部 GlassTabBar（含中央背题圆钮）；
+/// medium / expanded（平板 / 桌面）用左侧 AppSidebar（66px 图标 / 可展开 / 232px 全宽），
+/// 隐藏底部 dock。
 library;
 
 import 'package:flutter/material.dart';
@@ -14,8 +18,10 @@ import '../services/auto_archive_service.dart';
 import 'bank_home_page.dart';
 import 'home_page.dart';
 import 'memorize_home_page.dart';
+import 'responsive.dart';
 import 'settings_page.dart';
 import 'stats_page.dart';
+import 'widgets/app_sidebar.dart';
 import 'widgets/glass_tab_bar.dart';
 
 class RootPage extends ConsumerStatefulWidget {
@@ -28,6 +34,10 @@ class RootPage extends ConsumerStatefulWidget {
 class _RootPageState extends ConsumerState<RootPage> {
   int _index = 0;
   bool _navVisible = true; // 上滑隐藏底栏、下滑显示（需求）
+
+  // tab 切换时触发对应页面刷新（IndexedStack 常驻页面不重建，缺陷 #1）
+  final GlobalKey<HomePageState> _homeKey = GlobalKey();
+  final GlobalKey<StatsPageState> _statsKey = GlobalKey();
 
   @override
   void initState() {
@@ -59,35 +69,56 @@ class _RootPageState extends ConsumerState<RootPage> {
     return false;
   }
 
+  /// tab 选择（dock 与侧边栏共用）：切页 + 刷新今日/统计
+  void _select(int i) {
+    setState(() => _index = i);
+    if (i == 0) _homeKey.currentState?.refresh();
+    if (i == 3) _statsKey.currentState?.refresh();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // 沉浸式融合：body 内容延伸到底部导航区域下方（需求）
-      extendBody: true,
-      body: NotificationListener<ScrollNotification>(
-        onNotification: _onScroll,
-        // IndexedStack 常驻五页（状态保留、切换零重建）+ 慢速轻微上滑过渡（v1.1.3）
-        // 背景由 main.dart _BackgroundStack 统一提供（冷磨砂渐变+光斑全局共享）
-        child: _SmoothTabView(
-            index: _index,
-            children: const [
-              HomePage(),      // 今日信息流
-              BankHomePage(),  // 题库
-              MemorizeHomePage(), // 背题（中央圆钮入口）
-              StatsPage(),     // 统计
-              SettingsPage(),  // 我的（替代设置）
-            ],
-          ),
-        ),
-      bottomNavigationBar: IgnorePointer(
-        // 隐藏时（动画到透明）忽略点击，防止透明区域仍可命中（需求：导航隐藏不可点击）
-        ignoring: !_navVisible,
-        child: GlassTabBar(
-          index: _index,
-          hidden: !_navVisible,
-          onSelect: (i) => setState(() => _index = i),
-        ),
+    final layout = appLayoutOf(context);
+    final useSidebar = layout != AppLayout.compact;
+
+    final content = NotificationListener<ScrollNotification>(
+      onNotification: _onScroll,
+      // IndexedStack 常驻五页（状态保留、切换零重建）+ 慢速轻微上滑过渡（v1.1.3）
+      // 背景由 main.dart _BackgroundStack 统一提供（冷磨砂渐变+光斑全局共享）
+      child: _SmoothTabView(
+        index: _index,
+        children: [
+          HomePage(key: _homeKey),      // 今日信息流
+          const BankHomePage(),  // 题库
+          const MemorizeHomePage(), // 背题（中央圆钮入口）
+          StatsPage(key: _statsKey),     // 统计
+          const SettingsPage(),  // 我的（替代设置）
+        ],
       ),
+    );
+
+    return Scaffold(
+      // 沉浸式融合：body 内容延伸到底部导航区域下方（仅手机 dock 形态）
+      extendBody: !useSidebar,
+      body: useSidebar
+          ? Row(
+              children: [
+                AppSidebar(index: _index, onSelect: _select),
+                Expanded(child: content),
+              ],
+            )
+          : content,
+      bottomNavigationBar: useSidebar
+          ? null
+          : IgnorePointer(
+              // 隐藏时（动画到透明）忽略点击，防止透明区域仍可命中（需求：导航隐藏不可点击）
+              ignoring: !_navVisible,
+              child: GlassTabBar(
+                index: _index,
+                hidden: !_navVisible,
+                onSelect: _select,
+              ),
+            ),
     );
   }
 }

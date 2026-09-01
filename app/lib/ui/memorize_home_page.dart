@@ -12,6 +12,7 @@ import 'app_routes.dart';
 import 'chapter_overview_list_page.dart';
 import 'glass_app_bar.dart';
 import 'theme_controller.dart';
+import 'responsive.dart';
 import 'widgets/app_card.dart';
 
 class MemorizeHomePage extends ConsumerStatefulWidget {
@@ -106,7 +107,21 @@ class _MemorizeHomePageState extends ConsumerState<MemorizeHomePage> {
           padding: const EdgeInsets.fromLTRB(4, 4, 4, 12),
           child: Text('按科目背诵', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: theme.colorScheme.onSurfaceVariant)),
         ),
-        ..._banks.map((b) => _bankItem(theme, accent, ink2, b)),
+        // 宽屏（平板/桌面）科目两列，手机单列（P3 对齐原型 memlist）
+        if (isWideScreen(context))
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              for (final b in _banks)
+                SizedBox(
+                  width: (effectiveContentWidth(context) - 32 - 12) / 2,
+                  child: _bankItem(theme, accent, ink2, b),
+                ),
+            ],
+          )
+        else
+          ..._banks.map((b) => _bankItem(theme, accent, ink2, b)),
       ],
     );
   }

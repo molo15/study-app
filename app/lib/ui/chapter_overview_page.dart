@@ -17,6 +17,7 @@ import 'memorize_tabs_page.dart';
 import 'practice_page.dart';
 import 'widgets/app_section_header.dart';
 import 'widgets/app_state_view.dart';
+import 'responsive.dart';
 import 'app_routes.dart';
 
 class ChapterOverviewPage extends ConsumerStatefulWidget {
@@ -256,6 +257,25 @@ class _ChapterOverviewPageState extends ConsumerState<ChapterOverviewPage> {
                 ),
               ],
             ),
+          )
+        else if (isWideScreen(context))
+          // 宽屏（平板/桌面）知识点两列（P3 对齐原型 chaps）
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              for (final kp in _knowledge)
+                SizedBox(
+                  width: (effectiveContentWidth(context) - 32 - 12) / 2,
+                  child: _KnowledgeCard(
+                    kp: kp,
+                    progress: _progress[kp.id],
+                    memorize: _memoStates[kp.id],
+                    onPractice: () => _startKnowledge(kp),
+                    onMemorize: () => _startMemorize(knowledgeId: kp.id),
+                  ),
+                ),
+            ],
           )
         else
           for (final kp in _knowledge) ...[

@@ -25,6 +25,7 @@ import 'theme_controller.dart';
 
 import 'glass_app_bar.dart';
 import 'app_toast.dart';
+import 'responsive.dart';
 
 part 'practice_question_view.dart';
 part 'practice_answer_sheet.dart';
@@ -584,20 +585,97 @@ class _PracticePageState extends ConsumerState<PracticePage>
     _loadFlagState();
   }
 
-  /// 打开答题卡弹层（做题中与完成页共用；完成页时无当前题高亮）
+  /// 打开答题卡（UI v2 三形态：手机底部弹层 / 平板右下浮层 / 桌面右侧滑入）
+  /// 做题中与完成页共用；完成页时无当前题高亮。
   void _showAnswerSheet() {
-    showModalBottomSheet<void>(
+    final layout = appLayoutOf(context);
+    // 手机：底部弹层（现状，体验稳定）
+    if (layout == AppLayout.compact) {
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (_) => _AnswerSheet(
+          queue: _queue,
+          results: _results,
+          currentIndex: _index < _queue.length ? _index : -1,
+          onJump: _jumpTo,
+        ),
+      );
+      return;
+    }
+    // 平板 / 桌面：定位浮层（对齐原型答题卡形态适配）
+    final isDesktop = layout == AppLayout.expanded;
+    showGeneralDialog<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      barrierDismissible: true,
+      barrierLabel: '答题卡',
+      barrierColor: Colors.black.withValues(alpha: 0.25),
+      transitionDuration: const Duration(milliseconds: 320),
+      pageBuilder: (ctx, a1, a2) => Align(
+        // 平板右下 / 桌面右侧
+        alignment: isDesktop ? Alignment.centerRight : Alignment.bottomRight,
+        child: SafeArea(
+          child: Container(
+            width: isDesktop ? 280 : 300,
+            height: isDesktop ? double.infinity : null,
+            constraints: isDesktop
+                ? null
+                : BoxConstraints(
+                    maxHeight: MediaQuery.of(ctx).size.height * 0.74),
+            margin: isDesktop
+                ? null
+                : const EdgeInsets.only(right: 14, bottom: 16),
+            decoration: BoxDecoration(
+              borderRadius: isDesktop
+                  ? null
+                  : BorderRadius.circular(26), // 平板 r-lg
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x26263A5C),
+                  blurRadius: 44,
+                  offset: Offset(0, 14),
+                ),
+              ],
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: isDesktop
+                    ? const [
+                        Color(0xEBE7EEF7),
+                        Color(0xEBC9D7EA),
+                      ]
+                    : const [
+                        Color(0xFFE7EEF7),
+                        Color(0xFFC9D7EA),
+                      ],
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: isDesktop
+                  ? BorderRadius.zero
+                  : BorderRadius.circular(26),
+              child: _AnswerSheet(
+                queue: _queue,
+                results: _results,
+                currentIndex: _index < _queue.length ? _index : -1,
+                onJump: _jumpTo,
+              ),
+            ),
+          ),
+        ),
       ),
-      builder: (_) => _AnswerSheet(
-        queue: _queue,
-        results: _results,
-        currentIndex: _index < _queue.length ? _index : -1,
-        onJump: _jumpTo,
+      transitionBuilder: (ctx, anim, a2, child) => SlideTransition(
+        position: Tween<Offset>(
+          begin: isDesktop ? const Offset(1, 0) : const Offset(0, 0.2),
+          end: Offset.zero,
+        ).animate(
+          CurvedAnimation(parent: anim, curve: Curves.easeOutCubic),
+        ),
+        child: child,
       ),
     );
   }
@@ -759,7 +837,11 @@ class _PracticePageState extends ConsumerState<PracticePage>
           ),
         ),
       ),
-      body: _QuestionView(
+      body: Center(
+        child: ConstrainedBox(
+          // 桌面答题内容限宽 760 居中（P4 对齐原型 d-desktop 答题限宽）
+          constraints: const BoxConstraints(maxWidth: 760),
+          child: _QuestionView(
         reduceMotion: reduceMotion,
         question: _current,
         selection: _selection,
@@ -777,6 +859,8 @@ class _PracticePageState extends ConsumerState<PracticePage>
         onFreeSubmit: _onFreeSubmit,
         onRate: _rate,
         onRemoveWrong: _removeFromWrongBook,
+      ),
+        ),
       ),
     );
   }

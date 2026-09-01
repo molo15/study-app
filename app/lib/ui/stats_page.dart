@@ -1,10 +1,11 @@
-/// 统计报表（设计方案 §3.5）：作答量/正确率/用时/近 7 日/章节分布/到期未复习
+﻿/// 统计报表（设计方案 §3.5）：作答量/正确率/用时/近 7 日/章节分布/到期未复习
 ///
 /// 本页只做 UI 重排：StudyStats 字段、studyStats() 查询、SQL、正确率/累计用时
 /// 计算均保持不变，仅调整布局、视觉与空态引导。
 library;
 
 import 'package:fl_chart/fl_chart.dart';
+import 'responsive.dart';
 import 'package:flutter/material.dart';
 import 'widgets/app_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,10 +18,10 @@ class StatsPage extends ConsumerStatefulWidget {
   const StatsPage({super.key});
 
   @override
-  ConsumerState<StatsPage> createState() => _StatsPageState();
+  ConsumerState<StatsPage> createState() => StatsPageState();
 }
 
-class _StatsPageState extends ConsumerState<StatsPage> {
+class StatsPageState extends ConsumerState<StatsPage> {
   bool _loading = true;
   String? _error;
   StudyStats? _stats;
@@ -51,6 +52,11 @@ class _StatsPageState extends ConsumerState<StatsPage> {
         _error = '加载失败：$e';
       });
     }
+  }
+
+  /// 供 root_page tab 切换时调用（IndexedStack 常驻页面不重建，需手动刷新数据）
+  Future<void> refresh() async {
+    await _load();
   }
 
   String _fmtDuration(int ms) {
@@ -166,9 +172,49 @@ class _StatsPageState extends ConsumerState<StatsPage> {
             ),
           ),
         ),
-        const SizedBox(height: 16),
-        // 近 7 日做题量
-        AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.symmetric(vertical: 6), 
+                const SizedBox(height: 16),
+        // 宽屏（平板/桌面）：近 7 日与题型分布并排（P3 对齐原型 stats 双栏）
+        if (isWideScreen(context))
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            children: [
+              SizedBox(width: (effectiveContentWidth(context) - 32 - 16) / 2, child: AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.symmetric(vertical: 6), 
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const _SectionHeader(title: '近 7 日做题量', helperText: '每日完成题数变化'),
+                const SizedBox(height: 16),
+                _DailyBars(daily: s.daily),
+              ],
+            ),
+          ),
+        )),
+              if (s.typeDistribution.isNotEmpty)
+                SizedBox(width: (effectiveContentWidth(context) - 32 - 16) / 2, child: AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.symmetric(vertical: 6), 
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _SectionHeader(title: '题型分布', helperText: '各题型已作答数量占比'),
+                  const SizedBox(height: 16),
+                  _PieChartCard(
+                    data: {
+                      for (final e in s.typeDistribution.entries)
+                        _typeLabel(e.key): e.value,
+                    },
+                  ),
+                ],
+              ),
+            ),
+          )),
+            ],
+          )
+        else ...[
+          AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.symmetric(vertical: 6), 
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -181,9 +227,8 @@ class _StatsPageState extends ConsumerState<StatsPage> {
             ),
           ),
         ),
-        const SizedBox(height: 16),
-        // 题型分布圆饼图（需求：饼图+柱形图结合）
-        if (s.typeDistribution.isNotEmpty)
+          const SizedBox(height: 16),
+          if (s.typeDistribution.isNotEmpty)
           AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.symmetric(vertical: 6), 
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -202,6 +247,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
               ),
             ),
           ),
+        ],
         const SizedBox(height: 16),
         // 作答结果分布圆饼图
         if (s.resultDistribution.isNotEmpty)

@@ -1,4 +1,4 @@
-/// 首页：今日任务优先 + 快捷入口 + 题库列表（设计方案 §3.2）
+﻿/// 首页：今日任务优先 + 快捷入口 + 题库列表（设计方案 §3.2）
 ///
 /// 改版（阶段 B）：
 /// - 顶部今日状态改为「短文本胶囊 + Tooltip」，避免 320dp 窄屏与标题/错题按钮挤占；
@@ -20,6 +20,7 @@ import '../models/models.dart';
 import '../services/app_log.dart';
 import 'theme_controller.dart';
 import 'glass_app_bar.dart';
+import 'responsive.dart';
 import 'bank_page.dart';
 import 'mock_exam_list_page.dart';
 import 'practice_page.dart';
@@ -34,10 +35,10 @@ class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  ConsumerState<HomePage> createState() => _HomePageState();
+  ConsumerState<HomePage> createState() => HomePageState();
 }
 
-class _HomePageState extends ConsumerState<HomePage> {
+class HomePageState extends ConsumerState<HomePage> {
   /// 内置题库自动发现（v1.1.3）：枚举 assets/banks/*.zip，每科取版本号最高的包。
   ///
   /// 替代硬编码版本路径——此前 v0.12 已打包但 home_page 仍引用 v0.11，导致
@@ -165,6 +166,12 @@ class _HomePageState extends ConsumerState<HomePage> {
     });
   }
 
+  /// 供 root_page tab 切换时调用（IndexedStack 常驻页面不重建，需手动刷新数据）
+  Future<void> refresh() async {
+    final repo = await ref.read(quizRepositoryProvider);
+    await _refresh(repo);
+  }
+
   Future<void> _push(Widget page) async {
     await Navigator.of(context).push(AppPageRoute(builder: (_) => page));
     final repo = await ref.read(quizRepositoryProvider);
@@ -240,39 +247,71 @@ class _HomePageState extends ConsumerState<HomePage> {
         },
       );
     }
-    return ListView(
-      // 底部留 96 安全空间，防沉浸式导航遮挡（需求）
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-      children: [
-        // 考试倒计时 + 每日目标（P2；未设置/未启用时不显示）
-        if (_studyGoal != null && _studyGoal!.enabled)
-          _buildStudyGoalCard(theme),
-        // 今日任务区（主视觉区，设计方案 §3.2）
-        _SectionTitle(title: '今日任务'),
-        const SizedBox(height: 8),
-        _buildTodayCard(theme),
-        const SizedBox(height: 16),
-        // 快捷入口区：错题本 + 模拟考试（次级入口）
-        _buildQuickEntries(theme),
-        const SizedBox(height: 20),
-        // 题库区
-        _SectionTitle(
-          title: '题库',
-          trailing: Text(
-            '共 $_totalCount 题',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.outline,
-            ),
+    final wide = isWideScreen(context);
+    // 左栏：学习目标 + 今日任务 + 快捷入口
+    final leftCol = <Widget>[
+      // 考试倒计时 + 每日目标（P2；未设置/未启用时不显示）
+      if (_studyGoal != null && _studyGoal!.enabled)
+        _buildStudyGoalCard(theme),
+      _SectionTitle(title: '今日任务'),
+      const SizedBox(height: 8),
+      _buildTodayCard(theme),
+      const SizedBox(height: 16),
+      // 快捷入口区：错题本 + 模拟考试（次级入口）
+      _buildQuickEntries(theme),
+    ];
+    // 右栏：题库
+    final rightCol = <Widget>[
+      _SectionTitle(
+        title: '题库',
+        trailing: Text(
+          '共 $_totalCount 题',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.outline,
           ),
         ),
-        const SizedBox(height: 8),
-        for (var i = 0; i < _banks.length; i++)
-          StaggeredItem(
-            index: i,
-            child: _buildBankCard(theme, _banks[i]),
+      ),
+      const SizedBox(height: 8),
+      for (var i = 0; i < _banks.length; i++)
+        StaggeredItem(
+          index: i,
+          child: _buildBankCard(theme, _banks[i]),
+        ),
+    ];
+    if (!wide) {
+      return ListView(
+        // 底部留 96 安全空间，防沉浸式导航遮挡（需求）
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+        children: [
+          ...leftCol,
+          const SizedBox(height: 20),
+          ...rightCol,
+        ],
+      );
+    }
+    // 宽屏（≥600）：双栏布局（对齐原型 home 双栏，1.15fr / 1fr）
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 48),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 11,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: leftCol,
+            ),
           ),
-        const SizedBox(height: 16),
-      ],
+          const SizedBox(width: 22),
+          Expanded(
+            flex: 9,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: rightCol,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

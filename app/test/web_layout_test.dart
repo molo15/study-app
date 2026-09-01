@@ -14,6 +14,7 @@ import 'package:quiz_app/data/app_database.dart';
 import 'package:quiz_app/data/quiz_repository.dart';
 import 'package:quiz_app/main.dart';
 import 'package:quiz_app/ui/responsive.dart';
+import 'package:quiz_app/ui/widgets/app_sidebar.dart';
 import 'package:quiz_app/ui/widgets/glass_tab_bar.dart';
 
 void main() {
@@ -57,7 +58,7 @@ void main() {
   ];
 
   for (final (name, size) in viewports) {
-    testWidgets('$name：底部导航栏固定在视口底部', (tester) async {
+    testWidgets('$name：导航形态随断点切换（手机 dock / 平板桌面侧边栏）', (tester) async {
       // 用 view.physicalSize + dpr 设置 MediaQuery 视口（setSurfaceSize 只改渲染
       // surface、不改 MediaQuery，MediaQuery.sizeOf 会一直是默认 600 导致测试失真）
       tester.view.physicalSize = size;
@@ -82,12 +83,33 @@ void main() {
         await tester.pump(const Duration(milliseconds: 400));
       });
 
-      final nav = tester.widget<GlassTabBar>(find.byType(GlassTabBar));
-      expect(nav, isNotNull);
-      final rect = tester.getRect(find.byType(GlassTabBar));
-      // 导航栏应贴近视口底部（允许沉浸式扩展的少量偏差）
-      expect(rect.bottom, greaterThan(size.height - 40),
-          reason: '修复后导航栏应在视口底部，实际 bottom=${rect.bottom}');
+      final layout = appLayoutFromWidth(size.width);
+      if (layout == AppLayout.compact) {
+        // 手机：底部 dock 固定贴底
+        final nav = tester.widget<GlassTabBar>(find.byType(GlassTabBar));
+        expect(nav, isNotNull);
+        final rect = tester.getRect(find.byType(GlassTabBar));
+        // 导航栏应贴近视口底部（允许沉浸式扩展的少量偏差）
+        expect(rect.bottom, greaterThan(size.height - 40),
+            reason: '修复后导航栏应在视口底部，实际 bottom=${rect.bottom}');
+        expect(find.byType(AppSidebar), findsNothing,
+            reason: '手机形态不显示侧边栏');
+      } else {
+        // 平板 / 桌面：隐藏底部 dock，改用侧边栏
+        expect(find.byType(GlassTabBar), findsNothing,
+            reason: '$name 应隐藏底部 dock（改用侧边栏）');
+        expect(find.byType(AppSidebar), findsOneWidget,
+            reason: '$name 应显示侧边栏');
+        // 侧边栏宽度随断点：桌面 232 全宽 / 平板 66 图标栏（P1 规格）
+        final sbRect = tester.getRect(find.byType(AppSidebar));
+        if (layout == AppLayout.expanded) {
+          expect(sbRect.width, closeTo(232, 1),
+              reason: '桌面侧边栏 232px 全宽，实际 ${sbRect.width.toStringAsFixed(0)}');
+        } else {
+          expect(sbRect.width, closeTo(66, 1),
+              reason: '平板侧边栏 66px 图标栏，实际 ${sbRect.width.toStringAsFixed(0)}');
+        }
+      }
     });
   }
 }

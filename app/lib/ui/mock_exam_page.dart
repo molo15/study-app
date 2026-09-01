@@ -334,7 +334,11 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
           ),
         ],
       ),
-      body: ListView(
+      body: Center(
+        child: ConstrainedBox(
+          // 桌面答题内容限宽 760 居中（P4 对齐原型 d-desktop 答题限宽）
+          constraints: const BoxConstraints(maxWidth: 760),
+          child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Row(
@@ -448,6 +452,8 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
+      ),
+        ),
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(

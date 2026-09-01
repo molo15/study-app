@@ -32,7 +32,7 @@ const SHELL_ASSETS = [
   './icons/Icon-512.png',
   './icons/Icon-maskable-192.png',
   './icons/Icon-maskable-512.png',
-  './assets/AssetManifest.json',
+  './assets/AssetManifest.bin',
   './assets/FontManifest.json',
   './assets/fonts/MaterialIcons-Regular.otf',
   './assets/packages/cupertino_icons/assets/CupertinoIcons.ttf',
