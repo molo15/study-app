@@ -23,6 +23,7 @@ import 'question_manage_page.dart';
 import 'widgets/app_section_header.dart';
 import 'widgets/app_state_view.dart';
 import 'widgets/app_card.dart';
+import 'widgets/ios_install_guide.dart';
 import 'app_toast.dart';
 import 'app_routes.dart';
 
@@ -673,6 +674,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final iosBanner = iosInstallGuideBanner();
     // 标题居中（需求）；保留状态栏 inset，避免标题顶到打孔摄像头区域
     return Scaffold(
       appBar: GlassAppBar(title: const Text('我的'), centerTitle: true),
@@ -684,6 +686,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               // 底部留 96 安全空间，防沉浸式导航遮挡（需求）
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
               children: [
+                // ---------- iOS 数据保护提示（仅 iOS Web） ----------
+                ?iosBanner,
                 // ---------- 个人卡（UI v2 · 我的） ----------
                 _buildProfileCard(theme),
                 const SizedBox(height: 6),

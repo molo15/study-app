@@ -23,6 +23,7 @@ import 'settings_page.dart';
 import 'stats_page.dart';
 import 'widgets/app_sidebar.dart';
 import 'widgets/glass_tab_bar.dart';
+import 'widgets/ios_install_guide.dart';
 
 class RootPage extends ConsumerStatefulWidget {
   const RootPage({super.key});
@@ -43,6 +44,10 @@ class _RootPageState extends ConsumerState<RootPage> {
   void initState() {
     super.initState();
     _startAutoArchive();
+    // iOS Web 首次启动「添加到主屏幕」引导（仅一次，标记存设置表）
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      maybeShowIosInstallGuide(ref, context);
+    });
   }
 
   /// 挂载自动存档服务（定时 + 生命周期暂停触发；开关读设置）
