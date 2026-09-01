@@ -10,6 +10,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../data/quiz_repository.dart';
 import '../data/seed_loader.dart';
@@ -19,7 +20,6 @@ import '../services/auto_archive_service.dart';
 import '../services/export_helper.dart';
 import 'theme_controller.dart';
 import 'glass_app_bar.dart';
-import 'question_manage_page.dart';
 import 'widgets/app_section_header.dart';
 import 'widgets/app_state_view.dart';
 import 'widgets/app_card.dart';
@@ -534,12 +534,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Future<void> _onBankAction(BankInfo bank, String action) async {
     switch (action) {
       case 'edit':
-        await Navigator.of(context).push(
-          AppPageRoute(
-            builder: (_) =>
-                QuestionManagePage(bankId: bank.bankId, bankName: bank.name),
-          ),
-        );
+        context.go('/me/questions/${bank.bankId}');
         return;
       case 'purge':
         await _purgeArchived(bank.bankId);

@@ -13,6 +13,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../data/quiz_repository.dart';
 import '../data/seed_loader.dart';
@@ -21,11 +22,8 @@ import '../services/app_log.dart';
 import 'theme_controller.dart';
 import 'glass_app_bar.dart';
 import 'responsive.dart';
-import 'bank_page.dart';
-import 'mock_exam_list_page.dart';
 import 'practice_page.dart';
 import 'settings_page.dart';
-import 'wrong_book_page.dart';
 import 'app_routes.dart';
 import 'widgets/app_card.dart';
 import 'widgets/circular_ring.dart';
@@ -170,6 +168,12 @@ class HomePageState extends ConsumerState<HomePage> {
   Future<void> refresh() async {
     final repo = await ref.read(quizRepositoryProvider);
     await _refresh(repo);
+  }
+
+  /// 通过 go_router 打开可深链页面（URL 路由）；嵌套路由下返回保留 RootPage，
+  /// 首页数据在浏览二级页期间不变（数据变更发生在会话页，走 _push 刷新）
+  void _goRoute(String path) {
+    context.go(path);
   }
 
   Future<void> _push(Widget page) async {
@@ -593,7 +597,7 @@ class HomePageState extends ConsumerState<HomePage> {
             subtitle: _mockPapers.isEmpty
                 ? '综合卷'
                 : '${_mockPapers.length + 1} 套',
-            onTap: () => _push(MockExamListPage(bankId: _currentBankId)),
+            onTap: () => _goRoute(_currentBankId != null ? '/mock?bank=$_currentBankId' : '/mock'),
           ),
         ),
         const SizedBox(width: 10),
@@ -613,7 +617,7 @@ class HomePageState extends ConsumerState<HomePage> {
             iconColor: theme.colorScheme.error,
             title: '错题本',
             subtitle: _wrongCount == 0 ? '暂无' : '$_wrongCount 道',
-            onTap: () => _push(WrongBookPage(bankId: _currentBankId)),
+            onTap: () => _goRoute(_currentBankId != null ? '/wrongbook?bank=$_currentBankId' : '/wrongbook'),
           ),
         ),
       ],
@@ -647,7 +651,7 @@ class HomePageState extends ConsumerState<HomePage> {
       ),
     );
     if (picked != null && mounted) {
-      _push(BankPage(bankId: picked));
+      _goRoute('/bank/$picked');
     }
   }
 
@@ -696,7 +700,7 @@ class HomePageState extends ConsumerState<HomePage> {
     return AppCard(
       padding: EdgeInsets.zero,
       margin: const EdgeInsets.only(bottom: 10),
-      onTap: () => _push(BankPage(bankId: bank.bankId)),
+      onTap: () => _goRoute('/bank/${bank.bankId}'),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(

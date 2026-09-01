@@ -16,11 +16,10 @@ library;
 import 'package:flutter/material.dart';
 import 'widgets/app_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../data/quiz_repository.dart';
 import '../models/models.dart';
-import 'chapter_overview_list_page.dart';
-import 'chapter_overview_page.dart';
 import 'glass_app_bar.dart';
 import 'practice_page.dart';
 import 'app_routes.dart';
@@ -343,14 +342,7 @@ class _BankPageState extends ConsumerState<BankPage> {
         ),
         subtitle: const Text('按章节浏览知识点 · 直达刷题/背题'),
         trailing: const Icon(Icons.chevron_right),
-        onTap: () => Navigator.of(context).push(
-          AppPageRoute(
-            builder: (_) => ChapterOverviewListPage(
-              bankId: widget.bankId,
-              bankName: _bankName,
-            ),
-          ),
-        ),
+        onTap: () => context.go('/bank/${widget.bankId}/chapters'),
       ),
     );
   }
@@ -556,14 +548,7 @@ class _ChapterTile extends StatelessWidget {
 
   /// 章节知识概览（单章）——章节行独立入口，与「全部」刷题分离
   void _goOverview(BuildContext context) {
-    Navigator.of(context).push(
-      AppPageRoute(
-        builder: (_) => ChapterOverviewPage(
-          bankId: bankId,
-          chapter: chapter,
-        ),
-      ),
-    );
+    context.go('/bank/$bankId/chapter/${Uri.encodeComponent(chapter)}');
   }
 
   @override

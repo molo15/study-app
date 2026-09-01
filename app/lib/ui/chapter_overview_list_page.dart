@@ -9,12 +9,11 @@ import 'package:flutter/material.dart';
 import 'widgets/app_card.dart';
 import 'responsive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../data/quiz_repository.dart';
 import '../models/models.dart';
-import 'chapter_overview_page.dart';
 import 'glass_app_bar.dart';
-import 'app_routes.dart';
 
 class ChapterOverviewListPage extends ConsumerStatefulWidget {
   const ChapterOverviewListPage({
@@ -62,15 +61,7 @@ class _ChapterOverviewListPageState
   }
 
   void _openChapter(ChapterOverview ov) {
-    Navigator.of(context).push(
-      AppPageRoute(
-        builder: (_) => ChapterOverviewPage(
-          bankId: widget.bankId,
-          chapter: ov.chapter,
-          bankName: widget.bankName,
-        ),
-      ),
-    );
+    context.go('/bank/${widget.bankId}/chapter/${Uri.encodeComponent(ov.chapter)}');
   }
 
   @override

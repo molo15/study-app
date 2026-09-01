@@ -44,6 +44,7 @@ dependencies:
   fl_chart: ^1.2.0
   sqflite_common_ffi_web: ^1.1.2
   web: ^1.1.1
+  go_router: ^18.0.0
 
 dev_dependencies:
   flutter_test:

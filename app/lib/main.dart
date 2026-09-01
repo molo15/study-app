@@ -7,7 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'data/app_database.dart';
 import 'services/db_factory.dart';
-import 'ui/root_page.dart';
+import 'ui/router.dart';
 import 'ui/theme_controller.dart';
 import 'ui/responsive.dart';
 import 'ui/widgets/frost_background.dart';
@@ -88,7 +88,7 @@ class QuizApp extends ConsumerWidget {
         ));
       });
     }
-    return MaterialApp(
+    return MaterialApp.router(
       title: '考研刷题',
       debugShowCheckedModeBanner: false,
       theme: config.buildThemeData(),
@@ -96,7 +96,7 @@ class QuizApp extends ConsumerWidget {
       themeMode: config.darkMode ? ThemeMode.dark : ThemeMode.light,
       builder: (context, child) =>
           _BackgroundStack(config: config, child: child!),
-      home: const RootPage(),
+      routerConfig: appRouter,
     );
   }
 }

@@ -5,12 +5,10 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../data/quiz_repository.dart';
-import 'app_routes.dart';
-import 'chapter_overview_list_page.dart';
 import 'glass_app_bar.dart';
-import 'mock_exam_list_page.dart';
 import 'theme_controller.dart';
 import 'responsive.dart';
 import 'widgets/app_card.dart';
@@ -95,7 +93,7 @@ class _BankHomePageState extends ConsumerState<BankHomePage> {
         AppCard(
           padding: EdgeInsets.zero,
           margin: const EdgeInsets.only(bottom: 18),
-          onTap: () => pushPage(context, const MockExamListPage()),
+          onTap: () => context.go('/mock'),
           child: Padding(
             padding: const EdgeInsets.all(18),
             child: Row(
@@ -183,10 +181,7 @@ class _BankHomePageState extends ConsumerState<BankHomePage> {
     return AppCard(
       padding: EdgeInsets.zero,
       margin: const EdgeInsets.only(bottom: 12),
-      onTap: () => pushPage(
-        context,
-        ChapterOverviewListPage(bankId: bank.bankId, bankName: bank.name),
-      ),
+      onTap: () => context.go('/bank/${bank.bankId}/chapters'),
       child: Padding(
         padding: const EdgeInsets.all(15),
         child: Row(
