@@ -5,6 +5,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'widgets/app_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/quiz_repository.dart';
@@ -123,8 +124,7 @@ class _MockHistoryPageState extends ConsumerState<MockHistoryPage> {
                 _StatsCard(sessions: _sessions, full: _full),
                 const SizedBox(height: 16),
                 for (final s in _sessions)
-                  Card(
-                    margin: const EdgeInsets.only(bottom: 8),
+                  AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
                       leading: Container(
                         width: 52,
@@ -210,7 +210,7 @@ class _StatsCard extends StatelessWidget {
             ],
           ),
         );
-    return Card(
+    return AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.symmetric(vertical: 6), 
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: Row(

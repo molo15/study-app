@@ -12,7 +12,7 @@ import 'app_routes.dart';
 import 'chapter_overview_list_page.dart';
 import 'glass_app_bar.dart';
 import 'theme_controller.dart';
-import 'widgets/glass_card.dart';
+import 'widgets/app_card.dart';
 
 class MemorizeHomePage extends ConsumerStatefulWidget {
   const MemorizeHomePage({super.key});
@@ -76,8 +76,9 @@ class _MemorizeHomePageState extends ConsumerState<MemorizeHomePage> {
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
       children: [
         // 背题模式说明卡
-        GlassCard(
-          depth: GlassDepth.strong,
+        AppCard(
+          depth: 1,
+          padding: EdgeInsets.zero,
           margin: const EdgeInsets.only(bottom: 18),
           child: Padding(
             padding: const EdgeInsets.all(18),
@@ -121,7 +122,8 @@ class _MemorizeHomePageState extends ConsumerState<MemorizeHomePage> {
     final cs = colors[bank.name] ?? [accent, accent];
     final initial = bank.name.isNotEmpty ? bank.name.substring(0, 1) : '?';
 
-    return GlassCard(
+    return AppCard(
+      padding: EdgeInsets.zero,
       margin: const EdgeInsets.only(bottom: 12),
       onTap: () => pushPage(
         context,

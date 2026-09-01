@@ -215,8 +215,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   Widget _buildStudyGoalCard(ThemeData theme) {
     final goal = _studyGoal;
-    return Card(
-      clipBehavior: Clip.antiAlias,
+    return AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.symmetric(vertical: 6), 
       child: Column(
         children: [
           SwitchListTile(
@@ -697,8 +696,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 const SizedBox(height: 16),
                 // ---------- 学习设置 ----------
                 const AppSectionHeader(title: '学习设置', helperText: '刷题时的显示与复习节奏'),
-                Card(
-                  clipBehavior: Clip.antiAlias,
+                AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.symmetric(vertical: 6), 
                   child: Column(
                     children: [
                       SwitchListTile(
@@ -746,7 +744,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   title: '外观设置',
                   helperText: '自定义主色、背景与圆角风格',
                 ),
-                Card(
+                AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.symmetric(vertical: 6), 
                   child: ListTile(
                     leading: _IconBox(
                       icon: Icons.palette_outlined,
@@ -761,8 +759,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 const SizedBox(height: 16),
                 // ---------- 数据与题库 ----------
                 const AppSectionHeader(title: '数据与题库', helperText: '题库包管理与数据备份'),
-                Card(
-                  clipBehavior: Clip.antiAlias,
+                AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.symmetric(vertical: 6), 
                   child: Column(
                     children: [
                       // 题库包区块：可折叠，默认收起（用户要求）
@@ -934,8 +931,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   title: '关于',
                   helperText: '本地优先 · 学习数据仅保存在设备',
                 ),
-                Card(
-                  clipBehavior: Clip.antiAlias,
+                AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.symmetric(vertical: 6), 
                   child: Column(
                     children: [
                       ListTile(

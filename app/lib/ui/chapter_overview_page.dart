@@ -6,6 +6,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'widgets/app_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/quiz_repository.dart';
@@ -365,8 +366,7 @@ class _KnowledgeCardState extends State<_KnowledgeCard> {
     final ratio = (p == null || p.total == 0)
         ? 0.0
         : (p.answered / p.total).clamp(0.0, 1.0);
-    return Card(
-      margin: EdgeInsets.zero,
+    return AppCard(padding: EdgeInsets.zero, margin: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
         child: Column(

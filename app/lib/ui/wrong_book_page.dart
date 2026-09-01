@@ -7,6 +7,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'widgets/app_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/quiz_repository.dart';
@@ -151,7 +152,7 @@ class _WrongBookPageState extends ConsumerState<WrongBookPage> {
             itemCount: _questions.length,
             itemBuilder: (context, index) {
               final q = _questions[index];
-              return Card(
+              return AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.symmetric(vertical: 6), 
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,

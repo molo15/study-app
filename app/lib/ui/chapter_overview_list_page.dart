@@ -6,6 +6,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'widgets/app_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/quiz_repository.dart';
@@ -109,12 +110,11 @@ class _ChapterOverviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
+    return AppCard(
+      padding: EdgeInsets.zero,
       margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
+      onTap: onTap,
+      child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -172,7 +172,6 @@ class _ChapterOverviewCard extends StatelessWidget {
             ],
           ),
         ),
-      ),
     );
   }
 }

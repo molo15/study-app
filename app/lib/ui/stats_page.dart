@@ -6,6 +6,7 @@ library;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'widgets/app_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/quiz_repository.dart';
@@ -107,7 +108,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
       children: [
         // 总览卡
-        Card(
+        AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.symmetric(vertical: 6), 
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -167,7 +168,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
         ),
         const SizedBox(height: 16),
         // 近 7 日做题量
-        Card(
+        AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.symmetric(vertical: 6), 
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -183,7 +184,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
         const SizedBox(height: 16),
         // 题型分布圆饼图（需求：饼图+柱形图结合）
         if (s.typeDistribution.isNotEmpty)
-          Card(
+          AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.symmetric(vertical: 6), 
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -204,7 +205,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
         const SizedBox(height: 16),
         // 作答结果分布圆饼图
         if (s.resultDistribution.isNotEmpty)
-          Card(
+          AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.symmetric(vertical: 6), 
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -227,7 +228,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
           ),
         const SizedBox(height: 16),
         // P2 章节掌握度：排序+筛选+折叠+分档着色
-        Card(
+        AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.symmetric(vertical: 6), 
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(

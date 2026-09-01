@@ -7,6 +7,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'widgets/app_card.dart';
 
 import '../data/grading.dart';
 import '../models/models.dart';
@@ -182,8 +183,7 @@ class _MockReviewPageState extends State<MockReviewPage> {
                   };
                   final bank = mockBankLabel(q.bankId);
                   final isFlagged = widget.flagged.contains(q.id);
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 8),
+                  return AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
                       leading: Container(
                         width: 40,

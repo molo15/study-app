@@ -13,7 +13,7 @@ import 'glass_app_bar.dart';
 import 'mock_exam_list_page.dart';
 import 'theme_controller.dart';
 import 'responsive.dart';
-import 'widgets/glass_card.dart';
+import 'widgets/app_card.dart';
 
 class BankHomePage extends ConsumerStatefulWidget {
   const BankHomePage({super.key});
@@ -92,7 +92,8 @@ class _BankHomePageState extends ConsumerState<BankHomePage> {
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
       children: [
         // 综合模拟卷 Banner
-        GlassCard(
+        AppCard(
+          padding: EdgeInsets.zero,
           margin: const EdgeInsets.only(bottom: 18),
           onTap: () => pushPage(context, const MockExamListPage()),
           child: Padding(
@@ -179,7 +180,8 @@ class _BankHomePageState extends ConsumerState<BankHomePage> {
     final cs = colors[bank.name] ?? [accent, accent];
     final initial = bank.name.isNotEmpty ? bank.name.substring(0, 1) : '?';
 
-    return GlassCard(
+    return AppCard(
+      padding: EdgeInsets.zero,
       margin: const EdgeInsets.only(bottom: 12),
       onTap: () => pushPage(
         context,

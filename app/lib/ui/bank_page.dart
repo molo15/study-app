@@ -14,6 +14,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'widgets/app_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/quiz_repository.dart';
@@ -291,8 +292,7 @@ class _BankPageState extends ConsumerState<BankPage> {
 
   /// 整本随机刷：次级入口（用户要求：选 50/100/150 题，按题型顺序排列）
   Widget _buildRandom(ThemeData theme) {
-    return Card(
-      margin: EdgeInsets.zero,
+    return AppCard(padding: EdgeInsets.zero, margin: EdgeInsets.zero,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
@@ -321,8 +321,7 @@ class _BankPageState extends ConsumerState<BankPage> {
 
   /// 章节知识概览入口（P2，v4 库独立成部分）：点击进入全库章节概览列表
   Widget _buildOverviewEntry(ThemeData theme) {
-    return Card(
-      margin: EdgeInsets.zero,
+    return AppCard(padding: EdgeInsets.zero, margin: EdgeInsets.zero,
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
@@ -401,8 +400,7 @@ class _BankPageState extends ConsumerState<BankPage> {
 
   /// 编/章组卡：ExpansionTile 结构不变，统一行内间距、题量弱化展示
   Widget _buildGroupCard(ThemeData theme, ChapterGroup group) {
-    return Card(
-      margin: EdgeInsets.zero,
+    return AppCard(padding: EdgeInsets.zero, margin: EdgeInsets.zero,
       child: ExpansionTile(
         tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         childrenPadding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),

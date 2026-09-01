@@ -8,6 +8,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'widgets/app_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/quiz_repository.dart';
@@ -253,7 +254,7 @@ class _MemorizePageState extends ConsumerState<MemorizePage> {
           ),
         const SizedBox(height: 12),
         // 题干卡
-        Card(
+        AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.symmetric(vertical: 6), 
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -347,7 +348,7 @@ class _MemorizePageState extends ConsumerState<MemorizePage> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 96),
       children: [
-        Card(
+        AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.symmetric(vertical: 6), 
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -403,8 +404,7 @@ class _MemorizePageState extends ConsumerState<MemorizePage> {
           ),
           const SizedBox(height: 8),
           for (final q in _notYet.take(50))
-            Card(
-              margin: EdgeInsets.zero,
+            AppCard(padding: EdgeInsets.zero, margin: EdgeInsets.zero,
               child: ListTile(
                 dense: true,
                 leading: _TypeChip(type: q.type),

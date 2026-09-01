@@ -281,12 +281,11 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget _buildStudyGoalCard(ThemeData theme) {
     final goal = _studyGoal!;
     final days = goal.daysUntilExam(DateTime.now());
-    return Card(
+    return AppCard(
+      padding: EdgeInsets.zero,
       margin: const EdgeInsets.only(bottom: 16),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => _push(const SettingsPage()),
-        child: Padding(
+      onTap: () => _push(const SettingsPage()),
+      child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
@@ -334,7 +333,6 @@ class _HomePageState extends ConsumerState<HomePage> {
             ],
           ),
         ),
-      ),
     );
   }
 

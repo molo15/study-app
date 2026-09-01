@@ -8,7 +8,10 @@
 
 const BUILD_ID = '__BUILD_ID__';
 const SHELL_CACHE = 'quiz-shell-' + BUILD_ID;
-const RUNTIME_CACHE = 'quiz-runtime-' + BUILD_ID;
+// 运行时缓存不带 BUILD_ID：题库 zip 等资源 URL 自带版本号（如 v0.14.0），
+// 跨构建版本保留运行时缓存可避免每次发版后全量重新下载题库；
+// 资源 URL 变化时自然由缓存优先策略重新抓取新版本。
+const RUNTIME_CACHE = 'quiz-runtime';
 
 /* App Shell 预缓存清单：离线打开 App 的核心资源。
  * - 含 Flutter 引擎、主程序、数据库引擎（sqlite3.wasm + sqflite_sw.js）、

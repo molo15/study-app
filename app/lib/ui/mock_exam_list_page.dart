@@ -2,6 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'widgets/app_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/quiz_repository.dart';
@@ -90,7 +91,7 @@ class _MockExamListPageState extends ConsumerState<MockExamListPage> {
                   // 综合模拟卷：随机组卷入口（恒置顶）
                   final sessions =
                       _history['composite'] ?? const <MockSession>[];
-                  return Card(
+                  return AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.symmetric(vertical: 6), 
                     child: ListTile(
                       leading: Container(
                         width: 40,
@@ -137,7 +138,7 @@ class _MockExamListPageState extends ConsumerState<MockExamListPage> {
                 }
                 final p = _papers[index - 1];
                 final sessions = _history[p.id] ?? const <MockSession>[];
-                return Card(
+                return AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.symmetric(vertical: 6), 
                   child: ListTile(
                     leading: Container(
                       width: 40,

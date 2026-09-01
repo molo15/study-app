@@ -324,7 +324,7 @@ class _ThemePanelPageState extends ConsumerState<_ThemePanelPage> {
                 if (!kIsWeb) ...[
                   const AppSectionHeader(title: '背景图片'),
                   const SizedBox(height: 8),
-                  Card(
+                  AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.symmetric(vertical: 6), 
                     child: ListTile(
                       leading: _IconBox(
                         icon: Icons.image_outlined,

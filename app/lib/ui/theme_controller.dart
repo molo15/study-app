@@ -62,7 +62,7 @@ class AppThemeConfig {
   final bool reduceMotion;
 
   /// 冷磨砂（UI v2）：开启后背景用渐变+光斑（FrostBackground），
-  /// 卡片用毛玻璃（GlassCard），关闭则回退纯色/背景图旧逻辑。默认开。
+  /// 卡片用毛玻璃（AppCard），关闭则回退纯色/背景图旧逻辑。默认开。
   final bool frost;
 
   /// 冷磨砂背景渐变端点色（顶部 / 底部）
@@ -72,7 +72,7 @@ class AppThemeConfig {
   /// 冷磨砂强调色（冷青蓝）
   final String frostAccent;
 
-  /// 玻璃强度（0~1，BackdropFilter 半透明层不透明度，供 GlassCard 使用）
+  /// 玻璃强度（0~1，BackdropFilter 半透明层不透明度，供 AppCard 使用）
   final double glassOpacity;
 
   Color get primary => parseHexColor(primaryColor);
@@ -289,6 +289,51 @@ class AppThemeConfig {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
+      // 弹窗主题（审查 P1-1）：dialog/bottomSheet/datePicker 玻璃化——
+      // 半透明白 + 统一圆角(cornerRadius)，与冷磨砂卡片体系视觉对齐，
+      // 替代 Flutter 默认 M3 实色（圆角 28）样式。
+      dialogTheme: DialogThemeData(
+        backgroundColor: (darkMode ? const Color(0xFF1E2428) : Colors.white)
+            .withValues(alpha: 0.92),
+        surfaceTintColor: Colors.transparent,
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(cornerRadius),
+          side: BorderSide(
+            color: (darkMode ? Colors.white : Colors.white)
+                .withValues(alpha: darkMode ? 0.18 : 0.55),
+          ),
+        ),
+        titleTextStyle: TextStyle(
+          fontSize: 17,
+          fontWeight: FontWeight.w700,
+          color: scheme.onSurface,
+        ),
+        contentTextStyle: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: (darkMode ? const Color(0xFF1E2428) : Colors.white)
+            .withValues(alpha: 0.96),
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        showDragHandle: false,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(cornerRadius)),
+          side: BorderSide(
+            color: (darkMode ? Colors.white : Colors.white)
+                .withValues(alpha: darkMode ? 0.18 : 0.5),
+          ),
+        ),
+      ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: (darkMode ? const Color(0xFF1E2428) : Colors.white)
+            .withValues(alpha: 0.96),
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(cornerRadius),
+        ),
+      ),
+
       // 覆盖式横滑（v1.1.3）：新页右滑入，下层完全静止，消除转场时背景浮现其他页面；
       // 慢速由 app_routes.routeDuration 控制（400ms 正向 / 350ms 返回）
       pageTransitionsTheme: PageTransitionsTheme(
