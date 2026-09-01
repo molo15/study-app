@@ -6,7 +6,7 @@
     "background_color": "#0F1214",
     "theme_color": "#0F1214",
     "description": "考研刷题 · 五科题库 + 背题 + 模拟卷（本地优先，多端存档）",
-    "orientation": "portrait-primary",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

@@ -9,6 +9,7 @@ import 'data/app_database.dart';
 import 'services/db_factory.dart';
 import 'ui/root_page.dart';
 import 'ui/theme_controller.dart';
+import 'ui/responsive.dart';
 import 'ui/widgets/frost_background.dart';
 import 'ui/app_background_image.dart';
 
@@ -164,7 +165,7 @@ class _BackgroundStack extends StatelessWidget {
     // 解法：改用显式 tight 尺寸（宽度取 min(560, 视口宽)，高度取视口高），
     // 消除矛盾约束，在 tight（测试/窄屏）与无界（web）两种约束下行为一致。
     final viewportSize = MediaQuery.sizeOf(context);
-    final contentWidth = viewportSize.width < 560 ? viewportSize.width : 560.0;
+    final contentWidth = effectiveContentWidth(context);
     return Align(
       alignment: Alignment.topCenter,
       child: SizedBox(

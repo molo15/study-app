@@ -12,6 +12,7 @@ import 'chapter_overview_list_page.dart';
 import 'glass_app_bar.dart';
 import 'mock_exam_list_page.dart';
 import 'theme_controller.dart';
+import 'responsive.dart';
 import 'widgets/glass_card.dart';
 
 class BankHomePage extends ConsumerStatefulWidget {
@@ -129,7 +130,21 @@ class _BankHomePageState extends ConsumerState<BankHomePage> {
         ),
 
         _sectionTitle('五科题库', accent),
-        ..._banks.map((b) => _bankItem(theme, accent, ink2, b)),
+        // 宽屏（平板/桌面）题库两列，手机单列（P2 响应式）
+        if (isWideScreen(context))
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              for (final b in _banks)
+                SizedBox(
+                  width: (effectiveContentWidth(context) - 32 - 12) / 2,
+                  child: _bankItem(theme, accent, ink2, b),
+                ),
+            ],
+          )
+        else
+          ..._banks.map((b) => _bankItem(theme, accent, ink2, b)),
       ],
     );
   }
