@@ -90,7 +90,7 @@
   .avatar{width:40px;height:40px;border-radius:14px;background:linear-gradient(140deg,#8fb1f0,#5b7fd0);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;box-shadow:var(--shadow-sm);border:1px solid rgba(255,255,255,.55)}
 
   /* ===== 首页 ===== */
-  .hero{border-radius:var(--r-lg);padding:22px;display:flex;align-items:center;gap:16px;margin-bottom:20px;position:relative;overflow:hidden}
+  .hero{border-radius:var(--r-lg);padding:22px;display:flex;align-items:center;gap:16px;margin-bottom:18px;position:relative;overflow:hidden}
   .hero::after{content:"";position:absolute;top:-36px;right:-36px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(130,165,240,.38),transparent 65%)}
   .hero .lbl{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:1.2px;text-transform:uppercase}
   .hero h2{font-size:20px;font-weight:800;margin:6px 0 4px;letter-spacing:.3px}
@@ -102,9 +102,9 @@
   .ring .val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:17px;font-weight:800}
   .ring .cap{font-size:8.5px;color:var(--ink-3);font-weight:600}
 
-  .sec{font-size:13px;font-weight:700;color:var(--ink-2);margin:6px 2px 12px;display:flex;justify-content:space-between;align-items:center}
+  .sec{font-size:13px;font-weight:700;color:var(--ink-2);margin:8px 2px 10px;display:flex;justify-content:space-between;align-items:center}
   .sec a{font-size:11.5px;color:var(--accent);font-weight:600;text-decoration:none;cursor:pointer}
-  .qrow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px}
+  .qrow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
   .qcard{border-radius:var(--r-md);padding:16px;display:flex;flex-direction:column;gap:3px;position:relative;overflow:hidden;cursor:pointer;transition:transform .2s var(--ease)}
   .qcard:active{transform:scale(.96)}
   .qcard .ic{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:7px}
@@ -115,21 +115,20 @@
   .ic.nw{background:linear-gradient(140deg,rgba(63,168,138,.28),rgba(63,168,138,.12));color:#2f8f74}
   .ic.pk{background:linear-gradient(140deg,rgba(79,124,212,.28),rgba(79,124,212,.12));color:var(--accent)}
 
-  .quick3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin-bottom:22px}
+  .quick3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin-bottom:20px}
   .quick{border-radius:var(--r-md);padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:transform .2s var(--ease)}
   .quick:active{transform:scale(.95)}
   .quick .qi{width:40px;height:40px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:19px}
   .quick .qt{font-size:11.5px;font-weight:700;color:var(--ink-2)}
 
-  .bankrow{display:flex;gap:11px;overflow-x:auto;padding:2px 2px 14px;scrollbar-width:none}
-  .bankrow::-webkit-scrollbar{display:none}
-  .bank{border-radius:var(--r-md);padding:14px;min-width:106px;flex:none;cursor:pointer;transition:transform .2s var(--ease)}
+  .bankrow{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;padding:2px 0 6px}
+  .bank{border-radius:var(--r-md);padding:13px 12px;min-width:0;cursor:pointer;transition:transform .2s var(--ease)}
   .bank:active{transform:scale(.95)}
   .bank .dot{width:28px;height:28px;border-radius:10px;margin-bottom:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:800}
   .bank .bn{font-size:12.5px;font-weight:800}
   .bank .bc{font-size:10.5px;color:var(--ink-3);font-weight:500;margin-top:3px}
 
-  .datagrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin-bottom:20px}
+  .datagrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin-bottom:16px}
   .dcell{border-radius:var(--r-md);padding:14px 10px;text-align:center}
   .dcell .v{font-size:20px;font-weight:800;letter-spacing:.3px}
   .dcell .k{font-size:10.5px;color:var(--ink-3);font-weight:600;margin-top:3px}
@@ -229,6 +228,30 @@
   .kbtn.know{background:linear-gradient(140deg,var(--accent-2),var(--accent));color:#fff;border:none;box-shadow:0 10px 26px rgba(79,124,212,.4)}
   .kfoot{text-align:center;font-size:10.5px;color:var(--ink-3);padding-bottom:2px}
 
+  /* ===== 背题双模式：知识卡片 / 题目 ===== */
+  .modeswitch{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:20px}
+  .modecard{border-radius:var(--r-md);padding:16px 14px;display:flex;flex-direction:column;gap:5px;cursor:pointer;transition:all .25s var(--ease);position:relative;overflow:hidden;border:1px solid var(--line-2);background:var(--glass-2);backdrop-filter:blur(14px)}
+  .modecard:active{transform:scale(.96)}
+  .modecard .mi{width:40px;height:40px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:19px;margin-bottom:5px}
+  .modecard .mt{font-size:14px;font-weight:800}
+  .modecard .md{font-size:11px;color:var(--ink-3);font-weight:500;line-height:1.45}
+  .modecard.on{border-color:rgba(79,124,212,.6);background:linear-gradient(140deg,rgba(122,162,238,.18),rgba(122,162,238,.06));box-shadow:0 8px 22px rgba(79,124,212,.16)}
+  .modecard.on .mt{color:var(--accent)}
+  /* 背题卡页内模式切换（顶栏小标签） */
+  .memode{display:inline-flex;gap:3px;padding:3px;border-radius:10px;background:rgba(122,162,238,.14);margin-left:auto;flex:none}
+  .memode span{padding:6px 13px;border-radius:8px;font-size:11px;font-weight:700;color:var(--ink-3);cursor:pointer;transition:all .2s;white-space:nowrap}
+  .memode span.on{background:#fff;color:var(--accent);box-shadow:0 2px 8px rgba(79,124,212,.15)}
+  /* 背题卡页题目模式 */
+  .memquiz{display:none;flex-direction:column;gap:14px;width:100%;padding:6px 22px;flex:1;overflow:auto}
+  .memquiz.show{display:flex}
+  .kcardwrap.hide{display:none}
+  .mqtype{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;color:var(--accent);padding:4px 10px;border-radius:8px;background:rgba(122,162,238,.16);border:1px solid rgba(122,162,238,.32);align-self:flex-start}
+  .mqtext{font-size:15px;font-weight:650;line-height:1.65;letter-spacing:.1px}
+  .mqexplain{border-radius:var(--r-md);padding:15px 16px;display:none;background:var(--glass-2);backdrop-filter:blur(14px);border:1px solid var(--line)}
+  .mqexplain.show{display:block;animation:pageIn .4s var(--ease)}
+  .mqexplain .el{font-size:10.5px;font-weight:800;letter-spacing:1px;margin-bottom:7px;color:var(--ok)}
+  .mqexplain .et{font-size:12.5px;line-height:1.75;color:var(--ink-2)}
+
   /* ===== 统计页 ===== */
   .stathero{border-radius:var(--r-lg);padding:22px;display:flex;align-items:center;gap:18px;margin-bottom:18px;position:relative;overflow:hidden}
   .stathero::after{content:"";position:absolute;bottom:-40px;left:-30px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(122,162,238,.3),transparent 62%)}
@@ -321,11 +344,11 @@
   .qcard-main::after{content:"";position:absolute;top:-40px;right:-40px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(130,165,240,.25),transparent 65%)}
   .qtype{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;color:var(--accent);padding:4px 10px;border-radius:8px;background:rgba(122,162,238,.16);border:1px solid rgba(122,162,238,.32);margin-bottom:10px}
   .qtype .n{color:var(--ink-3);font-weight:600}
-  .qtext{font-size:14.5px;font-weight:650;line-height:1.6;letter-spacing:.1px}
-  .opts{display:flex;flex-direction:column;gap:9px}
-  .opt{display:flex;align-items:center;gap:11px;padding:11px 14px;border-radius:var(--r-md);border:1px solid var(--line-2);cursor:pointer;transition:all .2s var(--ease);background:var(--glass-2);backdrop-filter:blur(14px)}
-  .opt .o{width:24px;height:24px;flex:none;border-radius:8px;background:rgba(255,255,255,.75);border:1px solid rgba(160,175,200,.45);display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800;color:var(--ink-2)}
-  .opt .t{font-size:13px;font-weight:550;color:var(--ink-2);line-height:1.5}
+  .qtext{font-size:15.5px;font-weight:650;line-height:1.65;letter-spacing:.1px}
+  .opts{display:flex;flex-direction:column;gap:12px}
+  .opt{display:flex;align-items:center;gap:13px;padding:15px 16px;border-radius:var(--r-md);border:1px solid var(--line-2);cursor:pointer;transition:all .2s var(--ease);background:var(--glass-2);backdrop-filter:blur(14px)}
+  .opt .o{width:30px;height:30px;flex:none;border-radius:10px;background:rgba(255,255,255,.75);border:1px solid rgba(160,175,200,.45);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--ink-2)}
+  .opt .t{font-size:14.5px;font-weight:600;color:var(--ink-2);line-height:1.6}
   .opt.sel{border-color:rgba(79,124,212,.7);background:linear-gradient(140deg,rgba(122,162,238,.22),rgba(122,162,238,.08));box-shadow:0 8px 22px rgba(79,124,212,.16)}
   .opt.sel .o{background:linear-gradient(140deg,var(--accent-2),var(--accent));color:#fff;border:none}
   .opt.sel .t{color:var(--ink)}
@@ -400,16 +423,181 @@
 
   .stage-note{max-width:392px;text-align:center;font-size:12px;color:#6a7890;line-height:1.9}
   .stage-note b{color:#44536c}
+  /* ============================================================
+     多端设计参考（v2） · 形态切换器 / 设备外框 / 侧边栏 / 响应式
+     ============================================================ */
+  /* —— 形态切换器 —— */
+  .form-switch{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:stretch}
+  .form-switch button{display:inline-flex;flex-direction:column;align-items:center;gap:2px;padding:10px 18px;border-radius:14px;border:1px solid var(--line-2);background:var(--glass-2);color:var(--ink-2);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;backdrop-filter:blur(12px);transition:all .25s var(--ease);box-shadow:var(--shadow-sm)}
+  .form-switch button small{font-size:10px;color:var(--ink-3);font-weight:500}
+  .form-switch button:hover{transform:translateY(-2px)}
+  .form-switch button.on{background:linear-gradient(140deg,var(--accent-2),var(--accent));color:#fff;border-color:transparent;box-shadow:0 10px 26px rgba(79,124,212,.35)}
+  .form-switch button.on small{color:rgba(255,255,255,.85)}
+
+  /* —— 设备外框（通用 + 四形态） —— */
+  .device{position:relative;overflow:hidden;flex:none;transition:width .55s var(--ease),height .55s var(--ease),border-radius .55s var(--ease),padding .55s var(--ease)}
+  .d-phone{width:392px;height:820px;border-radius:56px;padding:14px;background:linear-gradient(160deg,#eef2f8,#d9e2ef);box-shadow:0 34px 90px rgba(40,60,100,.38),inset 0 0 0 1px rgba(255,255,255,.62)}
+  .d-phone::before{content:"";position:absolute;top:27px;left:50%;transform:translateX(-50%);width:118px;height:30px;border-radius:20px;background:rgba(20,28,44,.85);z-index:95}
+  .d-phone::after{content:"";position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:132px;height:5px;border-radius:3px;background:rgba(30,42,60,.85);z-index:95}
+  .d-ipad{width:768px;height:1024px;border-radius:40px;background:linear-gradient(160deg,#eef2f8,#d9e2ef);box-shadow:0 40px 110px rgba(40,60,100,.4),inset 0 0 0 1px rgba(255,255,255,.6)}
+  .d-ipad::before{content:"";position:absolute;top:14px;left:50%;transform:translateX(-50%);width:9px;height:9px;border-radius:50%;background:rgba(20,28,44,.55);z-index:95}
+  .d-tablet{width:920px;height:640px;border-radius:26px;background:linear-gradient(160deg,#eef2f8,#d9e2ef);box-shadow:0 34px 90px rgba(40,60,100,.38),inset 0 0 0 1px rgba(255,255,255,.6)}
+  .d-tablet::before{content:"";position:absolute;top:12px;left:50%;transform:translateX(-50%);width:9px;height:9px;border-radius:50%;background:rgba(20,28,44,.5);z-index:95}
+  .d-desktop{width:1180px;height:760px;border-radius:16px;background:#e4ebf4;box-shadow:0 40px 110px rgba(40,60,100,.4),inset 0 0 0 1px rgba(255,255,255,.7)}
+  /* 屏幕（内容区）随外框适配 */
+  .d-ipad .screen,.d-tablet .screen{inset:0;border-radius:26px}
+  .d-desktop .screen{inset:0;border-radius:14px}
+
+  /* —— iOS 状态栏（仅手机） —— */
+  .sysbar{display:none;position:absolute;top:0;left:0;right:0;height:48px;z-index:40;align-items:center;justify-content:space-between;padding:16px 26px 0;font-size:14px;font-weight:700;color:var(--ink);pointer-events:none}
+  .sysbar .s-icons{display:flex;align-items:center;gap:7px}
+  .d-phone .sysbar{display:flex}
+
+  /* —— 桌面窗口标题栏（仅桌面） —— */
+  .winbar{display:none;position:absolute;top:0;left:0;right:0;height:42px;z-index:45;align-items:center;gap:8px;padding:0 16px;background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(255,255,255,.55));border-bottom:1px solid rgba(255,255,255,.7);backdrop-filter:blur(14px)}
+  .winbar .dot{width:12px;height:12px;border-radius:50%}
+  .winbar .w-t{font-size:12px;font-weight:700;color:var(--ink-2);margin-left:6px;letter-spacing:.3px}
+  .d-desktop .winbar{display:flex}
+
+  /* —— App 主容器：侧边栏 + 内容区 —— */
+  .app{position:absolute;inset:0;display:flex;flex-direction:row}
+  .d-desktop .app{top:42px}
+  .stage-area{flex:1;position:relative;min-width:0;height:100%}
+
+  /* ===== 侧边栏（平板/桌面） ===== */
+  .sidebar{display:none}
+  .d-ipad .sidebar,.d-tablet .sidebar,.d-desktop .sidebar{display:flex;flex-direction:column;flex:none;z-index:30;background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(255,255,255,.4));backdrop-filter:blur(24px) saturate(170%);-webkit-backdrop-filter:blur(24px) saturate(170%);border-right:1px solid var(--line);padding:20px 10px 18px;gap:6px}
+  .d-ipad .sidebar,.d-tablet .sidebar{width:66px}
+  .d-desktop .sidebar{width:232px;padding:20px 14px 18px}
+  .s-brand{width:42px;height:42px;border-radius:14px;background:linear-gradient(140deg,#8fb1f0,#5b7fd0);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:17px;margin:0 auto 16px;box-shadow:var(--shadow-sm);border:1px solid rgba(255,255,255,.55);flex:none}
+  .d-desktop .s-brand{margin:0 0 16px 6px}
+  .s-nav{display:flex;flex-direction:column;gap:6px;flex:1}
+  .s-item{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:14px;border:none;background:transparent;cursor:pointer;color:var(--ink-2);font-family:inherit;font-size:13.5px;font-weight:700;transition:all .2s var(--ease);white-space:nowrap}
+  .s-item .si{font-size:19px;width:22px;text-align:center;flex:none}
+  .d-ipad .s-item,.d-tablet .s-item{justify-content:center;padding:12px 0}
+  .d-ipad .s-item .sl,.d-tablet .s-item .sl{display:none}
+  .s-item:hover{background:rgba(122,162,238,.12)}
+  .s-item.on{color:var(--accent);background:linear-gradient(140deg,rgba(122,162,238,.2),rgba(122,162,238,.08));box-shadow:inset 0 0 0 1px rgba(122,162,238,.3)}
+  .s-item.on .si{filter:drop-shadow(0 4px 10px rgba(79,124,212,.45))}
+  .s-foot{margin-top:auto;padding:12px 10px;border-radius:14px;background:var(--glass-3);border:1px solid var(--line-2);font-size:11px;color:var(--ink-2);text-align:center;line-height:1.6}
+  .s-foot b{color:var(--err);font-size:14px}
+  .d-ipad .s-foot,.d-tablet .s-foot{display:none}
+  /* 平板侧边栏展开（≡） */
+  .side-toggle{display:none}
+  .d-ipad .side-toggle,.d-tablet .side-toggle{display:flex;align-items:center;justify-content:center;margin:0 auto 12px;width:40px;height:40px;border-radius:12px;background:var(--glass-3);border:1px solid var(--line-2);color:var(--ink-2);cursor:pointer;font-size:17px;flex:none}
+  .d-ipad .sidebar.open,.d-tablet .sidebar.open{width:200px}
+  .d-ipad .sidebar.open .s-item,.d-tablet .sidebar.open .s-item{justify-content:flex-start;padding:11px 14px}
+  .d-ipad .sidebar.open .s-item .sl,.d-tablet .sidebar.open .s-item .sl{display:inline}
+  .d-ipad .sidebar.open .s-foot,.d-tablet .sidebar.open .s-foot{display:block}
+  .d-ipad .sidebar.open .s-brand,.d-tablet .sidebar.open .s-brand{margin:0 0 16px 6px}
+
+  /* ===== 顶栏 / 滚动区 / 底栏随形态适配 ===== */
+  .d-ipad .page .topbar,.d-tablet .page .topbar,.d-desktop .page .topbar{position:static;background:none;backdrop-filter:none;padding:22px 24px 8px}
+  .d-ipad .page .scroll,.d-tablet .page .scroll,.d-desktop .page .scroll{padding:4px 24px 20px}
+  .d-ipad .tabbar,.d-tablet .tabbar,.d-desktop .tabbar{display:none}
+  .d-ipad .subnav,.d-tablet .subnav,.d-desktop .subnav{padding:20px 24px 10px}
+  .d-ipad .sub-scroll,.d-tablet .sub-scroll,.d-desktop .sub-scroll{padding:6px 24px 24px}
+
+  /* ===== 背题卡 / 答题 / 模拟考：去掉手机专用 hack，改响应式 ===== */
+  #sub-memcard .seg{margin-top:6px}
+  .d-phone #sub-memcard .seg{margin-top:104px}
+  #sub-quiz .scroll{padding-top:14px}
+  .d-phone #sub-quiz .scroll{padding-top:150px}
+  #sub-exam .scroll{padding-top:14px}
+  .d-phone #sub-exam .scroll{padding-top:202px}
+  /* 桌面答题内容限宽居中 */
+  .d-desktop #sub-quiz .scroll,.d-desktop #sub-exam .scroll{max-width:760px;margin:0 auto;width:100%}
+  .d-desktop #sub-quiz .quizbar,.d-desktop #sub-exam .exambar{max-width:760px;margin:0 auto;width:100%}
+
+  /* ===== 宽屏多栏（桌面/平板） ===== */
+  .d-desktop .banklist,.d-ipad .banklist,.d-tablet .banklist{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .d-desktop .memlist,.d-ipad .memlist,.d-tablet .memlist{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .d-desktop .chaps,.d-ipad .chaps,.d-tablet .chaps{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .d-desktop .meitems,.d-ipad .meitems,.d-tablet .meitems{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .d-desktop .stat2{grid-template-columns:repeat(4,1fr)}
+  .d-desktop .bankrow{gap:14px}
+  .d-desktop .bank{padding:18px}
+  .home-col,.stats-col,.mock-col{min-width:0}
+  .d-desktop #p-home .scroll,.d-ipad #p-home .scroll,.d-tablet #p-home .scroll{display:grid;grid-template-columns:1.15fr 1fr;gap:0 22px;align-items:start}
+  .d-desktop #p-stats .scroll{display:grid;grid-template-columns:1fr 1fr;gap:0 22px;align-items:start}
+  .d-desktop #sub-mock .sub-scroll{display:grid;grid-template-columns:1fr 1fr;gap:0 22px;align-items:start}
+
+  /* ===== 答题卡形态适配：平板浮层 / 桌面右侧常驻 ===== */
+  .d-ipad #sub-sheet,.d-tablet #sub-sheet{position:absolute;inset:auto 14px 16px auto;width:300px;height:auto;max-height:74%;border-radius:var(--r-lg);box-shadow:var(--shadow);background:radial-gradient(420px 300px at 90% -10%,rgba(255,255,255,.85),transparent 60%),linear-gradient(165deg,#e7eef7,#c9d7ea);transform:translateY(26px) scale(.97);opacity:0;transition:transform .45s var(--ease),opacity .35s var(--ease)}
+  .d-ipad #sub-sheet.open,.d-tablet #sub-sheet.open{transform:none;opacity:1}
+  .d-ipad #sub-sheet .sub-scroll,.d-tablet #sub-sheet .sub-scroll{padding:6px 18px 18px;max-height:58vh;overflow:auto}
+  .d-ipad #sub-sheet .subnav,.d-tablet #sub-sheet .subnav{padding:16px 18px 8px}
+  .d-desktop #sub-sheet{position:absolute;inset:0 0 0 auto;width:280px;height:100%;border-radius:0;box-shadow:-16px 0 40px rgba(38,58,92,.12);background:linear-gradient(165deg,rgba(231,238,247,.92),rgba(201,215,234,.92));transform:translateX(100%);transition:transform .45s var(--ease)}
+  .d-desktop #sub-sheet.open{transform:none}
+  .d-desktop #sub-sheet .sub-scroll{padding:10px 18px 20px}
+  .d-desktop #sub-sheet .subnav{padding:18px 18px 8px}
+
+  /* ===== 标记语义补全：审题标记（练习）/ 存疑标记（模拟考） ===== */
+  .gn.flag{background:linear-gradient(140deg,rgba(224,161,60,.18),rgba(224,161,60,.06));color:#c88a2c;border-color:rgba(224,161,60,.55)}
+  .legend .lg.flag-dot .dot2{background:linear-gradient(140deg,#f0c76f,#e0a13c);border-radius:50%}
+  .flagbtn{display:inline-flex;align-items:center;gap:6px;padding:10px 12px;border-radius:13px;font-size:12px;font-weight:800;border:1px dashed rgba(224,161,60,.55);color:#c88a2c;background:rgba(224,161,60,.08);cursor:pointer;font-family:inherit;flex:none}
+  .flagbtn.on{background:linear-gradient(140deg,rgba(224,161,60,.24),rgba(224,161,60,.1));border-style:solid}
+
+  /* ===== 7 日柱状图横轴 ===== */
+  .spark-axis{display:flex;justify-content:space-between;font-size:9px;color:var(--ink-3);font-weight:600;margin-top:6px;padding:0 1px}
+
+  /* ===== 补充适配 ===== */
+  .legend{flex-wrap:wrap;row-gap:8px}
+  .d-ipad .subpage .topbar,.d-tablet .subpage .topbar,.d-desktop .subpage .topbar{position:static;background:none;backdrop-filter:none;padding-top:14px}
+  .d-desktop .grid12{grid-template-columns:repeat(6,1fr)}
 </style>
 </head>
 <body>
 
-  <div class="stage">考研刷题 · UI v2 · 流动 / 沉浸 / 质感</div>
+  <div class="stage">考研刷题 · UI v2 · 多端设计参考 · 流动 / 沉浸 / 质感</div>
 
-  <div class="phone">
+  <div class="form-switch" id="formSwitch">
+    <button class="on" data-f="phone">📱 手机竖屏<small>392×820 · 底部Tab</small></button>
+    <button data-f="ipad">📱 iPad 竖屏<small>768×1024 · 侧边栏</small></button>
+    <button data-f="tablet">📟 平板横屏<small>920×640 · 侧边栏</small></button>
+    <button data-f="desktop">🖥️ 桌面<small>1180×760 · 全侧边栏</small></button>
+  </div>
+
+  <div class="device d-phone" id="device">
     <div class="screen">
       <!-- 共享背景光斑（沉浸：永不跳动） -->
       <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div>
+
+      <!-- iOS 状态栏（仅手机壳展示） -->
+      <div class="sysbar">
+        <span>9:41</span>
+        <span class="s-icons">
+          <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1" opacity=".8"/><rect x="9" y="2.5" width="3" height="8.5" rx="1" opacity=".6"/><rect x="13.5" y="0" width="3" height="11" rx="1" opacity=".4"/></svg>
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 10.2a1.2 1.2 0 1 0 0 .01z"/><path d="M8 8 5.7 5.7a3.8 3.8 0 0 1 4.6 0L8 8z" opacity=".85"/><path d="M8 5 4.5 1.5a8 8 0 0 1 7 0L8 5z" opacity=".7"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="currentColor"><rect x="0" y="1" width="21" height="10" rx="3" fill="none" stroke="currentColor" stroke-opacity=".5"/><rect x="2" y="3" width="15" height="6" rx="1.5"/><path d="M22.5 4v4c1.3-.3 2-.9 2-2s-.7-1.7-2-2z" opacity=".5"/></svg>
+        </span>
+      </div>
+
+      <!-- 桌面窗口标题栏（仅桌面展示） -->
+      <div class="winbar">
+        <span class="dot" style="background:#ff5f57"></span>
+        <span class="dot" style="background:#febc2e"></span>
+        <span class="dot" style="background:#28c840"></span>
+        <span class="w-t">考研刷题 · 冷磨砂</span>
+      </div>
+
+      <div class="app">
+        <!-- 侧边栏（平板/桌面形态；手机隐藏） -->
+        <aside class="sidebar" id="sidebar">
+          <div class="side-toggle" id="sideToggle">☰</div>
+          <div class="s-brand">研</div>
+          <nav class="s-nav">
+            <button class="s-item on" data-p="home" onclick="go('home')"><span class="si">◈</span><span class="sl">今日</span></button>
+            <button class="s-item" data-p="bank" onclick="go('bank')"><span class="si">▤</span><span class="sl">题库</span></button>
+            <button class="s-item" data-p="mem" onclick="go('mem')"><span class="si">♻</span><span class="sl">背题</span></button>
+            <button class="s-item" data-p="stats" onclick="go('stats')"><span class="si">◔</span><span class="sl">统计</span></button>
+            <button class="s-item" data-p="me" onclick="go('me')"><span class="si">☰</span><span class="sl">我的</span></button>
+          </nav>
+          <div class="s-foot">距 2027 考研<br><b>128 天</b></div>
+        </aside>
+
+        <!-- 内容区：主页面 + 二级页 + 底部导航 -->
+        <div class="stage-area">
 
       <!-- ================= 主页面 ================= -->
       <div class="pages">
@@ -424,6 +612,7 @@
             <div class="avatar" onclick="go('me')">研</div>
           </div>
           <div class="scroll">
+            <div class="home-col">
             <div class="hero glass hl pop" onclick="push('chapter')">
               <div style="flex:1">
                 <div class="lbl">今日学习流</div>
@@ -471,7 +660,9 @@
                 <div class="qt">背题卡</div>
               </div>
             </div>
+            </div>
 
+            <div class="home-col">
             <div class="sec pop">五科题库</div>
             <div class="bankrow">
               <div class="bank glass-sm pop" onclick="push('chapter')">
@@ -501,6 +692,7 @@
               <div class="dcell glass-sm pop"><div class="v" style="color:var(--accent)">32</div><div class="k">今日已学</div></div>
               <div class="dcell glass-sm pop"><div class="v" style="color:var(--ok)">86%</div><div class="k">正确率</div></div>
               <div class="dcell glass-sm pop"><div class="v" style="color:var(--warn)">5</div><div class="k">连续天数</div></div>
+            </div>
             </div>
           </div>
         </div>
@@ -582,7 +774,7 @@
           <div class="topbar">
             <div>
               <div class="date">背题模式 · 只推不考</div>
-              <div class="hello">知识点卡</div>
+              <div class="hello">选择记忆方式</div>
             </div>
             <div class="avatar">背</div>
           </div>
@@ -592,6 +784,19 @@
               <h2>背到会为止</h2>
               <p>不会的卡每隔 5 张推回一次，直到背会。<br>不占复习队列，自评即存档，随时重新开始。</p>
               <span class="chip">✳ 进度跨会话保存</span>
+            </div>
+
+            <div class="modeswitch">
+              <div class="modecard on" data-mode="card" onclick="setMemMode('card')">
+                <div class="mi" style="background:linear-gradient(140deg,rgba(79,124,212,.26),rgba(79,124,212,.1));color:var(--accent)">♻</div>
+                <div class="mt">知识卡片</div>
+                <div class="md">3D 翻转看要点<br>正面名称 → 背面详解</div>
+              </div>
+              <div class="modecard" data-mode="quiz" onclick="setMemMode('quiz')">
+                <div class="mi" style="background:linear-gradient(140deg,rgba(63,168,138,.26),rgba(63,168,138,.1));color:var(--ok)">✎</div>
+                <div class="mt">题目</div>
+                <div class="md">做题巩固记忆<br>选答 → 揭示解析</div>
+              </div>
             </div>
 
             <div class="sec pop">选择科目</div>
@@ -656,6 +861,21 @@
                 </div>
                 <div class="go">→</div>
               </div>
+              <div class="memitem glass-sm pop">
+                <div class="ring2">
+                  <svg width="52" height="52" viewBox="0 0 52 52">
+                    <circle cx="26" cy="26" r="21" fill="none" stroke="rgba(150,170,205,.35)" stroke-width="5"/>
+                    <circle cx="26" cy="26" r="21" fill="none" stroke="url(#m5)" stroke-width="5" stroke-linecap="round" stroke-dasharray="132" stroke-dashoffset="128"/>
+                    <defs><linearGradient id="m5" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e08fb0"/><stop offset="1" stop-color="#c45f8a"/></linearGradient></defs>
+                  </svg>
+                  <div class="val2">3%</div>
+                </div>
+                <div class="info">
+                  <div class="bn">古代文学 · 先秦文学</div>
+                  <div class="bs">0 / 24 个知识点已掌握</div>
+                </div>
+                <div class="go">→</div>
+              </div>
             </div>
           </div>
         </div>
@@ -670,6 +890,7 @@
             <div class="avatar">析</div>
           </div>
           <div class="scroll">
+            <div class="stats-col">
             <div class="stathero glass pop">
               <div class="ring big">
                 <svg width="104" height="104" viewBox="0 0 104 104">
@@ -693,13 +914,16 @@
               <div class="brow pop" style="--w:25%"><div class="bl"><span>当代文学</span><span class="p">25%</span></div><div class="track"><div class="fill"></div></div></div>
               <div class="brow pop" style="--w:18%"><div class="bl"><span>古代文学</span><span class="p">18%</span></div><div class="track"><div class="fill"></div></div></div>
             </div>
+            </div>
 
+            <div class="stats-col">
             <div class="sec pop">近 7 日练习</div>
             <div class="scard glass-sm pop">
               <div class="sk">每日刷题量</div>
               <div class="spark">
                 <i style="--h:35%"></i><i style="--h:58%"></i><i style="--h:42%"></i><i style="--h:80%"></i><i style="--h:66%"></i><i style="--h:92%"></i><i style="--h:70%"></i>
               </div>
+              <div class="spark-axis"><span>周一</span><span>周二</span><span>周三</span><span>周四</span><span>周五</span><span>周六</span><span>周日</span></div>
             </div>
 
             <div class="stat2">
@@ -707,6 +931,7 @@
               <div class="scard glass-sm pop"><div class="sk">平均做题时长</div><div class="sv">42s</div><div class="sd">单选 / 题</div></div>
               <div class="scard glass-sm pop"><div class="sk">错题本</div><div class="sv" style="color:var(--warn)">37</div><div class="sd">待复刷</div></div>
               <div class="scard glass-sm pop"><div class="sk">连续学习</div><div class="sv" style="color:var(--accent)">5 天</div><div class="sd">最佳 12 天</div></div>
+            </div>
             </div>
           </div>
         </div>
@@ -874,17 +1099,22 @@
             </div>
           </div>
           <div class="sub-scroll">
+            <div class="mock-col">
             <div class="mockcard glass">
               <div class="ml">综合卷 · 100 分</div>
               <h3>随机抽取一套</h3>
               <div class="md">现代汉语 / 古代汉语为主，结合文学史。<br>每次点击重新组卷 · 客观题 + 简答题<br>完成后自动判分、逐题解析</div>
               <button class="start" onclick="push('exam')">开始模拟考 →</button>
             </div>
+            </div>
+
+            <div class="mock-col">
             <div class="sec" style="padding:0 2px">历史成绩</div>
             <div class="history">
               <div class="hitem glass-sm"><span class="hd">8月28日 综合卷</span><span class="hs">86 题</span><span class="score">82</span></div>
               <div class="hitem glass-sm"><span class="hd">8月25日 综合卷</span><span class="hs">86 题</span><span class="score">74</span></div>
               <div class="hitem glass-sm"><span class="hd">8月22日 综合卷</span><span class="hs">86 题</span><span class="score">69</span></div>
+            </div>
             </div>
           </div>
         </div>
@@ -924,14 +1154,18 @@
               <div class="bk glass-sm" onclick="popMem()">←</div>
               <div>
                 <div class="tt">现代汉语 · 修辞</div>
-                <div class="ss">知识点卡 · 3 / 8</div>
+                <div class="ss" id="memModeLabel">知识点卡 · 3 / 8</div>
+              </div>
+              <div class="memode" id="memModeSwitch">
+                <span class="on" data-mode="card" onclick="setMemMode('card')">知识卡片</span>
+                <span data-mode="quiz" onclick="setMemMode('quiz')">题目</span>
               </div>
             </div>
           </div>
-          <div class="seg" style="margin-top:104px">
+          <div class="seg">
             <i class="done"></i><i class="done"></i><i class="cur"></i><i></i><i></i><i></i><i></i><i></i>
           </div>
-          <div class="kcardwrap">
+          <div class="kcardwrap" id="kcardwrap">
             <div class="kcard" id="kcard" onclick="this.classList.toggle('flip')">
               <div class="kface">
                 <span class="ktag">知识点 · 现代汉语</span>
@@ -950,6 +1184,25 @@
               </div>
             </div>
           </div>
+
+          <!-- 背题·题目模式 -->
+          <div class="memquiz" id="memQuiz">
+            <div class="qcard-main glass">
+              <span class="mqtype">单选 · 背题巩固 <span style="color:var(--ink-3);font-weight:600">3 / 8</span></span>
+              <div class="mqtext">下列诗句中，属于「词语的锤炼 · 意义锤炼」典型示例的是：</div>
+            </div>
+            <div class="opts" id="memQuizOpts" style="padding:0 2px">
+              <div class="opt" onclick="memPickOpt(this)"><span class="o">A</span><span class="t">把「红杏枝头春意闹」的「闹」字换成「浓」</span></div>
+              <div class="opt" onclick="memPickOpt(this)"><span class="o">B</span><span class="t">「春风又绿江南岸」的「绿」字由形容词活用为动词</span></div>
+              <div class="opt" onclick="memPickOpt(this)"><span class="o">C</span><span class="t">「大江东去」以「大」修饰「江」凸显气势</span></div>
+              <div class="opt" onclick="memPickOpt(this)"><span class="o">D</span><span class="t">「明月别枝惊鹊」调整「明月」与「别枝」的语序</span></div>
+            </div>
+            <div class="mqexplain" id="memQuizExplain">
+              <div class="el">✓ 解析 · 意义锤炼</div>
+              <div class="et">意义锤炼要求用词<b>准确、鲜明、生动</b>。B 中「绿」字由形容词活用为动词，使江南春色跃然纸上，是<b>意义锤炼</b>的典型用例；A、C 侧重声音/气势，D 属句式调整。</div>
+            </div>
+          </div>
+
           <div class="kbar">
             <button class="kbtn dont">还不会</button>
             <button class="kbtn know">背会了</button>
@@ -971,7 +1224,7 @@
               <i class="done"></i><i class="done"></i><i class="done"></i><i class="cur"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
             </div>
           </div>
-          <div class="scroll fcol" style="padding-top:150px">
+          <div class="scroll fcol">
             <div class="qcard-main glass">
               <span class="qtype">单选 <span class="n" id="quizQno">3 / 12</span></span>
               <div class="qtext" id="quizQtext">下列诗句中，属于「词语的锤炼 · 意义锤炼」典型示例的是：</div>
@@ -993,6 +1246,7 @@
             </div>
           </div>
           <div class="quizbar">
+            <button class="flagbtn" id="quizFlag" onclick="this.classList.toggle('on');this.textContent=this.classList.contains('on')?'🚩 已标记·待修改':'🚩 审题标记'">🚩 审题标记</button>
             <button class="qbtn sheet" onclick="push('sheet')">▦ 答题卡</button>
             <button class="qbtn submit" id="quizSubmit" onclick="submitQuiz()">提交答案</button>
           </div>
@@ -1020,6 +1274,8 @@
               <span class="lg"><span class="dot2" style="background:rgba(63,168,138,.5)"></span>已答</span>
               <span class="lg"><span class="dot2" style="background:rgba(212,100,106,.5)"></span>答错</span>
               <span class="lg"><span class="dot2" style="background:rgba(160,175,200,.45)"></span>未答</span>
+              <span class="lg"><span class="dot2" style="background:transparent;border:1.5px dashed rgba(79,124,212,.7)"></span>存疑·待回看</span>
+              <span class="lg flag-dot"><span class="dot2"></span>审题标记</span>
             </div>
             <div class="grid12">
               <div class="gn done" onclick="jumpSheet()">1</div>
@@ -1033,7 +1289,7 @@
               <div class="gn done" onclick="jumpSheet()">9</div>
               <div class="gn" onclick="jumpSheet()">10</div>
               <div class="gn mark" onclick="jumpSheet()">11</div>
-              <div class="gn" onclick="jumpSheet()">12</div>
+              <div class="gn flag" onclick="jumpSheet()">12</div>
             </div>
             <button class="ract primary" onclick="pop()">返回继续作答</button>
           </div>
@@ -1059,7 +1315,7 @@
               <span class="num" id="examPct">3%</span>
             </div>
           </div>
-          <div class="scroll fcol" style="padding-top:202px">
+          <div class="scroll fcol">
             <div class="qcard-main glass">
               <span class="qtype">单选 <span class="n">· 古代汉语</span></span>
               <div class="qtext" id="examQtext">「不虞君之涉吾地也」中「虞」的含义是：</div>
@@ -1072,7 +1328,7 @@
             </div>
           </div>
           <div class="exambar">
-            <button class="markbtn" onclick="this.classList.toggle('on');this.textContent=this.textContent.startsWith('✓')?'◆ 标记':'✓ 已标记'">◆ 标记</button>
+            <button class="markbtn" onclick="this.classList.toggle('on');this.textContent=this.classList.contains('on')?'◆ 待回看':'◆ 存疑'">◆ 存疑</button>
             <button class="qbtn" onclick="prevExam()">上一题</button>
             <button class="qbtn" onclick="nextExam()">下一题</button>
             <button class="qbtn submit" style="flex:.7" onclick="push('result')">交卷</button>
@@ -1143,14 +1399,18 @@
         <button class="tab center" data-p="mem"><span class="ic">♻</span><span class="lb"></span></button>
         <button class="tab" data-p="stats"><span class="ic">◔</span><span class="lb">统计</span></button>
         <button class="tab" data-p="me"><span class="ic">☰</span><span class="lb">我的</span></button>
+        </div>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="stage-note">
-    <b>全貌预览：</b>今日信息流 · 题库 · 背题总览(中央圆钮) · 统计 · <b>我的(替代设置)</b> + 答题全流程<br>
-    <b>答题流：</b>章节概览 → 点知识点 → 答题页(选答案→提交看解析) → <b>答题卡</b>(题号跳转)<br>
-    <b>模拟考：</b>题库→综合模拟卷→开始→(倒计时/标记/交卷)→成绩页<br>
+  <div class="stage-note" style="max-width:780px">
+    <b>多端参考：</b>顶部切换 4 形态 —— 手机(底部Tab) · iPad竖屏 / 平板横屏(图标侧边栏 ≡ 展开) · 桌面(全宽侧边栏 232px)<br>
+    <b>导航：</b>手机=底部5Tab(中央背题圆钮)；平板/桌面=侧边栏，二级页 push 不覆盖侧栏<br>
+    <b>答题卡：</b>手机=整页push · 平板=右下角浮层 · 桌面=右侧常驻面板（点 ▦ / 答题卡 唤起）<br>
+    <b>答题流：</b>章节概览 → 知识点 → 练习页(选答→提交看解析；🚩审题标记默认关) → 答题卡(题号跳转)<br>
+    <b>模拟考：</b>题库→综合模拟卷→开始→(◆存疑标记 / 倒计时 / 交卷)→成绩页<br>
     <b>背题：</b>中央圆钮 → 背题总览 → 点击科目 → <b>点卡片 3D 翻转</b>
   </div>
 
@@ -1165,6 +1425,7 @@
       t.classList.toggle('on',on);
       if(on&&t.classList.contains('center')){/* 中央钮高亮 */}
     });
+    document.querySelectorAll('.s-item').forEach(s=>s.classList.toggle('on',s.dataset.p===name));
     // 统计页：触发条形填充动画
     if(name==='stats'){setTimeout(()=>{},50);}
   }
@@ -1181,8 +1442,40 @@
     const id=stack.pop();
     document.getElementById('sub-'+id).classList.remove('open');
   }
-  function openMemCard(){ push('memcard'); }
+  function openMemCard(){ push('memcard'); applyMemMode(); }
   function popMem(){ pop(); }
+  // —— 背题双模式：知识卡片 / 题目 ——
+  let _memMode='card';
+  function setMemMode(mode){
+    _memMode=mode;
+    // 总览页模式卡片高亮
+    document.querySelectorAll('#p-mem .modecard').forEach(c=>c.classList.toggle('on',c.dataset.mode===mode));
+    applyMemMode();
+  }
+  function applyMemMode(){
+    const wrap=document.getElementById('kcardwrap');
+    const quiz=document.getElementById('memQuiz');
+    const sw=document.getElementById('memModeSwitch');
+    const label=document.getElementById('memModeLabel');
+    if(!wrap||!quiz) return;
+    const isCard=_memMode==='card';
+    wrap.classList.toggle('hide',!isCard);
+    quiz.classList.toggle('show',!isCard);
+    if(sw) sw.querySelectorAll('span').forEach(s=>s.classList.toggle('on',s.dataset.mode===_memMode));
+    if(label) label.textContent=isCard?'知识点卡 · 3 / 8':'题目巩固 · 3 / 8';
+    // 题目模式重置选项和解析
+    if(!isCard){
+      quiz.querySelectorAll('.opt').forEach(o=>o.classList.remove('sel','right','wrong'));
+      document.getElementById('memQuizExplain').classList.remove('show');
+    }
+  }
+  function memPickOpt(el){
+    const box=el.closest('.opts');
+    box.querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));
+    el.classList.add('sel');
+    // 背题模式：选答后直接揭示解析（不判分，自评）
+    document.getElementById('memQuizExplain').classList.add('show');
+  }
   // 答题：选项选择
   function pickOpt(el){
     const box=el.closest('.opts');
@@ -1273,6 +1566,31 @@
   }));
   // 初始：背题卡自动翻转演示一次
   setTimeout(()=>{const c=document.getElementById('kcard');if(c&&!c.classList.contains('flip')){c.classList.add('flip');setTimeout(()=>c.classList.remove('flip'),1500);}},1500);
+
+  // —— 多端形态切换（手机 / iPad竖 / 平板横 / 桌面）——
+  const device=document.getElementById('device');
+  const _base={phone:[392,820],ipad:[768,1024],tablet:[920,640],desktop:[1180,760]};
+  function fitDevice(){
+    const m=device.className.match(/d-(\w+)/); if(!m) return;
+    const [w]=_base[m[1]];
+    const pad=24;
+    const availW=window.innerWidth-pad*2;
+    const s=Math.min(1,availW/w);
+    device.style.zoom=(s<1? s.toFixed(4):'');
+  }
+  document.querySelectorAll('#formSwitch button').forEach(b=>{
+    b.addEventListener('click',()=>{
+      document.querySelectorAll('#formSwitch button').forEach(x=>x.classList.toggle('on',x===b));
+      device.classList.remove('d-phone','d-ipad','d-tablet','d-desktop');
+      device.classList.add('d-'+b.dataset.f);
+      fitDevice();
+    });
+  });
+  window.addEventListener('resize',fitDevice);
+  fitDevice();
+  // 平板侧边栏展开（≡）
+  const sideToggle=document.getElementById('sideToggle');
+  if(sideToggle) sideToggle.addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('open'));
 </script>
 </body>
 </html>
