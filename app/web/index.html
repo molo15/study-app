@@ -39,6 +39,9 @@
   <link rel="preload" href="main.dart.js" as="script">
   <link rel="preload" href="canvaskit/chromium/canvaskit.js" as="script">
   <link rel="preload" href="canvaskit/chromium/canvaskit.wasm" as="fetch" type="application/wasm">
+  <!-- 中文字体 2.9MB（woff2 已压缩，无法再 gzip）preload 与主程序并行下载，
+       避免 FontLoader 在 main.dart.js 执行后才开始拉取（字体 preload 需 crossorigin）。 -->
+  <link rel="preload" href="assets/assets/fonts/NotoSansSC-subset.woff2" as="font" type="font/woff2" crossorigin>
 </head>
 <body>
   <!--

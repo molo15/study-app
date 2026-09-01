@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>iOS / 桌面优先 · 适配与性能方案 · 考研刷题 Web</title>
+<style>
+  :root { --ink:#1e2a3c; --ink2:#56647c; --accent:#4f7cd4; --accent2:#7aa2ee; --ok:#3fa88a; --warn:#e0a13c; --err:#d4646a; --line:#e3eaf4; --bg:#f6f9fd; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:'PingFang SC','Microsoft YaHei',Roboto,sans-serif; color:var(--ink); background:linear-gradient(160deg,#eef3fa,#f8fbff); line-height:1.65; }
+  .wrap { max-width:960px; margin:0 auto; padding:32px 24px 60px; }
+  h1 { font-size:26px; margin:0 0 6px; }
+  .sub { color:var(--ink2); font-size:14px; margin-bottom:24px; }
+  .card { background:rgba(255,255,255,.86); border:1px solid var(--line); border-radius:18px; padding:20px 22px; margin-bottom:18px; box-shadow:0 6px 20px rgba(38,58,92,.06); }
+  .card h2 { font-size:17px; margin:0 0 12px; display:flex; align-items:center; gap:8px; }
+  .card h2 .tag { font-size:11px; padding:2px 8px; border-radius:20px; color:#fff; }
+  .tag.blue { background:var(--accent); } .tag.green { background:var(--ok); } .tag.orange { background:var(--warn); } .tag.red { background:var(--err); } .tag.gray { background:#8b98ae; }
+  table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  th,td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { background:rgba(79,124,212,.07); color:var(--ink2); font-weight:600; font-size:12.5px; }
+  td.num { font-variant-numeric:tabular-nums; }
+  .pill { display:inline-block; font-size:11px; padding:1px 8px; border-radius:12px; margin-right:4px; }
+  .pill.no { background:#fdeaea; color:var(--err); } .pill.yes { background:#e8f4f0; color:var(--ok); } .pill.warn { background:#fdf3e0; color:var(--warn); }
+  .note { font-size:12.5px; color:var(--ink2); background:rgba(79,124,212,.05); border-left:3px solid var(--accent2); padding:8px 12px; border-radius:6px; margin-top:10px; }
+  .warn { border-left-color:var(--warn); background:rgba(224,161,60,.07); }
+  .ok { border-left-color:var(--ok); background:rgba(63,168,138,.07); }
+  .red { border-left-color:var(--err); background:rgba(212,100,106,.06); }
+  code { background:rgba(79,124,212,.08); padding:1px 6px; border-radius:5px; font-size:12.5px; font-family:Consolas,Menlo,monospace; }
+  pre { background:#1e2a3c; color:#dfe8f5; border-radius:12px; padding:14px 16px; font-size:12px; overflow-x:auto; line-height:1.55; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media(max-width:720px){ .grid2{grid-template-columns:1fr;} }
+  .matrix td:first-child { font-weight:600; white-space:nowrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>iOS / 桌面优先 · 适配与性能方案</h1>
+  <div class="sub">考研刷题 Web · 优先级：iOS + 电脑端为主，安卓仅保证可打包 · 2026-09-01</div>
+
+  <!-- 决策前提 -->
+  <div class="card">
+    <h2><span class="tag blue">前提</span> 平台优先级矩阵</h2>
+    <table class="matrix">
+      <tr><th style="width:130px">平台</th><th>定位</th><th>渲染后端</th><th>优化投入</th></tr>
+      <tr><td>iOS（Safari）</td><td>主场景 · 蜂窝网络 · 移动端</td><td>canvaskit（dart2js）</td><td><b>最高</b>：体积压缩、数据持久化、安全区</td></tr>
+      <tr><td>电脑端（Win/mac 浏览器）</td><td>主场景 · 桌面宽屏</td><td>canvaskit（dart2js）</td><td>高：宽屏多栏已做、压缩</td></tr>
+      <tr><td>安卓（Chrome/打包）</td><td>仅保证可打包 apk</td><td>canvaskit（dart2js）</td><td>低：不投入专项优化</td></tr>
+    </table>
+    <div class="note">三端共用同一 canvaskit（dart2js）构建——兼容 iOS 14+，不引入 skwasm（需 WasmGC，仅 iOS 16.4+，且跨域隔离 iOS 支持待验证）。</div>
+  </div>
+
+  <!-- 第1项：字体 -->
+  <div class="card">
+    <h2><span class="tag orange">① 结论</span> iOS 字体「按平台跳过」不可行（已证伪）</h2>
+    <table>
+      <tr><th style="width:180px">验证项</th><th>结果</th></tr>
+      <tr><td>Flutter 官方机制</td><td>GitHub issue #77212：<b>CanvasKit 无法访问本机/系统字体</b>，fallback 用内置 Noto（CJK 子集不完整）→ 跳过 NotoSansSC 中文必然豆腐块</td></tr>
+      <tr><td>字符覆盖</td><td>当前子集含 <b>21437 字符</b>（含文言文/古代汉语生僻字），题库为考研文学/古汉，<b>不能裁剪到常用字</b></td></tr>
+      <tr><td>压缩空间</td><td>woff2 本身已压缩（gzip 后 0% 收益）——2.9MB 是<b>必需成本</b>，iOS/桌面/安卓都要加载</td></tr>
+      <tr><td><b>替代优化（已实施）</b></td><td><span class="pill yes">已做</span>字体 <code>preload</code>（与主程序并行下载，不再等 main.dart.js 执行后才拉取）+ P0 已做字体非阻塞加载</td></tr>
+    </table>
+    <div class="note warn">修正原计划：字体 2.9MB 无法通过「跳过」或「裁剪」省掉；真正的 iOS 流量杠杆是 <b>canvaskit.wasm / main.dart.js 的 gzip/brotli（见第③项）</b>。</div>
+  </div>
+
+  <!-- 第2项：持久化 -->
+  <div class="card">
+    <h2><span class="tag red">② 风险</span> iOS 数据持久化排查（重点）</h2>
+    <table>
+      <tr><th style="width:180px">项</th><th>结论</th></tr>
+      <tr><td>存储后端</td><td><code>sqlite3.wasm</code>（sqflite_common_ffi_web）+ <b>IndexedDB 持久化</b>（db_factory_web.dart 已确认）</td></tr>
+      <tr><td>iOS WebKit 政策</td><td><b>未添加到主屏幕的 Web 内容，连续 7 天不访问会被系统清除网站数据（含 IndexedDB）</b>——ITP 清理策略，无 API 可禁用</td></tr>
+      <tr><td>影响</td><td>iOS 用户若用 Safari 直接打开（不添加到主屏幕），7 天不用 → <b>刷题进度 / 错题 / 成绩 / 存档全部丢失</b></td></tr>
+      <tr><td>现有缓解</td><td><span class="pill yes">已有</span>自动存档（auto_archive_service）+ 设置页「备份/导出」入口（export_helper）</td></tr>
+      <tr><td><b>缺口</b></td><td>iOS 端无「添加到主屏幕」引导（standalone 模式下 WebKit <b>不清理</b>数据，且全屏无地址栏，体验等同原生）</td></tr>
+    </table>
+    <div class="note red"><b>建议（待确认后实现）</b>：① iOS 检测（<code>kIsWeb && defaultTargetPlatform == iOS</code>）首次启动弹「添加到主屏幕以获得数据持久化」引导；② 设置页常驻 iOS 专属提示条 + 备份入口置顶。此为功能改动，需你确认后再做。</div>
+  </div>
+
+  <!-- 第3项：压缩部署 -->
+  <div class="card">
+    <h2><span class="tag green">③ 方案</span> gzip / brotli 部署（iOS 蜂窝最大杠杆）</h2>
+    <p style="font-size:13.5px;margin:0 0 10px;">实测 gzip 收益（本机 python gzip level 9）：</p>
+    <table>
+      <tr><th>资源</th><th>原始</th><th>gzip 后</th><th>节省</th></tr>
+      <tr><td>canvaskit/chromium/canvaskit.wasm</td><td class="num">5.3MB</td><td class="num">2.0MB</td><td>-63%</td></tr>
+      <tr><td>main.dart.js</td><td class="num">3.3MB</td><td class="num">1.0MB</td><td>-71%</td></tr>
+      <tr><td>sqlite3.wasm</td><td class="num">716KB</td><td class="num">343KB</td><td>-53%</td></tr>
+      <tr><td>字体 woff2</td><td class="num">2.9MB</td><td class="num">2.9MB</td><td>0%（已压缩）</td></tr>
+      <tr><td><b>关键项合计</b></td><td class="num"><b>12.3MB</b></td><td class="num"><b>6.3MB</b></td><td><b>-49%</b></td></tr>
+    </table>
+    <p style="font-size:13.5px;margin:12px 0 6px;"><b>nginx 配置（生产部署，brotli 优先 + gzip 回退）</b>：</p>
+    <pre># /etc/nginx/conf.d/study_app.conf（片段）
+server {
+    listen 443 ssl http2;
+    server_name 你的域名;
+    root /srv/study_app/web;   # build/web 部署目录
+    index index.html;
+
+    # brotli（需 ngx_brotli 模块；无则只开 gzip 即可）
+    brotli on;
+    brotli_comp_level 6;
+    brotli_static on;                 # 预生成 .br 文件则直接发
+    brotli_types application/wasm application/javascript application/json
+               text/css text/plain font/woff2 image/svg+xml;
+
+    # gzip 回退（兜底）
+    gzip on;
+    gzip_comp_level 6;
+    gzip_vary on;
+    gzip_types application/wasm application/javascript application/json
+               text/css text/plain image/svg+xml;
+
+    # wasm 正确 MIME + 强缓存（构建指纹已含在 sw.js，资源本身可长缓存）
+    location ~* \.(wasm|js|woff2|png|svg)$ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        add_header X-Content-Type-Options nosniff;
+    }
+
+    location = /index.html { add_header Cache-Control "no-cache"; }
+    location = /sw.js     { add_header Cache-Control "no-cache"; }
+}</pre>
+    <div class="note ok"><b>预期</b>：冷加载网络 13.2MB → <b>约 6.5–7MB</b>；iOS 蜂窝场景（4G/5G）首屏下载时间近乎减半；桌面亦同步受益。注意：本地方便起见可用 <code>python -m http.server</code> 开发，正式部署必须上压缩。</div>
+  </div>
+
+  <!-- 汇总 -->
+  <div class="card">
+    <h2><span class="tag gray">汇总</span> 三项推进结果</h2>
+    <table>
+      <tr><th>项</th><th>结论</th><th>状态</th></tr>
+      <tr><td>① iOS 字体跳过</td><td>不可行（canvaskit 无系统字体桥 + 文言生僻字不可裁）→ 替代：字体 preload 并行下载</td><td><span class="pill yes">已证伪</span>替代已实施</td></tr>
+      <tr><td>② iOS 持久化</td><td>IndexedDB + iOS 7 天清理风险确认；已有自动存档/备份；缺口 = 无「添加到主屏幕」引导</td><td><span class="pill warn">待确认</span>引导功能待你批准</td></tr>
+      <tr><td>③ gzip/brotli 部署</td><td>关键资源 -49%（12.3→6.3MB）；nginx 配置已交付</td><td><span class="pill warn">部署层</span>需生产环境执行</td></tr>
+    </table>
+  </div>
+
+</div>
+</body>
+</html>
