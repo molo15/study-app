@@ -1,4 +1,4 @@
-/// 模拟卷列表页（需求：题库含模拟卷可刷）
+﻿/// 模拟卷列表页（需求：题库含模拟卷可刷）
 library;
 
 import 'package:flutter/material.dart';
@@ -130,9 +130,12 @@ class _MockExamListPageState extends ConsumerState<MockExamListPage> {
                           const Icon(Icons.chevron_right),
                         ],
                       ),
-                      onTap: () => Navigator.of(context).push(
-                        AppPageRoute(builder: (_) => const CompositeLoadingPage()),
-                      ),
+                      onTap: () async {
+                        await Navigator.of(context).push(
+                          AppPageRoute(builder: (_) => const CompositeLoadingPage()),
+                        );
+                        _load(); // 从考试页返回后刷新历史成绩（缺陷 #1）
+                      },
                     ),
                   );
                 }
@@ -174,9 +177,12 @@ class _MockExamListPageState extends ConsumerState<MockExamListPage> {
                         const Icon(Icons.chevron_right),
                       ],
                     ),
-                    onTap: () => Navigator.of(context).push(
-                      AppPageRoute(builder: (_) => MockExamPage(paper: p)),
-                    ),
+                    onTap: () async {
+                      await Navigator.of(context).push(
+                        AppPageRoute(builder: (_) => MockExamPage(paper: p)),
+                      );
+                      _load(); // 从考试页返回后刷新历史成绩（缺陷 #1）
+                    },
                   ),
                 );
               },

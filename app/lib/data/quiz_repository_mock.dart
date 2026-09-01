@@ -1,4 +1,4 @@
-part of 'quiz_repository.dart';
+﻿part of 'quiz_repository.dart';
 
 /// 模拟卷、今日概览、学习统计
 mixin _MockMixin on RepositoryMixinBase {
@@ -288,8 +288,8 @@ mixin _MockMixin on RepositoryMixinBase {
     final tomorrowStart = todayStart + Duration.millisecondsPerDay;
 
     final todayRows = await _db.rawQuery(
-      'SELECT result FROM answer_logs WHERE answered_at >= ? AND answered_at < ?',
-      [todayStart, tomorrowStart],
+      'SELECT result FROM answer_logs WHERE answered_at >= ? AND answered_at < ? AND result != ?',
+      [todayStart, tomorrowStart, 'skip'],
     );
     final todayAnswered = todayRows.length;
     final todayCorrect = todayRows

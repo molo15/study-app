@@ -1,4 +1,4 @@
-/// 3D 翻转卡（UI v2 · 背题卡内反转）。
+﻿/// 3D 翻转卡（UI v2 · 背题卡内反转）。
 ///
 /// 正面 front / 背面 back，由外部 flipped 状态控制翻转方向；
 /// 点击卡面触发 onTap（通常由外层切换 flipped）。带透视的 Y 轴旋转。
@@ -71,7 +71,9 @@ class _FlippableCardState extends State<FlippableCard>
 
         return GestureDetector(
           onTap: widget.onTap,
-          child: Transform(
+          child: SizedBox(
+            height: widget.height,
+            child: Transform(
             alignment: Alignment.center,
             transform: Matrix4.identity()
               ..setEntry(3, 2, 0.0015) // 透视
@@ -97,7 +99,7 @@ class _FlippableCardState extends State<FlippableCard>
                 if (!isAtRest) const IgnorePointer(child: SizedBox.expand()),
               ],
             ),
-          ),
+          )),
         );
       },
     );
