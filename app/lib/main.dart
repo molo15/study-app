@@ -24,19 +24,10 @@ Future<void> main() async {
   // 中文字体（启动加载优化）：不再放入 pubspec fonts 声明（web 端 Flutter 会
   // 预下载 FontManifest 声明的全部字体，17.7MB VF 首屏必下载），改用 FontLoader
   // 运行时按平台加载子集字体——web 用 woff2（3MB），io 用 ttf（7MB 本地文件）。
-  // web 端 await 加载：与 canvaskit(7.3MB)/main.dart.js 并行下载，不增加总启动时间，
-  // 且首帧字体已就绪，避免渲染器 fallback 到 Google Fonts CDN（被墙时中文不渲染）。
-  try {
-    final fontAsset = kIsWeb
-        ? 'assets/fonts/NotoSansSC-subset.woff2'
-        : 'assets/fonts/NotoSansSC-subset.ttf';
-    final fontData = await rootBundle.load(fontAsset);
-    final loader = FontLoader('NotoSansSC')
-      ..addFont(Future.value(fontData));
-    await loader.load();
-  } catch (e) {
-    debugPrint('中文字体加载失败: $e');
-  }
+  // 性能优化（基线复测）：不再 await 阻塞 runApp——首帧渲染依赖 canvaskit wasm
+  // 编译（实测约 3s），2.9MB 字体的下载通常更早完成；即便稍晚，字体就绪后
+  // ensureVisualUpdate 触发重绘，首帧即切换为 NotoSansSC。由此 FCP 不被字体下载卡住。
+  unawaited(_loadAppFont());
   // 边缘绘制 edge-to-edge：内容绘制到状态栏/导航栏区域后方，
   // 系统栏透明叠加（需求：边缘绘制 edge 到 edge；上滑唤出/隐藏由系统手势导航接管）
   if (!kIsWeb) {
@@ -51,6 +42,24 @@ Future<void> main() async {
     );
   }
   runApp(const ProviderScope(child: QuizApp()));
+}
+
+/// 后台加载中文字体，不阻塞首帧。加载完成后请求一帧重绘，
+/// 使已渲染文本切换到 NotoSansSC（避免 fallback 到 Google Fonts CDN）。
+Future<void> _loadAppFont() async {
+  try {
+    final fontAsset = kIsWeb
+        ? 'assets/fonts/NotoSansSC-subset.woff2'
+        : 'assets/fonts/NotoSansSC-subset.ttf';
+    final fontData = await rootBundle.load(fontAsset);
+    final loader = FontLoader('NotoSansSC')
+      ..addFont(Future.value(fontData));
+    await loader.load();
+    // 字体注册完成：请求一帧，确保首帧/已渲染文本使用新字体重绘
+    WidgetsBinding.instance.ensureVisualUpdate();
+  } catch (e) {
+    debugPrint('中文字体加载失败: $e');
+  }
 }
 
 class QuizApp extends ConsumerWidget {

@@ -32,6 +32,13 @@
 
   <title>考研刷题</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- 启动加载优化：preload 并行预下载主程序与渲染引擎（默认 chromium 变体），
+       与 flutter_bootstrap.js 的解析/注入并行，避免串行等待。
+       实际不支持的浏览器会自动回退 full 变体，此 preload 仅作预热不阻塞。 -->
+  <link rel="preload" href="main.dart.js" as="script">
+  <link rel="preload" href="canvaskit/chromium/canvaskit.js" as="script">
+  <link rel="preload" href="canvaskit/chromium/canvaskit.wasm" as="fetch" type="application/wasm">
 </head>
 <body>
   <!--
