@@ -386,9 +386,9 @@ class _TypeDistribution extends StatelessWidget {
 
   static const Map<String, String> _labels = {
     'single_choice': '单选',
-    'multiple_choice': '多选',
+    'multi_choice': '多选',
     'true_false': '判断',
-    'fill_blank': '填空',
+    'blank': '填空',
     'short_answer': '简答',
   };
 
