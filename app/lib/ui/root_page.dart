@@ -13,10 +13,10 @@ import '../services/archive_store.dart';
 import '../services/auto_archive_service.dart';
 import 'bank_home_page.dart';
 import 'pages/v3/home_v3_page.dart';
-import 'memorize_home_page.dart';
+import 'pages/v3/memorize_v3_page.dart';
+import 'pages/v3/stats_v3_page.dart';
 import 'responsive.dart';
 import 'settings_page.dart';
-import 'stats_page.dart';
 import 'widgets/app_sidebar.dart';
 import 'widgets/floating_tab_bar.dart';
 import 'widgets/ios_install_guide.dart';
@@ -34,7 +34,7 @@ class _RootPageState extends ConsumerState<RootPage> {
 
   // tab 切换时触发对应页面刷新（IndexedStack 常驻页面不重建，缺陷 #1）
   final GlobalKey<HomeV3PageState> _homeKey = GlobalKey();
-  final GlobalKey<StatsPageState> _statsKey = GlobalKey();
+  final GlobalKey<StatsV3PageState> _statsKey = GlobalKey();
 
   @override
   void initState() {
@@ -92,8 +92,8 @@ class _RootPageState extends ConsumerState<RootPage> {
         children: [
           HomeV3Page(key: _homeKey),      // 今日信息流（V3）
           const BankHomePage(),  // 题库
-          const MemorizeHomePage(), // 背题（中央圆钮入口）
-          StatsPage(key: _statsKey),     // 统计
+          const MemorizeV3Page(), // 背题（中央圆钮入口，V3）
+          StatsV3Page(key: _statsKey),     // 统计（V3）
           const SettingsPage(),  // 我的（替代设置）
         ],
       ),
