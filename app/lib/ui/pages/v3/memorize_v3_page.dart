@@ -149,13 +149,11 @@ class _MemorizeV3PageState extends ConsumerState<MemorizeV3Page> {
   }
 
   (Color, Color) _subjectGradient(String name) => switch (name) {
-        '现代汉语' => (const Color(0xFF8FB1F0), const Color(0xFF5B7FD0)),
-        '古代汉语' => (IOSSubjectColors.ancientChinese,
-            const Color(0xFF4BA38C)),
-        '现代文学' => (const Color(0xFFE8B26B), const Color(0xFFD08A3E)),
-        '当代文学' => (IOSSubjectColors.literaryTheory,
-            const Color(0xFF8A5FC4)),
-        '古代文学' => (const Color(0xFFE08FB0), const Color(0xFFC45F8A)),
-        _ => (IOSColors.light.primary, const Color(0xFF4F7CD4)),
+        '现代汉语' => IOSSubjectColors.modernChineseGrad,
+        '古代汉语' => IOSSubjectColors.ancientChineseGrad,
+        '现代文学' => IOSSubjectColors.modernLitGrad,
+        '当代文学' => IOSSubjectColors.contemporaryLitGrad,
+        '古代文学' => IOSSubjectColors.ancientLitGrad,
+        _ => IOSSubjectColors.defaultGrad,
       };
 }

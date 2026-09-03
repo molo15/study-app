@@ -40,6 +40,32 @@ abstract final class IOSSubjectColors {
   static const Color ancientChinese = IOSSystemColors.green; // 古代汉语
   static const Color literaryTheory = IOSSystemColors.purple; // 文学理论
   static const Color politics = IOSSystemColors.red; // 政治
+
+  // ---- 背题页科目渐变（浅 → 深），与首页纯色同源，统一在令牌管理 ----
+  static const (Color, Color) modernChineseGrad = (
+    Color(0xFF8FB1F0),
+    Color(0xFF5B7FD0),
+  ); // 现代汉语
+  static const (Color, Color) ancientChineseGrad = (
+    IOSSystemColors.green,
+    Color(0xFF4BA38C),
+  ); // 古代汉语
+  static const (Color, Color) modernLitGrad = (
+    Color(0xFFE8B26B),
+    Color(0xFFD08A3E),
+  ); // 现代文学
+  static const (Color, Color) contemporaryLitGrad = (
+    IOSSystemColors.purple,
+    Color(0xFF8A5FC4),
+  ); // 当代文学
+  static const (Color, Color) ancientLitGrad = (
+    Color(0xFFE08FB0),
+    Color(0xFFC45F8A),
+  ); // 古代文学
+  static const (Color, Color) defaultGrad = (
+    IOSSystemColors.blue,
+    Color(0xFF4F7CD4),
+  ); // 兜底
 }
 
 /// 颜色方案公共接口（浅色/深色均实现此接口）
