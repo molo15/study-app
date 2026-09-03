@@ -98,6 +98,13 @@ class QuizApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final config =
         ref.watch(themeControllerProvider).value ?? AppThemeConfig.defaults();
+    // V3 §3.6：有效深色 = 三段切换（system 跟随系统 / light 强制浅 / dark 强制深）
+    final isDark = switch (config.themePreference) {
+      ThemePreference.system =>
+        MediaQuery.platformBrightnessOf(context) == Brightness.dark,
+      ThemePreference.light => false,
+      ThemePreference.dark => true,
+    };
     // 隐藏状态栏开关（主题设置）：开启 → 沉浸模式（状态栏+导航栏隐藏，下滑临时唤出）
     if (!kIsWeb) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -106,14 +113,13 @@ class QuizApp extends ConsumerWidget {
               ? SystemUiMode.immersiveSticky
               : SystemUiMode.edgeToEdge,
         );
-        // 系统栏图标跟随深色模式切换，避免深色主题下深色图标不可见（审查修复）
+        // 系统栏图标跟随有效深色切换，避免深色主题下深色图标不可见（审查修复）
         SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           systemNavigationBarColor: Colors.transparent,
-          statusBarIconBrightness:
-              config.darkMode ? Brightness.light : Brightness.dark,
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
           systemNavigationBarIconBrightness:
-              config.darkMode ? Brightness.light : Brightness.dark,
+              isDark ? Brightness.light : Brightness.dark,
         ));
       });
     }
@@ -124,9 +130,10 @@ class QuizApp extends ConsumerWidget {
       // V2 主题（config.buildThemeData）保留在 theme_controller.dart 中，可随时回退
       theme: buildIOSLightTheme(),
       darkTheme: buildIOSDarkTheme(),
-      themeMode: config.darkMode ? ThemeMode.dark : ThemeMode.light,
+      // V3 §3.6：三段切换（system 跟随系统 / light 强制浅 / dark 强制深）
+      themeMode: config.themeModeValue,
       builder: (context, child) =>
-          _BackgroundStack(config: config, child: child!),
+          _BackgroundStack(config: config, isDark: isDark, child: child!),
       routerConfig: appRouter,
     );
   }
@@ -140,9 +147,14 @@ class QuizApp extends ConsumerWidget {
 /// Web 适配（Phase 2.2）：内容居中，最大宽度 560（手机布局不拉伸）；
 /// 桌面/平板两侧露出共享背景；web 无本地背景图（`AppBackgroundImage` web 版为空）。
 class _BackgroundStack extends StatelessWidget {
-  const _BackgroundStack({required this.config, required this.child});
+  const _BackgroundStack({
+    required this.config,
+    required this.isDark,
+    required this.child,
+  });
 
   final AppThemeConfig config;
+  final bool isDark;
   final Widget child;
 
   @override
@@ -165,11 +177,11 @@ class _BackgroundStack extends StatelessWidget {
     } else {
       // 渐变遮罩颜色：深色模式下使用深色遮罩（如 #0F1214）且 alpha 更高，
       // 避免用户配置的浅色背景把背景图冲淡（需求：深色模式背景图遮罩）
-      final overlayColor = config.darkMode
+      final overlayColor = isDark
           ? const Color(0xFF0F1214)
           : config.background;
-      final overlayTopAlpha = config.darkMode ? 0.96 : 0.92;
-      final overlayBottomAlpha = config.darkMode ? 0.92 : 0.85;
+      final overlayTopAlpha = isDark ? 0.96 : 0.92;
+      final overlayBottomAlpha = isDark ? 0.92 : 0.85;
       body = Stack(
         fit: StackFit.expand,
         children: [

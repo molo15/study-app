@@ -99,16 +99,15 @@ class _FullScreenBackGestureDetector<T> extends StatefulWidget {
 class _FullScreenBackGestureDetectorState<T>
     extends State<_FullScreenBackGestureDetector<T>> {
   late final HorizontalDragGestureRecognizer _recognizer;
-  bool _gestureActive = false;
 
   @override
   void initState() {
     super.initState();
     _recognizer = HorizontalDragGestureRecognizer()
-      ..onStart = _handleDragStart
-      ..onUpdate = _handleDragUpdate
+      ..onStart = (_) {}
+      ..onUpdate = (_) {}
       ..onEnd = _handleDragEnd
-      ..onCancel = _handleDragCancel;
+      ..onCancel = () {};
   }
 
   @override
@@ -117,26 +116,12 @@ class _FullScreenBackGestureDetectorState<T>
     super.dispose();
   }
 
-  void _handleDragStart(DragStartDetails details) {
-    _gestureActive = true;
-  }
-
-  void _handleDragUpdate(DragUpdateDetails details) {
-    // 阶段1：仅记录手势，阶段4实现交互式拖拽
-    // CupertinoPageRoute 内部已有手势控制器，此处不重复驱动
-  }
-
   void _handleDragEnd(DragEndDetails details) {
-    _gestureActive = false;
     // 阶段1：向右快速滑动时触发 pop
     // 阶段4：根据拖拽进度和速度决定是否完成返回
     if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
       Navigator.of(context).maybePop();
     }
-  }
-
-  void _handleDragCancel() {
-    _gestureActive = false;
   }
 
   @override

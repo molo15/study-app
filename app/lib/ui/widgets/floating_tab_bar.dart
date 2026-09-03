@@ -233,7 +233,8 @@ class _CenterDialState extends State<_CenterDial> {
     final colors = dark ? IOSColors.dark : IOSColors.light;
     final anim = IOSAnimations.of(context);
 
-    final bgColor = _pressed ? colors.primaryPressed : colors.primary;
+    final bgColor =
+        (widget.selected || _pressed) ? colors.primaryPressed : colors.primary;
     final scale = _pressed ? 0.95 : 1.0;
 
     return GestureDetector(

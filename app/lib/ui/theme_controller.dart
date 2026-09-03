@@ -24,6 +24,12 @@ Color parseHexColor(String hex, {Color fallback = const Color(0xFF00696D)}) {
 String colorToHex(Color color) =>
     '#${color.toARGB32().toRadixString(16).padLeft(8, '0')}';
 
+/// 深色模式偏好（V3 §3.6 三段切换）
+///
+/// - [system]：跟随系统（ThemeMode.system，Flutter 自动监听 platformBrightness）
+/// - [light] / [dark]：强制覆盖
+enum ThemePreference { system, light, dark }
+
 class AppThemeConfig {
   const AppThemeConfig({
     this.primaryColor = '#4F7CD4',
@@ -40,7 +46,9 @@ class AppThemeConfig {
     this.frostBgBottom = '#C9D7EA',
     this.frostAccent = '#4F7CD4',
     this.glassOpacity = 0.62,
-  });
+    ThemePreference? themePreference,
+  }) : themePreference = themePreference ??
+            (darkMode ? ThemePreference.dark : ThemePreference.system);
 
   final String primaryColor;
   final String backgroundColor;
@@ -53,6 +61,17 @@ class AppThemeConfig {
   final double cardOpacity;
   final double cornerRadius;
   final bool darkMode;
+
+  /// 深色模式偏好（V3 §3.6 三段切换）：system 跟随系统 / light 强制浅 / dark 强制深。
+  /// 缺省由 [darkMode] 推导（向后兼容旧存档：dark→dark，其余→system）。
+  final ThemePreference themePreference;
+
+  /// 映射为 Flutter ThemeMode（用于 MaterialApp.themeMode）
+  ThemeMode get themeModeValue => switch (themePreference) {
+        ThemePreference.system => ThemeMode.system,
+        ThemePreference.light => ThemeMode.light,
+        ThemePreference.dark => ThemeMode.dark,
+      };
 
   /// 隐藏系统状态栏（沉浸模式；默认显示）
   final bool hideStatusBar;
@@ -145,6 +164,7 @@ class AppThemeConfig {
     String? frostBgBottom,
     String? frostAccent,
     double? glassOpacity,
+    ThemePreference? themePreference,
   }) => AppThemeConfig(
     primaryColor: primaryColor ?? this.primaryColor,
     backgroundColor: backgroundColor ?? this.backgroundColor,
@@ -160,6 +180,7 @@ class AppThemeConfig {
     frostBgBottom: frostBgBottom ?? this.frostBgBottom,
     frostAccent: frostAccent ?? this.frostAccent,
     glassOpacity: glassOpacity ?? this.glassOpacity,
+    themePreference: themePreference ?? this.themePreference,
   );
 
   Map<String, dynamic> toJson() => {
@@ -177,16 +198,26 @@ class AppThemeConfig {
     'frostBgBottom': frostBgBottom,
     'frostAccent': frostAccent,
     'glassOpacity': glassOpacity,
+    'themePreference': themePreference.name,
   };
 
-  factory AppThemeConfig.fromJson(Map<String, dynamic> json) => AppThemeConfig(
+  factory AppThemeConfig.fromJson(Map<String, dynamic> json) {
+    final darkMode = json['darkMode'] as bool? ?? false;
+    // 旧存档无 themePreference 时按 darkMode 推导（dark→dark，其余→system）
+    final pref = switch (json['themePreference'] as String?) {
+      'system' => ThemePreference.system,
+      'light' => ThemePreference.light,
+      'dark' => ThemePreference.dark,
+      _ => darkMode ? ThemePreference.dark : ThemePreference.system,
+    };
+    return AppThemeConfig(
     primaryColor: json['primaryColor'] as String? ?? '#4F7CD4',
     backgroundColor: json['backgroundColor'] as String? ?? '#E7EEF7',
     backgroundImagePath: json['backgroundImagePath'] as String? ?? '',
     backgroundOpacity: (json['backgroundOpacity'] as num?)?.toDouble() ?? 0.55,
     cardOpacity: (json['cardOpacity'] as num?)?.toDouble() ?? 0.72,
     cornerRadius: (json['cornerRadius'] as num?)?.toDouble() ?? 18.0,
-    darkMode: json['darkMode'] as bool? ?? false,
+    darkMode: darkMode,
     hideStatusBar: json['hideStatusBar'] as bool? ?? false,
     reduceMotion: json['reduceMotion'] as bool? ?? false,
     frost: json['frost'] as bool? ?? false,
@@ -194,7 +225,9 @@ class AppThemeConfig {
     frostBgBottom: json['frostBgBottom'] as String? ?? '#C9D7EA',
     frostAccent: json['frostAccent'] as String? ?? '#4F7CD4',
     glassOpacity: (json['glassOpacity'] as num?)?.toDouble() ?? 0.62,
+    themePreference: pref,
   );
+  }
 
   /// 由配置构建 ThemeData（迁移自 app_theme.dart，支持深色）
   ThemeData buildThemeData() {
