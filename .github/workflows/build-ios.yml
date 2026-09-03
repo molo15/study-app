@@ -33,10 +33,6 @@ jobs:
         working-directory: app
         run: flutter pub get
 
-      - name: Install CocoaPods
-        working-directory: app/ios
-        run: pod install --repo-update
-
       - name: Build iOS (release, no codesign)
         working-directory: app
         run: flutter build ios --release --no-codesign
