@@ -42,14 +42,18 @@ jobs:
       - name: Verify app bundle
         run: |
           ls -la app/build/ios/iphoneos/
-          test -d "app/build/ios/iphoneos/Runner.app" && echo "Runner.app exists" || echo "Runner.app MISSING"
+          echo "--- architectures ---"
+          lipo -info app/build/ios/iphoneos/Runner.app/Runner || echo "lipo failed"
+          echo "--- frameworks ---"
+          ls -la app/build/ios/iphoneos/Runner.app/Frameworks/ 2>/dev/null || echo "no Frameworks dir"
 
       - name: Pack unsigned IPA
         run: |
           cd app/build/ios/iphoneos
+          rm -rf Payload quiz-app-unsigned.ipa
           mkdir -p Payload
-          cp -r Runner.app Payload/
-          zip -r quiz-app-unsigned.ipa Payload
+          ditto Runner.app Payload/Runner.app
+          zip -y -r quiz-app-unsigned.ipa Payload
           ls -lh quiz-app-unsigned.ipa
 
       - name: Upload IPA artifact
