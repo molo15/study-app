@@ -35,7 +35,9 @@ jobs:
 
       - name: Build iOS (release, no codesign)
         working-directory: app
-        run: flutter build ios --release --no-codesign
+        run: |
+          rm -f ios/Podfile ios/Podfile.lock
+          flutter build ios --release --no-codesign
 
       - name: Verify app bundle
         run: |
