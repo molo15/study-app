@@ -12,6 +12,19 @@ import 'ui/theme_controller.dart';
 import 'ui/responsive.dart';
 import 'ui/widgets/frost_background.dart';
 import 'ui/app_background_image.dart';
+import 'ui/theme/ios_theme.dart';
+
+/// 中文字体就绪信号：FontLoader 在 runApp 之后（引擎初始化完成后）异步注册
+/// NotoSansSC，注册完成后自增，驱动整棵 Widget 树重建一次。
+///
+/// 为什么需要整树重建：CanvasKit 首帧布局时本地中文字体尚未注册，会走在线
+/// 字形回退（fontFallbackBaseUrl 已同源化为快速 404），回退失败后引擎缓存
+/// “缺中文字形”的布局结果；仅 ensureVisualUpdate 请求一帧不足以让先绘制的
+/// 文本（如 AppBar 标题）重新匹配字形，表现为持续豆腐块。字体就绪后用变化
+/// 的 key 重建整树，所有 RenderParagraph 重新 layout，此时字体已注册，标题
+/// 与全部文本正常。字体只加载一次，故只重建一次；routerConfig 为全局单例，
+/// 重建不丢路由状态。
+final ValueNotifier<int> appFontRevision = ValueNotifier<int>(0);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,9 +37,11 @@ Future<void> main() async {
   // 中文字体（启动加载优化）：不再放入 pubspec fonts 声明（web 端 Flutter 会
   // 预下载 FontManifest 声明的全部字体，17.7MB VF 首屏必下载），改用 FontLoader
   // 运行时按平台加载子集字体——web 用 woff2（3MB），io 用 ttf（7MB 本地文件）。
-  // 性能优化（基线复测）：不再 await 阻塞 runApp——首帧渲染依赖 canvaskit wasm
-  // 编译（实测约 3s），2.9MB 字体的下载通常更早完成；即便稍晚，字体就绪后
-  // ensureVisualUpdate 触发重绘，首帧即切换为 NotoSansSC。由此 FCP 不被字体下载卡住。
+  //
+  // web 端仅加载 Regular(w400)：主题中所有文本统一用 w400（AppBar/Dialog 标题
+  // 靠字号与颜色维持层次），避免粗体字重回退到 fonts.gstatic.com 在线分片
+  // （国内被阻断 → 豆腐块）。unawaited 并行加载，index.html 已 preload 该字体，
+  // 下载与引擎编译并行；注册完成后 ensureVisualUpdate 触发重绘。
   unawaited(_loadAppFont());
   // 边缘绘制 edge-to-edge：内容绘制到状态栏/导航栏区域后方，
   // 系统栏透明叠加（需求：边缘绘制 edge 到 edge；上滑唤出/隐藏由系统手势导航接管）
@@ -41,11 +56,21 @@ Future<void> main() async {
       ),
     );
   }
-  runApp(const ProviderScope(child: QuizApp()));
+  runApp(ProviderScope(
+    child: ValueListenableBuilder<int>(
+      valueListenable: appFontRevision,
+      builder: (context, revision, _) =>
+          QuizApp(key: ValueKey<int>(revision)),
+    ),
+  ));
 }
 
 /// 后台加载中文字体，不阻塞首帧。加载完成后请求一帧重绘，
 /// 使已渲染文本切换到 NotoSansSC（避免 fallback 到 Google Fonts CDN）。
+///
+/// web 端仅加载 Regular(w400) 子集：主题统一用 w400，粗体靠字号与颜色区分，
+/// 避免粗体字重回退到在线字体（国内被阻断 → 豆腐块）。
+/// io 端使用单一 ttf（系统 Skia 就近匹配并合成粗体）。
 Future<void> _loadAppFont() async {
   try {
     final fontAsset = kIsWeb
@@ -57,6 +82,10 @@ Future<void> _loadAppFont() async {
     await loader.load();
     // 字体注册完成：请求一帧，确保首帧/已渲染文本使用新字体重绘
     WidgetsBinding.instance.ensureVisualUpdate();
+    // web 端再自增修订号驱动整树重建一次（见 appFontRevision 说明），
+    // 清除 CanvasKit 缓存的“缺中文字形”首帧布局；io 端本地字体毫秒级就绪、
+    // 无在线回退，不需要重建。
+    if (kIsWeb) appFontRevision.value++;
   } catch (e) {
     debugPrint('中文字体加载失败: $e');
   }
@@ -91,8 +120,10 @@ class QuizApp extends ConsumerWidget {
     return MaterialApp.router(
       title: '考研刷题',
       debugShowCheckedModeBanner: false,
-      theme: config.buildThemeData(),
-      darkTheme: config.buildThemeData(),
+      // V3 iOS 主题：light/dark 双主题，NoSplash 全局去水波纹
+      // V2 主题（config.buildThemeData）保留在 theme_controller.dart 中，可随时回退
+      theme: buildIOSLightTheme(),
+      darkTheme: buildIOSDarkTheme(),
       themeMode: config.darkMode ? ThemeMode.dark : ThemeMode.light,
       builder: (context, child) =>
           _BackgroundStack(config: config, child: child!),

@@ -227,7 +227,8 @@ class AppThemeConfig {
         centerTitle: false,
         titleTextStyle: TextStyle(
           fontSize: 20,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w400,
+          fontFamily: 'NotoSansSC',
           color: scheme.onSurface,
         ),
       ),
@@ -258,7 +259,7 @@ class AppThemeConfig {
           final selected = states.contains(WidgetState.selected);
           return TextStyle(
             fontSize: 12,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+            fontWeight: selected ? FontWeight.w400 : FontWeight.w400,
             // 黑色系深浅区分选中/未选中（需求：不用彩色）
             color: darkMode
                 ? (selected ? Colors.white : Colors.white54)
@@ -306,7 +307,8 @@ class AppThemeConfig {
         ),
         titleTextStyle: TextStyle(
           fontSize: 17,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w400,
+          fontFamily: 'NotoSansSC',
           color: scheme.onSurface,
         ),
         contentTextStyle: TextStyle(fontSize: 14, color: scheme.onSurfaceVariant),
