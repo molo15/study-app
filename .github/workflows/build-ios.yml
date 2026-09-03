@@ -1,0 +1,62 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master, main]
+    paths:
+      - 'app/lib/**'
+      - 'app/ios/**'
+      - 'app/pubspec.yaml'
+      - 'app/pubspec.lock'
+      - '.github/workflows/build-ios.yml'
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        working-directory: app
+        run: flutter pub get
+
+      - name: Install CocoaPods
+        working-directory: app/ios
+        run: pod install --repo-update
+
+      - name: Build iOS (release, no codesign)
+        working-directory: app
+        run: flutter build ios --release --no-codesign
+
+      - name: Verify app bundle
+        run: |
+          ls -la app/build/ios/iphoneos/
+          test -d "app/build/ios/iphoneos/Runner.app" && echo "Runner.app exists" || echo "Runner.app MISSING"
+
+      - name: Pack unsigned IPA
+        run: |
+          cd app/build/ios/iphoneos
+          mkdir -p Payload
+          cp -r Runner.app Payload/
+          zip -r quiz-app-unsigned.ipa Payload
+          ls -lh quiz-app-unsigned.ipa
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: quiz-app-ios-ipa
+          path: app/build/ios/iphoneos/quiz-app-unsigned.ipa
+          retention-days: 30
