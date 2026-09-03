@@ -19,6 +19,7 @@ import '../data/grading.dart';
 import '../data/quiz_repository.dart';
 import '../models/models.dart';
 import '../services/app_log.dart';
+import 'theme/ios_tokens.dart';
 
 import 'widgets/animation_constants.dart';
 import 'theme_controller.dart';
@@ -46,11 +47,9 @@ String typeLabel(QuestionType type) => switch (type) {
 
 /// 语义色集中定义（审查 P2：判分/评分色不再散落魔法值）
 /// 深色模式用亮色变体保证对比度（UI 复审 P1-1）
-const _kSuccess = Color(0xFF2E7D32);
 const _kSuccessDark = Color(0xFF81C784);
 const _kWarning = Color(0xFFB2780A);
 const _kWarningDark = Color(0xFFE2B93B);
-const _kError = Color(0xFFBA1A1A);
 const _kErrorDark = Color(0xFFF2B8B5);
 
 Color _semantic(BuildContext context, Color light, Color dark) =>
@@ -761,15 +760,15 @@ class _PracticePageState extends ConsumerState<PracticePage>
   Widget build(BuildContext context) {
     if (_loading) {
       return Scaffold(
-        appBar: GlassAppBar(title: Text(_modeLabel)),
-        body: const Center(child: CircularProgressIndicator()),
+        appBar: _V3PracticeAppBar(title: _modeLabel),
+        body: const Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
       );
     }
     if (_error != null) {
       // 统一空/错误态：图标 + 说明 + 返回操作（设计方案 §3.4 状态机）
       final isLoadError = _error!.startsWith('加载失败');
       return Scaffold(
-        appBar: GlassAppBar(title: Text(_modeLabel)),
+        appBar: _V3PracticeAppBar(title: _modeLabel),
         body: isLoadError
             ? _PracticeStateView(
                 icon: Icons.error_outline,
@@ -802,40 +801,14 @@ class _PracticePageState extends ConsumerState<PracticePage>
     // P0 手感优化：减少动效开关（主题配置持久化）
     final reduceMotion = ref.watch(themeControllerProvider).value?.reduceMotion ?? false;
     return Scaffold(
-      appBar: GlassAppBar(
-        title: Text(_modeLabel),
-        actions: [
-          // 答题卡入口：队列非空即可打开（设计：答题卡功能）
-          if (_queue.isNotEmpty)
-            IconButton(
-              tooltip: '答题卡',
-              icon: const Icon(Icons.grid_view_outlined),
-              onPressed: _showAnswerSheet,
-            ),
-          if (_showPracticeTimer)
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: _PracticeTimerLabel(seconds: _displayedSeconds),
-            ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(3),
-          // 进度平滑过渡（UI 审查③：每题进度跳变）
-          child: TweenAnimationBuilder<double>(
-            tween: Tween(
-              begin: (_index + 1) / _queue.length,
-              end: (_index + 1) / _queue.length,
-            ),
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOutCubic,
-            builder: (context, value, _) => LinearProgressIndicator(
-              value: value,
-              backgroundColor: Theme.of(
-                context,
-              ).colorScheme.surfaceContainerHighest,
-            ),
-          ),
-        ),
+      // V3 iOS 顶栏：模式标签 + 计时 + 答题卡入口 + 进度条
+      appBar: _V3PracticeAppBar(
+        title: _modeLabel,
+        progress: (_index + 1) / _queue.length,
+        showTimer: _showPracticeTimer,
+        seconds: _displayedSeconds,
+        showAnswerSheet: _queue.isNotEmpty,
+        onAnswerSheet: _showAnswerSheet,
       ),
       body: Center(
         child: ConstrainedBox(
@@ -866,34 +839,94 @@ class _PracticePageState extends ConsumerState<PracticePage>
   }
 }
 
-class _PracticeTimerLabel extends StatelessWidget {
-  const _PracticeTimerLabel({required this.seconds});
+/// V3 iOS 轻量顶栏（答题会话）：模式标签 + 计时 + 答题卡入口 + 底部进度条。
+class _V3PracticeAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const _V3PracticeAppBar({
+    required this.title,
+    this.progress,
+    this.showTimer = false,
+    this.seconds = 0,
+    this.showAnswerSheet = false,
+    this.onAnswerSheet,
+  });
 
+  final String title;
+  final double? progress;
+  final bool showTimer;
   final int seconds;
+  final bool showAnswerSheet;
+  final VoidCallback? onAnswerSheet;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(72);
+
+  static String _fmt(int seconds) {
+    final m = seconds ~/ 60;
+    final s = seconds % 60;
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
 
   @override
   Widget build(BuildContext context) {
-    final minutes = seconds ~/ 60;
-    final remaining = seconds % 60;
-    final text =
-        '${minutes.toString().padLeft(2, '0')}:${remaining.toString().padLeft(2, '0')}';
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          Icons.timer_outlined,
-          size: 18,
-          color: Theme.of(context).colorScheme.outline,
-        ),
-        const SizedBox(width: 4),
-        Text(
-          text,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            color: Theme.of(context).colorScheme.outline,
-            fontFeatures: const [FontFeature.tabularFigures()],
+    final colors = IOSColors.of(context);
+    return Container(
+      color: Colors.transparent,
+      height: 72,
+      child: Column(
+        children: [
+          Expanded(
+            child: Row(
+              children: [
+                const SizedBox(width: IOSSpacing.s16),
+                Text(title, style: IOSTypography.headline(color: colors.text)),
+                const Spacer(),
+                if (showTimer) ...[
+                  Icon(Icons.timer_outlined, size: 16, color: colors.text2),
+                  const SizedBox(width: 4),
+                  Text(
+                    _fmt(seconds),
+                    style: IOSTypography.footnote(
+                      color: colors.text2,
+                    ).copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+                  ),
+                  const SizedBox(width: IOSSpacing.s8),
+                ],
+                if (showAnswerSheet)
+                  IconButton(
+                    tooltip: '答题卡',
+                    visualDensity: VisualDensity.compact,
+                    icon: Icon(
+                      Icons.grid_view_outlined,
+                      color: colors.primary,
+                      size: 22,
+                    ),
+                    onPressed: onAnswerSheet,
+                  ),
+                const SizedBox(width: IOSSpacing.s4),
+              ],
+            ),
           ),
-        ),
-      ],
+          if (progress != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: IOSSpacing.s16),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: progress, end: progress),
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, _) => LinearProgressIndicator(
+                    value: value.clamp(0.0, 1.0),
+                    minHeight: 3,
+                    backgroundColor: colors.fill2,
+                    color: colors.primary,
+                  ),
+                ),
+              ),
+            ),
+          const SizedBox(height: 10),
+        ],
+      ),
     );
   }
 }

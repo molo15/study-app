@@ -46,6 +46,7 @@ class _QuestionView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colors = IOSColors.of(context);
     final tc = typeColor(context, question.type);
     // 判断题选项单一数据源：库里无 options 时回退固定「正确/错误」
     // （审查 P0-1/P1-A：避免与 seed 补齐的 options 双渲染）
@@ -83,7 +84,7 @@ class _QuestionView extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: tc.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(IOSRadius.tag),
               ),
               child: Text(
                 typeLabel(question.type),
@@ -93,12 +94,12 @@ class _QuestionView extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: IOSSpacing.s8),
             Expanded(
               child: Text(
                 question.chapter,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.outline,
+                  color: colors.text2,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -110,7 +111,7 @@ class _QuestionView extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.outlineVariant,
+                  color: colors.text3,
                   fontFamily: 'monospace',
                 ),
               ),
@@ -122,9 +123,7 @@ class _QuestionView extends StatelessWidget {
                 tooltip: flagged ? '取消标记' : '标记为待修改',
                 visualDensity: VisualDensity.compact,
                 iconSize: 20,
-                color: flagged
-                    ? Theme.of(context).colorScheme.error
-                    : theme.colorScheme.outline,
+                color: flagged ? colors.danger : colors.text2,
                 icon: Icon(flagged ? Icons.flag : Icons.flag_outlined),
                 onPressed: onToggleFlag,
               ),
@@ -133,21 +132,18 @@ class _QuestionView extends StatelessWidget {
             Text(
               '$index / $total',
               style: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.outline,
+                color: colors.text2,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 20),
-        // 题干（titleLarge + 行高 1.6，与选项区间距 20dp，设计方案 §3.4）
+        const SizedBox(height: IOSSpacing.s20),
+        // 题干（V3 title1 + 行高 1.6，与选项区间距 20dp，设计方案 §3.4）
         Text(
           question.stem,
-          style: theme.textTheme.titleLarge?.copyWith(
-            height: 1.6,
-            fontWeight: FontWeight.w600,
-          ),
+          style: IOSTypography.title1(color: colors.text).copyWith(height: 1.6),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: IOSSpacing.s20),
         // 判断题选项（合并单一数据源，审查 P1-A）
         for (final option in tfOptions)
           _OptionTile(
@@ -192,35 +188,22 @@ class _QuestionView extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 3),
                       child: FilledButton.tonal(
                         style: FilledButton.styleFrom(
-                          backgroundColor: _semantic(
-                            context,
-                            switch (rating) {
-                              Rating.again => _kError,
-                              Rating.hard => _kWarning,
-                              _ => _kSuccess,
-                            },
-                            switch (rating) {
-                              Rating.again => _kErrorDark,
-                              Rating.hard => _kWarningDark,
-                              _ => _kSuccessDark,
-                            },
-                          ).withValues(alpha: 0.12),
-                          foregroundColor: _semantic(
-                            context,
-                            switch (rating) {
-                              Rating.again => _kError,
-                              Rating.hard => _kWarning,
-                              _ => _kSuccess,
-                            },
-                            switch (rating) {
-                              Rating.again => _kErrorDark,
-                              Rating.hard => _kWarningDark,
-                              _ => _kSuccessDark,
-                            },
-                          ),
+                          backgroundColor: switch (rating) {
+                            Rating.again => colors.dangerBg,
+                            Rating.hard => colors.warningBg,
+                            _ => colors.successBg,
+                          },
+                          foregroundColor: switch (rating) {
+                            Rating.again => colors.danger,
+                            Rating.hard => colors.warning,
+                            _ => colors.success,
+                          },
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           // 四档评分按钮统一最小高度 48dp（设计方案 §4.4）
                           minimumSize: const Size(0, 48),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(IOSRadius.md),
+                          ),
                         ),
                         onPressed: () => onRate(rating),
                         child: Text(label),
@@ -241,13 +224,24 @@ class _QuestionView extends StatelessWidget {
             ],
           ],
         ] else
-          FilledButton.icon(
-            onPressed: selection.isEmpty ? null : onSubmit,
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
+          // V3 iOS 实心主色提交按钮
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: FilledButton(
+              onPressed: selection.isEmpty ? null : onSubmit,
+              style: FilledButton.styleFrom(
+                backgroundColor: colors.primary,
+                disabledBackgroundColor: colors.fill2,
+                foregroundColor: Colors.white,
+                disabledForegroundColor: colors.text3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(IOSRadius.pill),
+                ),
+                elevation: 0,
+              ),
+              child: const Text('提交', style: TextStyle(fontSize: IOSFontSize.body)),
             ),
-            icon: const Icon(Icons.check),
-            label: const Text('提交'),
           ),
       ],
       ),
@@ -312,6 +306,7 @@ class _OptionTileState extends State<_OptionTile>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colors = IOSColors.of(context);
     final isChoice = widget.question.type == QuestionType.singleChoice ||
         widget.question.type == QuestionType.multiChoice ||
         widget.question.type == QuestionType.trueFalse;
@@ -322,17 +317,17 @@ class _OptionTileState extends State<_OptionTile>
     IconData? trailing;
     if (isChoice && widget.submitted) {
       if (isCorrect) {
-        borderColor = _semantic(context, _kSuccess, _kSuccessDark);
-        fillColor = borderColor.withValues(alpha: 0.08);
+        borderColor = colors.success;
+        fillColor = colors.successBg;
         trailing = Icons.check_circle;
       } else if (widget.selected) {
-        borderColor = _semantic(context, _kError, _kErrorDark);
-        fillColor = borderColor.withValues(alpha: 0.06);
+        borderColor = colors.danger;
+        fillColor = colors.dangerBg;
         trailing = Icons.cancel;
       }
     } else if (isChoice && widget.selected && !widget.submitted) {
-      borderColor = theme.colorScheme.primary;
-      fillColor = theme.colorScheme.primary.withValues(alpha: 0.14);
+      borderColor = colors.primary;
+      fillColor = colors.primaryBg;
     }
 
     // P0 手感：错误选中时水平抖动（sin 波 × 4px，衰减）
@@ -357,21 +352,18 @@ class _OptionTileState extends State<_OptionTile>
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           curve: Curves.easeOut,
-          margin: const EdgeInsets.symmetric(vertical: 5),
+          margin: const EdgeInsets.symmetric(vertical: IOSSpacing.s4),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(IOSRadius.md),
             border: Border.all(
-              color: borderColor ?? theme.colorScheme.outlineVariant,
-              width: borderColor == null ? 1 : 1.8,
+              color: borderColor ?? colors.separator,
+              width: borderColor == null ? 1 : 1.5,
             ),
           ),
           child: Material(
-            // UI v2：未选中未提交时半透明白底（玻璃质感），深色模式保持透明
-            color: fillColor ??
-                (theme.brightness == Brightness.light
-                    ? Colors.white.withValues(alpha: 0.42)
-                    : Colors.transparent),
-            borderRadius: BorderRadius.circular(13),
+            // V3：内容纯白卡（无玻璃/阴影，克制原则）
+            color: fillColor ?? colors.card,
+            borderRadius: BorderRadius.circular(IOSRadius.md - 1),
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 52),
               child: ListTile(
@@ -381,8 +373,8 @@ class _OptionTileState extends State<_OptionTile>
                             ? Icons.check_circle_outlined
                             : Icons.circle_outlined,
                         color: widget.selected
-                            ? (borderColor ?? theme.colorScheme.primary)
-                            : theme.colorScheme.outline,
+                            ? (borderColor ?? colors.primary)
+                            : colors.text3,
                       )
                     : null,
                 title: Text(
@@ -476,6 +468,7 @@ class _FreeAnswerFieldState extends State<_FreeAnswerField> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colors = IOSColors.of(context);
     final isShortAnswer = widget.question.type == QuestionType.shortAnswer;
     final multiSlot = _slotCount > 1;
     return Column(
@@ -488,8 +481,8 @@ class _FreeAnswerFieldState extends State<_FreeAnswerField> {
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(10),
+              color: colors.primaryBg,
+              borderRadius: BorderRadius.circular(IOSRadius.sm),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -497,14 +490,14 @@ class _FreeAnswerFieldState extends State<_FreeAnswerField> {
                 Icon(
                   Icons.lightbulb_outline,
                   size: 16,
-                  color: theme.colorScheme.onPrimaryContainer,
+                  color: colors.primary,
                 ),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
                     widget.question.answerFormat!,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onPrimaryContainer,
+                      color: colors.primary,
                       height: 1.4,
                     ),
                   ),
@@ -518,7 +511,7 @@ class _FreeAnswerFieldState extends State<_FreeAnswerField> {
             child: Text(
               '共 $_slotCount 空 · 逐空填写，全部填完再提交',
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.outline,
+                color: colors.text2,
               ),
             ),
           ),
@@ -529,15 +522,27 @@ class _FreeAnswerFieldState extends State<_FreeAnswerField> {
             enabled: !widget.submitted,
             minLines: isShortAnswer ? 3 : 1,
             maxLines: isShortAnswer ? 5 : 1,
+            style: TextStyle(fontSize: IOSFontSize.body, color: colors.text),
             decoration: InputDecoration(
               labelText: multiSlot ? '第 ${i + 1} 空' : null,
               hintText: isShortAnswer ? '作答后点击「作答完成」进入判分' : '填写答案',
+              labelStyle: TextStyle(color: colors.text2, fontSize: IOSFontSize.caption1),
+              hintStyle: TextStyle(color: colors.placeholder, fontSize: IOSFontSize.body),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(IOSRadius.md),
+                borderSide: BorderSide(color: colors.separator, width: 1),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(IOSRadius.md),
+                borderSide: BorderSide(color: colors.separator, width: 1),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(IOSRadius.md),
+                borderSide: BorderSide(color: colors.primary, width: 1.5),
               ),
               filled: true,
-              // 深色模式适配（UI 复审 P0-1）：用主题表面色而非纯白
-              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              // V3 内容纯白输入区
+              fillColor: colors.card,
             ),
           ),
         ],
@@ -545,9 +550,17 @@ class _FreeAnswerFieldState extends State<_FreeAnswerField> {
         if (!widget.submitted)
           Align(
             alignment: Alignment.centerLeft,
-            child: FilledButton.tonal(
+            child: FilledButton(
               onPressed: _submit,
-              style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(0, 48),
+                backgroundColor: colors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(IOSRadius.pill),
+                ),
+                elevation: 0,
+              ),
               child: Text(isShortAnswer ? '作答完成' : '填入答案'),
             ),
           ),
@@ -568,24 +581,25 @@ class _ResultCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colors = IOSColors.of(context);
     final (color, label, icon) = switch (grade) {
       Grade.correct => (
-        _semantic(context, _kSuccess, _kSuccessDark),
+        colors.success,
         '回答正确',
         Icons.check_circle,
       ),
       Grade.partial => (
-        _semantic(context, _kWarning, _kWarningDark),
+        colors.warning,
         '部分正确',
         Icons.help_outline,
       ),
       Grade.wrong => (
-        _semantic(context, _kError, _kErrorDark),
+        colors.danger,
         '回答错误',
         Icons.cancel,
       ),
       Grade.skip => (
-        Theme.of(context).colorScheme.outline,
+        colors.text3,
         '未作答',
         Icons.help_outline,
       ),
@@ -598,8 +612,8 @@ class _ResultCard extends StatelessWidget {
     ].join(' · ');
     final card = Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(14),
+        color: colors.card,
+        borderRadius: BorderRadius.circular(IOSRadius.lg),
         border: Border.all(color: color.withValues(alpha: 0.4), width: 1),
       ),
       child: IntrinsicHeight(
@@ -610,8 +624,9 @@ class _ResultCard extends StatelessWidget {
               width: 5,
               decoration: BoxDecoration(
                 color: color,
-                borderRadius:
-                    const BorderRadius.horizontal(left: Radius.circular(14)),
+                borderRadius: BorderRadius.horizontal(
+                  left: Radius.circular(IOSRadius.lg),
+                ),
               ),
             ),
             Expanded(
@@ -647,7 +662,7 @@ class _ResultCard extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(sourceText,
                           style: theme.textTheme.bodySmall
-                              ?.copyWith(color: theme.colorScheme.outline)),
+                              ?.copyWith(color: colors.text2)),
                     ],
                   ],
                 ),
