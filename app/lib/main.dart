@@ -12,6 +12,19 @@ import 'ui/theme_controller.dart';
 import 'ui/responsive.dart';
 import 'ui/widgets/frost_background.dart';
 import 'ui/app_background_image.dart';
+import 'ui/theme/ios_theme.dart';
+
+/// 中文字体就绪信号：FontLoader 在 runApp 之后（引擎初始化完成后）异步注册
+/// NotoSansSC，注册完成后自增，驱动整棵 Widget 树重建一次。
+///
+/// 为什么需要整树重建：CanvasKit 首帧布局时本地中文字体尚未注册，会走在线
+/// 字形回退（fontFallbackBaseUrl 已同源化为快速 404），回退失败后引擎缓存
+/// “缺中文字形”的布局结果；仅 ensureVisualUpdate 请求一帧不足以让先绘制的
+/// 文本（如 AppBar 标题）重新匹配字形，表现为持续豆腐块。字体就绪后用变化
+/// 的 key 重建整树，所有 RenderParagraph 重新 layout，此时字体已注册，标题
+/// 与全部文本正常。字体只加载一次，故只重建一次；routerConfig 为全局单例，
+/// 重建不丢路由状态。
+final ValueNotifier<int> appFontRevision = ValueNotifier<int>(0);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,9 +37,11 @@ Future<void> main() async {
   // 中文字体（启动加载优化）：不再放入 pubspec fonts 声明（web 端 Flutter 会
   // 预下载 FontManifest 声明的全部字体，17.7MB VF 首屏必下载），改用 FontLoader
   // 运行时按平台加载子集字体——web 用 woff2（3MB），io 用 ttf（7MB 本地文件）。
-  // 性能优化（基线复测）：不再 await 阻塞 runApp——首帧渲染依赖 canvaskit wasm
-  // 编译（实测约 3s），2.9MB 字体的下载通常更早完成；即便稍晚，字体就绪后
-  // ensureVisualUpdate 触发重绘，首帧即切换为 NotoSansSC。由此 FCP 不被字体下载卡住。
+  //
+  // web 端仅加载 Regular(w400)：主题中所有文本统一用 w400（AppBar/Dialog 标题
+  // 靠字号与颜色维持层次），避免粗体字重回退到 fonts.gstatic.com 在线分片
+  // （国内被阻断 → 豆腐块）。unawaited 并行加载，index.html 已 preload 该字体，
+  // 下载与引擎编译并行；注册完成后 ensureVisualUpdate 触发重绘。
   unawaited(_loadAppFont());
   // 边缘绘制 edge-to-edge：内容绘制到状态栏/导航栏区域后方，
   // 系统栏透明叠加（需求：边缘绘制 edge 到 edge；上滑唤出/隐藏由系统手势导航接管）
@@ -41,11 +56,21 @@ Future<void> main() async {
       ),
     );
   }
-  runApp(const ProviderScope(child: QuizApp()));
+  runApp(ProviderScope(
+    child: ValueListenableBuilder<int>(
+      valueListenable: appFontRevision,
+      builder: (context, revision, _) =>
+          QuizApp(key: ValueKey<int>(revision)),
+    ),
+  ));
 }
 
 /// 后台加载中文字体，不阻塞首帧。加载完成后请求一帧重绘，
 /// 使已渲染文本切换到 NotoSansSC（避免 fallback 到 Google Fonts CDN）。
+///
+/// web 端仅加载 Regular(w400) 子集：主题统一用 w400，粗体靠字号与颜色区分，
+/// 避免粗体字重回退到在线字体（国内被阻断 → 豆腐块）。
+/// io 端使用单一 ttf（系统 Skia 就近匹配并合成粗体）。
 Future<void> _loadAppFont() async {
   try {
     final fontAsset = kIsWeb
@@ -57,6 +82,10 @@ Future<void> _loadAppFont() async {
     await loader.load();
     // 字体注册完成：请求一帧，确保首帧/已渲染文本使用新字体重绘
     WidgetsBinding.instance.ensureVisualUpdate();
+    // web 端再自增修订号驱动整树重建一次（见 appFontRevision 说明），
+    // 清除 CanvasKit 缓存的“缺中文字形”首帧布局；io 端本地字体毫秒级就绪、
+    // 无在线回退，不需要重建。
+    if (kIsWeb) appFontRevision.value++;
   } catch (e) {
     debugPrint('中文字体加载失败: $e');
   }
@@ -69,6 +98,13 @@ class QuizApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final config =
         ref.watch(themeControllerProvider).value ?? AppThemeConfig.defaults();
+    // V3 §3.6：有效深色 = 三段切换（system 跟随系统 / light 强制浅 / dark 强制深）
+    final isDark = switch (config.themePreference) {
+      ThemePreference.system =>
+        MediaQuery.platformBrightnessOf(context) == Brightness.dark,
+      ThemePreference.light => false,
+      ThemePreference.dark => true,
+    };
     // 隐藏状态栏开关（主题设置）：开启 → 沉浸模式（状态栏+导航栏隐藏，下滑临时唤出）
     if (!kIsWeb) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -77,25 +113,27 @@ class QuizApp extends ConsumerWidget {
               ? SystemUiMode.immersiveSticky
               : SystemUiMode.edgeToEdge,
         );
-        // 系统栏图标跟随深色模式切换，避免深色主题下深色图标不可见（审查修复）
+        // 系统栏图标跟随有效深色切换，避免深色主题下深色图标不可见（审查修复）
         SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           systemNavigationBarColor: Colors.transparent,
-          statusBarIconBrightness:
-              config.darkMode ? Brightness.light : Brightness.dark,
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
           systemNavigationBarIconBrightness:
-              config.darkMode ? Brightness.light : Brightness.dark,
+              isDark ? Brightness.light : Brightness.dark,
         ));
       });
     }
     return MaterialApp.router(
       title: '考研刷题',
       debugShowCheckedModeBanner: false,
-      theme: config.buildThemeData(),
-      darkTheme: config.buildThemeData(),
-      themeMode: config.darkMode ? ThemeMode.dark : ThemeMode.light,
+      // V3 iOS 主题：light/dark 双主题，NoSplash 全局去水波纹
+      // V2 主题（config.buildThemeData）保留在 theme_controller.dart 中，可随时回退
+      theme: buildIOSLightTheme(),
+      darkTheme: buildIOSDarkTheme(),
+      // V3 §3.6：三段切换（system 跟随系统 / light 强制浅 / dark 强制深）
+      themeMode: config.themeModeValue,
       builder: (context, child) =>
-          _BackgroundStack(config: config, child: child!),
+          _BackgroundStack(config: config, isDark: isDark, child: child!),
       routerConfig: appRouter,
     );
   }
@@ -109,9 +147,14 @@ class QuizApp extends ConsumerWidget {
 /// Web 适配（Phase 2.2）：内容居中，最大宽度 560（手机布局不拉伸）；
 /// 桌面/平板两侧露出共享背景；web 无本地背景图（`AppBackgroundImage` web 版为空）。
 class _BackgroundStack extends StatelessWidget {
-  const _BackgroundStack({required this.config, required this.child});
+  const _BackgroundStack({
+    required this.config,
+    required this.isDark,
+    required this.child,
+  });
 
   final AppThemeConfig config;
+  final bool isDark;
   final Widget child;
 
   @override
@@ -134,11 +177,11 @@ class _BackgroundStack extends StatelessWidget {
     } else {
       // 渐变遮罩颜色：深色模式下使用深色遮罩（如 #0F1214）且 alpha 更高，
       // 避免用户配置的浅色背景把背景图冲淡（需求：深色模式背景图遮罩）
-      final overlayColor = config.darkMode
+      final overlayColor = isDark
           ? const Color(0xFF0F1214)
           : config.background;
-      final overlayTopAlpha = config.darkMode ? 0.96 : 0.92;
-      final overlayBottomAlpha = config.darkMode ? 0.92 : 0.85;
+      final overlayTopAlpha = isDark ? 0.96 : 0.92;
+      final overlayBottomAlpha = isDark ? 0.92 : 0.85;
       body = Stack(
         fit: StackFit.expand,
         children: [

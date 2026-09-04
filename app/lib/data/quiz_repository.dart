@@ -80,6 +80,7 @@ class QuizRepository extends RepositoryMixinBase with
   // 与 UI 约定的静态常量/键（定义在 QuizRepository 上，供上层静态访问）
   static const practiceTimerVisibleKey = 'show_practice_timer';
   static const reviewModeEnabledKey = 'review_mode_enabled';
+  static const mockDoubtEnabledKey = 'mock_doubt_enabled';
   static String practiceProgressKey(String key) => 'practice_progress:$key';
   static String practiceResultsKey(String key) => 'practice_results:$key';
   static const wrongBookRetireThreshold = 2;

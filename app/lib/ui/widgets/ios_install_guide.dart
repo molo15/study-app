@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/quiz_repository.dart';
+import '../theme/ios_tokens.dart';
 import 'app_card.dart';
 
 /// 是否 iOS Web（Safari）。
@@ -41,8 +42,9 @@ Future<void> maybeShowIosInstallGuide(
 }
 
 /// 设置页 iOS 专属提示条（仅 iOS Web 返回非空）。
-Widget? iosInstallGuideBanner() {
+Widget? iosInstallGuideBanner(BuildContext context) {
   if (!isIosWeb) return null;
+  final colors = IOSColors.of(context);
   return Padding(
     padding: const EdgeInsets.only(bottom: 12),
     child: AppCard(
@@ -50,8 +52,8 @@ Widget? iosInstallGuideBanner() {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.smartphone_outlined,
-              size: 20, color: Color(0xFF4F7CD4)),
+          Icon(Icons.smartphone_outlined,
+              size: 20, color: colors.primary),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -65,8 +67,8 @@ Widget? iosInstallGuideBanner() {
                 Text(
                   'Safari 会清理长期未访问的网页数据（含刷题进度）。'
                   '点底部「分享」→「添加到主屏幕」后数据不再被清理，且全屏无地址栏。',
-                  style: const TextStyle(
-                      fontSize: 12.5, color: Color(0xFF56647C), height: 1.5),
+                  style: TextStyle(
+                      fontSize: 12.5, color: colors.text2, height: 1.5),
                 ),
               ],
             ),
@@ -83,6 +85,7 @@ class IosInstallGuideDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = IOSColors.of(context);
     return Dialog(
       backgroundColor: Colors.transparent,
       insetPadding:
@@ -98,11 +101,11 @@ class IosInstallGuideDialog extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4F7CD4).withValues(alpha: .12),
+                    color: colors.primary.withValues(alpha: .12),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.install_mobile,
-                      color: Color(0xFF4F7CD4), size: 22),
+                  child: Icon(Icons.install_mobile,
+                      color: colors.primary, size: 22),
                 ),
                 const SizedBox(width: 10),
                 const Expanded(
@@ -114,24 +117,24 @@ class IosInstallGuideDialog extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 14),
-            const Text(
+            Text(
               'iOS 的 Safari 会清理长时间未访问的网页数据，包括你的刷题进度、错题与存档。'
               '添加到主屏幕后，数据将不再被清理，并享受全屏无地址栏的原生体验。',
               style:
-                  TextStyle(fontSize: 13, height: 1.6, color: Color(0xFF56647C)),
+                  TextStyle(fontSize: 13, height: 1.6, color: colors.text2),
             ),
             const SizedBox(height: 14),
-            const _StepLine(n: '1', text: '点 Safari 底部「分享」按钮'),
+            _StepLine(n: '1', text: '点 Safari 底部「分享」按钮', color: colors.primary),
             const SizedBox(height: 8),
-            const _StepLine(n: '2', text: '选择「添加到主屏幕」'),
+            _StepLine(n: '2', text: '选择「添加到主屏幕」', color: colors.primary),
             const SizedBox(height: 8),
-            const _StepLine(n: '3', text: '从桌面图标打开本应用'),
+            _StepLine(n: '3', text: '从桌面图标打开本应用', color: colors.primary),
             const SizedBox(height: 18),
             SizedBox(
               width: double.infinity,
               child: FilledButton(
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF4F7CD4),
+                  backgroundColor: colors.primary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
@@ -147,10 +150,11 @@ class IosInstallGuideDialog extends StatelessWidget {
 }
 
 class _StepLine extends StatelessWidget {
-  const _StepLine({required this.n, required this.text});
+  const _StepLine({required this.n, required this.text, required this.color});
 
   final String n;
   final String text;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -160,8 +164,7 @@ class _StepLine extends StatelessWidget {
           width: 18,
           height: 18,
           alignment: Alignment.center,
-          decoration: const BoxDecoration(
-              color: Color(0xFF4F7CD4), shape: BoxShape.circle),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           child: Text(
             n,
             style: const TextStyle(

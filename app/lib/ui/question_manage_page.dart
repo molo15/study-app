@@ -1,4 +1,4 @@
-/// 题目管理：题库包题目浏览器 + 单题编辑表单（设计：bank_management）
+﻿/// 题目管理：题库包题目浏览器 + 单题编辑表单（设计：bank_management）
 ///
 /// - 浏览器：按章节分组/题型筛选/关键词搜索，显示审题标记与本地修改状态；
 /// - 编辑页：改题干/选项/答案/解析/章节/answerVariants，保存置 user_edited=1；
@@ -10,7 +10,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/quiz_repository.dart';
 import '../models/models.dart';
-import 'glass_app_bar.dart';
 import 'app_toast.dart';
 import 'practice_page.dart' show typeColor, typeLabel;
 import 'app_routes.dart';
@@ -80,7 +79,7 @@ class _QuestionManagePageState extends ConsumerState<QuestionManagePage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: GlassAppBar(title: Text('${widget.bankName} · 题目管理')),
+      appBar: AppBar(title: Text('${widget.bankName} · 题目管理')),
       body: Column(
         children: [
           Padding(
@@ -437,7 +436,7 @@ class _QuestionEditPageState extends ConsumerState<QuestionEditPage> {
     final theme = Theme.of(context);
     final q = _q;
     return Scaffold(
-      appBar: GlassAppBar(
+      appBar: AppBar(
         title: const Text('编辑题目'),
         actions: [
           if (q != null && q.userEdited)

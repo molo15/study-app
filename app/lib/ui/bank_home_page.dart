@@ -1,6 +1,7 @@
-/// 题库主页（UI v2 · 冷磨砂）：搜索框 + 综合模拟卷 Banner + 五科列表。
+/// 题库主页（V3 iOS 风格）：综合模拟卷 Banner + 五科列表。
 ///
-/// 入口：底部导航「题库」。点科目进章节概览，点模拟卷进模拟卷列表。
+/// 入口：底部导航「题库」。点科目进章节树，点模拟卷进模拟卷列表。
+/// V3 化：大标题 + IOSCard Banner + IOSListItem 科目列表 + IOSSubjectColors 渐变。
 library;
 
 import 'package:flutter/material.dart';
@@ -8,10 +9,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../data/quiz_repository.dart';
-import 'glass_app_bar.dart';
-import 'theme_controller.dart';
 import 'responsive.dart';
-import 'widgets/app_card.dart';
+import 'theme/ios_tokens.dart';
+import 'widgets/ios_button.dart';
+import 'widgets/ios_card.dart';
+import 'widgets/ios_list_group.dart';
 
 class BankHomePage extends ConsumerStatefulWidget {
   const BankHomePage({super.key});
@@ -51,170 +53,134 @@ class _BankHomePageState extends ConsumerState<BankHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final config = ref.watch(themeControllerProvider).asData?.value;
-    final accent = config?.accent ?? const Color(0xFF4F7CD4);
-    final ink2 = theme.colorScheme.onSurfaceVariant;
-
-    return Scaffold(
-      appBar: GlassAppBar(
-        title: const Text('题库'),
-        centerTitle: true,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(10),
-          child: Container(),
-        ),
-      ),
-      body: _buildBody(theme, accent, ink2),
-    );
-  }
-
-  Widget _buildBody(ThemeData theme, Color accent, Color ink2) {
+    final colors = IOSColors.of(context);
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
     }
     if (_error != null) {
       return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('加载失败：$_error', style: TextStyle(color: theme.colorScheme.error)),
-            const SizedBox(height: 12),
-            FilledButton(onPressed: _load, child: const Text('重试')),
+            Icon(Icons.cloud_off_outlined, size: 44, color: colors.danger),
+            const SizedBox(height: IOSSpacing.s12),
+            Text(_error!, style: IOSTypography.callout(color: colors.text2)),
+            const SizedBox(height: IOSSpacing.s16),
+            IOSButton(label: '重试', onPressed: _load),
           ],
         ),
       );
     }
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
-      children: [
-        // 综合模拟卷 Banner
-        AppCard(
-          padding: EdgeInsets.zero,
-          margin: const EdgeInsets.only(bottom: 18),
-          onTap: () => context.go('/mock'),
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Row(
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color.lerp(accent, Colors.white, 0.25)!, accent],
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: effectiveContentWidth(context)),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            IOSSpacing.s16,
+            IOSSpacing.s8,
+            IOSSpacing.s16,
+            IOSFloatingBar.kTContentBottomInset,
+          ),
+          children: [
+            Text('题库', style: IOSTypography.largeTitle(color: colors.text)),
+            const SizedBox(height: IOSSpacing.s8),
+            // 综合模拟卷 Banner
+            IOSCard(
+              padding: const EdgeInsets.all(IOSSpacing.s16),
+              onTap: () => context.go('/mock'),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(IOSRadius.md),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color.lerp(colors.primary, Colors.white, 0.25)!,
+                          colors.primary,
+                        ],
+                      ),
+                    ),
+                    child: const Icon(Icons.assignment_outlined,
+                        color: Colors.white, size: 22),
+                  ),
+                  const SizedBox(width: IOSSpacing.s16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('综合模拟卷',
+                            style: IOSTypography.callout(color: colors.text)
+                                .copyWith(fontWeight: FontWeight.w700)),
+                        const SizedBox(height: IOSSpacing.s4),
+                        Text('5 科随机组卷 · 现代汉语 / 古代汉语为主',
+                            style: IOSTypography.caption1(
+                                color: colors.text2)),
+                      ],
                     ),
                   ),
-                  child: const Icon(Icons.assignment_outlined, color: Colors.white, size: 24),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('综合模拟卷', style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800, color: theme.colorScheme.onSurface)),
-                      const SizedBox(height: 3),
-                      Text('5 科随机组卷 · 现代汉语 / 古代汉语为主', style: TextStyle(fontSize: 11.5, color: ink2)),
-                    ],
-                  ),
-                ),
-                Icon(Icons.chevron_right, color: ink2.withValues(alpha: 0.6)),
-              ],
-            ),
-          ),
-        ),
-
-        _sectionTitle('五科题库', accent),
-        // 宽屏（平板/桌面）题库两列，手机单列（P2 响应式）
-        if (isWideScreen(context))
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              for (final b in _banks)
-                SizedBox(
-                  width: (effectiveContentWidth(context) - 32 - 12) / 2,
-                  child: _bankItem(theme, accent, ink2, b),
-                ),
-            ],
-          )
-        else
-          ..._banks.map((b) => _bankItem(theme, accent, ink2, b)),
-      ],
-    );
-  }
-
-  Widget _sectionTitle(String title, Color accent) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 4, 4, 12),
-      child: Row(
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _bankItem(ThemeData theme, Color accent, Color ink2, BankInfo bank) {
-    // 科目首字 + 主题色
-    final colors = <String, List<Color>>{
-      '现代汉语': [const Color(0xFF8FB1F0), const Color(0xFF5B7FD0)],
-      '古代汉语': [const Color(0xFF7FC4B2), const Color(0xFF4BA38C)],
-      '现代文学': [const Color(0xFFE8B26B), const Color(0xFFD08A3E)],
-      '当代文学': [const Color(0xFFB78FE0), const Color(0xFF8A5FC4)],
-      '古代文学': [const Color(0xFFE08FB0), const Color(0xFFC45F8A)],
-    };
-    final cs = colors[bank.name] ?? [accent, accent];
-    final initial = bank.name.isNotEmpty ? bank.name.substring(0, 1) : '?';
-
-    return AppCard(
-      padding: EdgeInsets.zero,
-      margin: const EdgeInsets.only(bottom: 12),
-      onTap: () => context.go('/bank/${bank.bankId}/chapters'),
-      child: Padding(
-        padding: const EdgeInsets.all(15),
-        child: Row(
-          children: [
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: cs,
-                ),
-              ),
-              alignment: Alignment.center,
-              child: Text(initial, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(bank.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 4),
-                  Text('${bank.active} 题 · ${bank.version}', style: TextStyle(fontSize: 11, color: ink2)),
+                  Icon(Icons.chevron_right,
+                      color: colors.text2.withValues(alpha: 0.6)),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: ink2.withValues(alpha: 0.6)),
+            const SizedBox(height: IOSSpacing.s24),
+            // 五科列表
+            IOSListGroup(
+              title: '五科题库',
+              items: [
+                for (final b in _banks)
+                  IOSListItem(
+                    title: b.name,
+                    subtitle: '${b.active} 题 · ${b.version}',
+                    leading: _subjectAvatar(b),
+                    showChevron: true,
+                    onTap: () => context.go('/bank/${b.bankId}/chapters'),
+                  ),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
+
+  Widget _subjectAvatar(BankInfo bank) {
+    final (a, b) = _subjectGradient(bank.name);
+    final initial = bank.name.isNotEmpty ? bank.name.substring(0, 1) : '?';
+    return Container(
+      width: 38,
+      height: 38,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(IOSRadius.sm),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [a, b],
+        ),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        initial,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+
+  (Color, Color) _subjectGradient(String name) => switch (name) {
+        '现代汉语' => IOSSubjectColors.modernChineseGrad,
+        '古代汉语' => IOSSubjectColors.ancientChineseGrad,
+        '现代文学' => IOSSubjectColors.modernLitGrad,
+        '当代文学' => IOSSubjectColors.contemporaryLitGrad,
+        '古代文学' => IOSSubjectColors.ancientLitGrad,
+        _ => IOSSubjectColors.defaultGrad,
+      };
 }

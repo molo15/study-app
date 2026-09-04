@@ -11,7 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/quiz_repository.dart';
-import '../theme_controller.dart';
+import '../theme/ios_animations.dart';
+import '../theme/ios_tokens.dart';
 import '../responsive.dart';
 
 /// 侧边栏导航项（今日 / 题库 / 背题 / 统计 / 我的）
@@ -62,11 +63,11 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
 
   @override
   Widget build(BuildContext context) {
-    final config = ref.watch(themeControllerProvider).asData?.value;
-    final accent = config?.accent ?? const Color(0xFF4F7CD4);
-    final dark = config?.darkMode ?? false;
-    final ink = dark ? Colors.white70 : const Color(0xFF56647C);
-    final ink3 = dark ? Colors.white38 : const Color(0xFF8B98AE);
+    final colors = IOSColors.of(context);
+    final anim = IOSAnimations.of(context);
+    final accent = colors.primary;
+    final ink = colors.text2;
+    final ink3 = colors.text3;
 
     final layout = appLayoutOf(context);
     final isDesktop = layout == AppLayout.expanded;
@@ -77,21 +78,13 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
         : (_expanded ? 200.0 : 66.0);
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 280),
-      curve: Curves.easeOutCubic,
+      duration: anim.effectiveDuration(IOSDuration.standard),
+      curve: anim.effectiveCurve(IOSCurve.standard),
       width: width,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: dark
-              ? const [Color(0x66FFFFFF), Color(0x33000000)]
-              : const [Color(0xB8FFFFFF), Color(0x66FFFFFF)],
-        ),
+        color: colors.card,
         border: Border(
-          right: BorderSide(
-            color: Colors.white.withValues(alpha: dark ? 0.18 : 0.68),
-          ),
+          right: BorderSide(color: colors.separator),
         ),
       ),
       child: Column(
@@ -109,13 +102,11 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: dark ? 0.08 : 0.5),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: dark ? 0.2 : 0.45),
-                      ),
+                      color: colors.fill,
+                      borderRadius: BorderRadius.circular(IOSRadius.sm),
+                      border: Border.all(color: colors.cardBorder),
                     ),
-                    child: const Icon(Icons.menu, size: 18, color: Color(0xFF56647C)),
+                    child: Icon(Icons.menu, size: 18, color: colors.text2),
                   ),
                 ),
               ),
@@ -132,22 +123,15 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF8FB1F0), Color(0xFF5B7FD0)],
-                  ),
-                  borderRadius: BorderRadius.circular(14),
+                  color: colors.primary,
+                  borderRadius: BorderRadius.circular(IOSRadius.md),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF263A5C).withValues(alpha: 0.10),
+                      color: colors.cardBorder,
                       blurRadius: 20,
                       offset: const Offset(0, 6),
                     ),
                   ],
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.55),
-                  ),
                 ),
                 child: const Center(
                   child: Text(
@@ -175,26 +159,26 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
           if (showText && !isDesktop)
             Padding(
               padding: const EdgeInsets.all(8),
-              child: _buildFoot(dark, ink, ink3),
+              child: _buildFoot(colors, ink, ink3),
             )
           else if (isDesktop)
             Padding(
               padding: const EdgeInsets.all(14),
-              child: _buildFoot(dark, ink, ink3),
+              child: _buildFoot(colors, ink, ink3),
             ),
         ],
       ),
     );
   }
 
-  Widget _buildFoot(bool dark, Color ink, Color ink3) {
+  Widget _buildFoot(IOSColorScheme colors, Color ink, Color ink3) {
     final days = _days;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: dark ? 0.08 : 0.46),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: dark ? 0.2 : 0.45)),
+        color: colors.fill,
+        borderRadius: BorderRadius.circular(IOSRadius.md),
+        border: Border.all(color: colors.cardBorder),
       ),
       child: Column(
         children: [
@@ -209,7 +193,7 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
-                color: const Color(0xFFD4646A),
+                color: colors.danger,
                 height: 1.4,
               ),
             ),
@@ -243,10 +227,8 @@ class _AppSidebarState extends ConsumerState<AppSidebar> {
           ),
           alignment: showText ? Alignment.centerLeft : Alignment.center,
           decoration: BoxDecoration(
-            color: on
-                ? const Color(0xFF4F7CD4).withValues(alpha: 0.10)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(14),
+            color: on ? accent.withValues(alpha: 0.10) : Colors.transparent,
+            borderRadius: BorderRadius.circular(IOSRadius.md),
             border: on
                 ? Border.all(color: accent.withValues(alpha: 0.30))
                 : null,

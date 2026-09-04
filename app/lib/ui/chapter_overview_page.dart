@@ -6,19 +6,18 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'widgets/app_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/quiz_repository.dart';
 import '../models/models.dart';
-import 'glass_app_bar.dart';
 import 'memorize_page.dart';
 import 'memorize_tabs_page.dart';
 import 'practice_page.dart';
-import 'widgets/app_section_header.dart';
-import 'widgets/app_state_view.dart';
 import 'responsive.dart';
 import 'app_routes.dart';
+import 'theme/ios_tokens.dart';
+import 'widgets/ios_button.dart';
+import 'widgets/ios_card.dart';
 
 class ChapterOverviewPage extends ConsumerStatefulWidget {
   const ChapterOverviewPage({
@@ -179,19 +178,25 @@ class _ChapterOverviewPageState extends ConsumerState<ChapterOverviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final colors = IOSColors.of(context);
     return Scaffold(
-      appBar: GlassAppBar(
+      backgroundColor: colors.bg,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
         title: Hero(
           tag: 'chapter-title:${widget.bankId}:${widget.chapter}',
-          child: Text(widget.chapter),
+          child: Text(widget.chapter,
+              style: IOSTypography.title2(color: colors.text)),
         ),
-        centerTitle: true,
+        leading: const BackButton(color: IOSSystemColors.blue),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.5))
           : _error != null
-              ? AppStateView.error(
+              ? _ErrorView(
                   message: _error!,
                   onRetry: () {
                     setState(() {
@@ -201,105 +206,110 @@ class _ChapterOverviewPageState extends ConsumerState<ChapterOverviewPage> {
                     _load();
                   },
                 )
-              : _buildBody(theme),
+              : _buildBody(),
     );
   }
 
-  Widget _buildBody(ThemeData theme) {
+  Widget _buildBody() {
+    final colors = IOSColors.of(context);
     final hasKnowledge = _knowledge.isNotEmpty;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-      children: [
-        _buildOverviewCard(theme),
-        const SizedBox(height: 12),
-        _buildActionRow(theme),
-        const SizedBox(height: 20),
-        AppSectionHeader(
-          title: hasKnowledge ? '知识点 · ${_knowledge.length}' : '本章题目',
-          trailing: Text(
-            hasKnowledge
-                ? '${_overview?.questionCount ?? 0} 道基础题'
-                : '${_overview?.questionCount ?? 0} 题',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.outline,
+    return Center(
+      child: ConstrainedBox(
+        constraints:
+            BoxConstraints(maxWidth: effectiveContentWidth(context)),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+              IOSSpacing.s16, IOSSpacing.s8, IOSSpacing.s16,
+              IOSFloatingBar.kTContentBottomInset),
+          children: [
+            _buildOverviewCard(),
+            const SizedBox(height: IOSSpacing.s12),
+            _buildActionRow(),
+            const SizedBox(height: IOSSpacing.s40),
+            _buildSectionHeader(
+              title: hasKnowledge ? '知识点 · ${_knowledge.length}' : '本章题目',
+              trailing: hasKnowledge
+                  ? '${_overview?.questionCount ?? 0} 道基础题'
+                  : '${_overview?.questionCount ?? 0} 题',
             ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        if (!hasKnowledge)
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest.withValues(
-                alpha: 0.5,
-              ),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              children: [
-                Icon(
-                  Icons.account_tree_outlined,
-                  size: 40,
-                  color: theme.colorScheme.outline,
+            const SizedBox(height: IOSSpacing.s8),
+            if (!hasKnowledge)
+              IOSCard(
+                padding: const EdgeInsets.all(IOSSpacing.s24),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.account_tree_outlined,
+                      size: 40,
+                      color: colors.text3,
+                    ),
+                    const SizedBox(height: IOSSpacing.s12),
+                    Text('此题库包未含知识点结构',
+                        style: IOSTypography.title3(color: colors.text)),
+                    const SizedBox(height: IOSSpacing.s4),
+                    Text(
+                      '可直接整章刷题，或升级题库包获得知识点概览',
+                      textAlign: TextAlign.center,
+                      style: IOSTypography.caption1(color: colors.text3),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  '此题库包未含知识点结构',
-                  style: theme.textTheme.titleMedium,
+              )
+            else if (isWideScreen(context))
+              // 宽屏（平板/桌面）知识点两列（P3 对齐原型 chaps）
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  for (final kp in _knowledge)
+                    SizedBox(
+                      width: (effectiveContentWidth(context) - 32 - 12) / 2,
+                      child: _KnowledgeCard(
+                        kp: kp,
+                        progress: _progress[kp.id],
+                        memorize: _memoStates[kp.id],
+                        onPractice: () => _startKnowledge(kp),
+                        onMemorize: () => _startMemorize(knowledgeId: kp.id),
+                      ),
+                    ),
+                ],
+              )
+            else
+              for (final kp in _knowledge) ...[
+                _KnowledgeCard(
+                  kp: kp,
+                  progress: _progress[kp.id],
+                  memorize: _memoStates[kp.id],
+                  onPractice: () => _startKnowledge(kp),
+                  onMemorize: () => _startMemorize(knowledgeId: kp.id),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '可直接整章刷题，或升级题库包获得知识点概览',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.outline,
-                  ),
-                ),
+                const SizedBox(height: IOSSpacing.s8),
               ],
-            ),
-          )
-        else if (isWideScreen(context))
-          // 宽屏（平板/桌面）知识点两列（P3 对齐原型 chaps）
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              for (final kp in _knowledge)
-                SizedBox(
-                  width: (effectiveContentWidth(context) - 32 - 12) / 2,
-                  child: _KnowledgeCard(
-                    kp: kp,
-                    progress: _progress[kp.id],
-                    memorize: _memoStates[kp.id],
-                    onPractice: () => _startKnowledge(kp),
-                    onMemorize: () => _startMemorize(knowledgeId: kp.id),
-                  ),
-                ),
-            ],
-          )
-        else
-          for (final kp in _knowledge) ...[
-            _KnowledgeCard(
-              kp: kp,
-              progress: _progress[kp.id],
-              memorize: _memoStates[kp.id],
-              onPractice: () => _startKnowledge(kp),
-              onMemorize: () => _startMemorize(knowledgeId: kp.id),
-            ),
-            const SizedBox(height: 8),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader({required String title, required String trailing}) {
+    final colors = IOSColors.of(context);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(title,
+            style: IOSTypography.title3(color: colors.text)
+                .copyWith(fontWeight: FontWeight.w700)),
+        Text(trailing, style: IOSTypography.caption1(color: colors.text3)),
       ],
     );
   }
 
-  Widget _buildOverviewCard(ThemeData theme) {
+  Widget _buildOverviewCard() {
+    final colors = IOSColors.of(context);
     final ov = _overview;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
-        borderRadius: BorderRadius.circular(16),
-      ),
+    return IOSCard(
+      padding: const EdgeInsets.all(IOSSpacing.s16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -307,45 +317,47 @@ class _ChapterOverviewPageState extends ConsumerState<ChapterOverviewPage> {
             children: [
               Icon(
                 Icons.auto_stories_outlined,
-                color: theme.colorScheme.primary,
+                color: colors.primary,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: IOSSpacing.s8),
               Text(
                 '本章知识概览',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: IOSTypography.title3(color: colors.text)
+                    .copyWith(fontWeight: FontWeight.w700),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: IOSSpacing.s8),
           Text(
             ov?.summary.isNotEmpty == true
                 ? ov!.summary
                 : '${widget.chapter} · ${ov?.questionCount ?? 0} 道题待练习。',
-            style: theme.textTheme.bodySmall?.copyWith(height: 1.5),
+            style: IOSTypography.caption1(color: colors.text2)
+                .copyWith(height: 1.5),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildActionRow(ThemeData theme) {
+  Widget _buildActionRow() {
     return Row(
       children: [
         Expanded(
-          child: FilledButton.icon(
+          child: IOSButton(
+            type: IOSButtonType.primary,
+            label: '开始刷题',
+            icon: Icons.edit_note,
             onPressed: _startChapter,
-            icon: const Icon(Icons.edit_note),
-            label: const Text('开始刷题'),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: IOSSpacing.s12),
         Expanded(
-          child: FilledButton.tonalIcon(
+          child: IOSButton(
+            type: IOSButtonType.text,
+            label: '背题模式',
+            icon: Icons.style_outlined,
             onPressed: _startMemorize,
-            icon: const Icon(Icons.style_outlined),
-            label: const Text('背题模式'),
           ),
         ),
       ],
@@ -380,15 +392,17 @@ class _KnowledgeCardState extends State<_KnowledgeCard> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final colors = IOSColors.of(context);
     final kp = widget.kp;
     final p = widget.progress;
     final ratio = (p == null || p.total == 0)
         ? 0.0
         : (p.answered / p.total).clamp(0.0, 1.0);
-    return AppCard(padding: EdgeInsets.zero, margin: EdgeInsets.zero,
+    return IOSCard(
+      padding: EdgeInsets.zero,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+        padding: const EdgeInsets.fromLTRB(
+            IOSSpacing.s16, IOSSpacing.s12, IOSSpacing.s12, IOSSpacing.s12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -398,54 +412,48 @@ class _KnowledgeCardState extends State<_KnowledgeCard> {
                   Icon(
                     Icons.local_fire_department,
                     size: 18,
-                    color: theme.colorScheme.tertiary,
+                    color: IOSSystemColors.orange,
                   ),
-                  const SizedBox(width: 4),
-                ],                Expanded(
+                  const SizedBox(width: IOSSpacing.s4),
+                ],
+                Expanded(
                   child: Text(
                     kp.name,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: IOSTypography.body(color: colors.text)
+                        .copyWith(fontWeight: FontWeight.w600),
                   ),
                 ),
                 Text(
                   '${kp.questionCount} 题',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.outline,
-                  ),
+                  style: IOSTypography.caption1(color: colors.text3),
                 ),
                 if (widget.memorize != null) ...[
-                  const SizedBox(width: 6),
+                  const SizedBox(width: IOSSpacing.s8),
                   _MemorizeBadge(progress: widget.memorize!),
                 ],
               ],
             ),
             if (kp.summary.isNotEmpty) ...[
-              const SizedBox(height: 6),
+              const SizedBox(height: IOSSpacing.s8),
               Text(
                 kp.summary,
                 maxLines: _expanded ? null : 2,
                 overflow: _expanded ? null : TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  height: 1.45,
-                ),
+                style: IOSTypography.caption1(color: colors.text2)
+                    .copyWith(height: 1.45),
               ),
               if (kp.summary.length > 40)
                 GestureDetector(
                   onTap: () => setState(() => _expanded = !_expanded),
                   child: Text(
                     _expanded ? '收起' : '展开',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: IOSTypography.caption1(color: colors.primary)
+                        .copyWith(fontWeight: FontWeight.w600),
                   ),
                 ),
             ],
             if (p != null && p.total > 0) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: IOSSpacing.s8),
               Row(
                 children: [
                   Expanded(
@@ -454,34 +462,34 @@ class _KnowledgeCardState extends State<_KnowledgeCard> {
                       child: LinearProgressIndicator(
                         value: ratio,
                         minHeight: 4,
-                        backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                        color: colors.primary,
+                        backgroundColor: colors.fill2,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: IOSSpacing.s8),
                   Text(
                     '已答 ${p.answered}/${p.total}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.outline,
-                    ),
+                    style: IOSTypography.caption1(color: colors.text3),
                   ),
                 ],
               ),
             ],
-            const SizedBox(height: 4),
+            const SizedBox(height: IOSSpacing.s4),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton.icon(
                   onPressed: widget.onMemorize,
-                  icon: const Icon(Icons.style_outlined, size: 18),
-                  label: const Text('背题'),
+                  icon: Icon(Icons.style_outlined,
+                      size: 18, color: colors.primary),
+                  label: Text('背题', style: IOSTypography.callout(color: colors.primary)),
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: IOSSpacing.s4),
                 TextButton.icon(
                   onPressed: widget.onPractice,
-                  icon: const Icon(Icons.play_arrow, size: 18),
-                  label: const Text('刷题'),
+                  icon: Icon(Icons.play_arrow, size: 18, color: colors.primary),
+                  label: Text('刷题', style: IOSTypography.callout(color: colors.primary)),
                 ),
               ],
             ),
@@ -501,21 +509,52 @@ class _MemorizeBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final colors = IOSColors.of(context);
     final mastered = progress.mastered;
-    final color = mastered ? const Color(0xFF2E7D32) : Colors.orange.shade800;
+    final color = mastered ? colors.success : IOSSystemColors.orange;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding:
+          const EdgeInsets.symmetric(horizontal: IOSSpacing.s8, vertical: IOSSpacing.s4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(IOSRadius.tag),
         border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
       child: Text(
         mastered ? '已掌握' : '学习中',
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: color,
-          fontWeight: FontWeight.w700,
+        style: IOSTypography.caption2(color: color)
+            .copyWith(fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+}
+
+/// 通用错误态：图标 + 说明 + 重试按钮（V3 风格）
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = IOSColors.of(context);
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.cloud_off_outlined, size: 44, color: colors.danger),
+            const SizedBox(height: IOSSpacing.s12),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: IOSTypography.body(color: colors.text2),
+            ),
+            const SizedBox(height: IOSSpacing.s16),
+            IOSButton(label: '重试', icon: Icons.refresh, onPressed: onRetry),
+          ],
         ),
       ),
     );
