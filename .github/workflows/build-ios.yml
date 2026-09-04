@@ -33,11 +33,17 @@ jobs:
         working-directory: app
         run: flutter pub get
 
-      - name: Disable code signing in Xcode project
+      - name: Inject dummy Development Team and disable signing
         working-directory: app/ios
         run: |
+          # 1. Change to Manual signing style
           sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' Runner.xcodeproj/project.pbxproj
-          echo "CODE_SIGN_STYLE after:"
+          # 2. Inject dummy DEVELOPMENT_TEAM so Flutter's pre-flight check passes
+          sed -i '' '/PRODUCT_BUNDLE_IDENTIFIER = dev.kaoyan.quizApp;/a\
+\t\t\tDEVELOPMENT_TEAM = 0000000000;' Runner.xcodeproj/project.pbxproj
+          echo "--- DEVELOPMENT_TEAM lines ---"
+          grep 'DEVELOPMENT_TEAM' Runner.xcodeproj/project.pbxproj | head -5
+          echo "--- CODE_SIGN_STYLE lines ---"
           grep 'CODE_SIGN_STYLE' Runner.xcodeproj/project.pbxproj | head -3
 
       - name: Build iOS (release, no codesign)
@@ -48,18 +54,7 @@ jobs:
           CODE_SIGN_IDENTITY: ""
         run: |
           rm -f ios/Podfile ios/Podfile.lock
-          # Flutter may exit 1 on final codesign check, but Xcode build itself succeeds
-          flutter build ios --release --no-codesign || true
-          echo "--- Check if Runner.app was produced despite Flutter exit code ---"
-          ls -la build/ios/iphoneos/Runner.app 2>/dev/null && echo "Runner.app EXISTS" || echo "Runner.app MISSING"
-          # If missing, fallback to xcodebuild directly
-          if [ ! -d build/ios/iphoneos/Runner.app ]; then
-            echo "Fallback: building with xcodebuild directly..."
-            cd ios
-            xcodebuild -workspace Runner.xcworkspace -scheme Runner -configuration Release -destination 'generic/platform=iOS' CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" build || true
-            cd ..
-            ls -la build/ios/iphoneos/Runner.app 2>/dev/null && echo "Runner.app EXISTS after xcodebuild" || echo "Runner.app STILL MISSING"
-          fi
+          flutter build ios --release --no-codesign
 
       - name: Verify app bundle
         run: |
