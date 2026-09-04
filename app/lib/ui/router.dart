@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -34,41 +35,53 @@ final appRouter = GoRouter(
       routes: [
         GoRoute(
           path: 'bank/:bankId',
-          builder: (_, s) => BankPage(bankId: s.pathParameters['bankId']!),
+          pageBuilder: (_, s) => CupertinoPage(
+            child: BankPage(bankId: s.pathParameters['bankId']!),
+          ),
           routes: [
             GoRoute(
               path: 'chapters',
-              builder: (_, s) => ChapterOverviewListPage(
-                bankId: s.pathParameters['bankId']!,
+              pageBuilder: (_, s) => CupertinoPage(
+                child: ChapterOverviewListPage(
+                  bankId: s.pathParameters['bankId']!,
+                ),
               ),
             ),
             GoRoute(
               path: 'chapter/:chapterId',
-              builder: (_, s) => ChapterOverviewPage(
-                bankId: s.pathParameters['bankId']!,
-                // chapter 参数即章名（String）；go_router 已自动解码 path 参数，
-                // 页面内部自行反查概览
-                chapter: s.pathParameters['chapterId']!,
+              pageBuilder: (_, s) => CupertinoPage(
+                child: ChapterOverviewPage(
+                  bankId: s.pathParameters['bankId']!,
+                  // chapter 参数即章名（String）；go_router 已自动解码 path 参数，
+                  // 页面内部自行反查概览
+                  chapter: s.pathParameters['chapterId']!,
+                ),
               ),
             ),
           ],
         ),
         GoRoute(
           path: 'mock',
-          builder: (_, s) => MockExamListPage(
-            bankId: s.uri.queryParameters['bank'],
+          pageBuilder: (_, s) => CupertinoPage(
+            child: MockExamListPage(
+              bankId: s.uri.queryParameters['bank'],
+            ),
           ),
         ),
         GoRoute(
           path: 'wrongbook',
-          builder: (_, s) => WrongBookPage(
-            bankId: s.uri.queryParameters['bank'],
+          pageBuilder: (_, s) => CupertinoPage(
+            child: WrongBookPage(
+              bankId: s.uri.queryParameters['bank'],
+            ),
           ),
         ),
         GoRoute(
           path: 'me/questions/:bankId',
-          builder: (_, s) => QuestionManageDeepLinkPage(
-            bankId: s.pathParameters['bankId']!,
+          pageBuilder: (_, s) => CupertinoPage(
+            child: QuestionManageDeepLinkPage(
+              bankId: s.pathParameters['bankId']!,
+            ),
           ),
         ),
       ],

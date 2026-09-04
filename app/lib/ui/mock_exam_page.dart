@@ -52,6 +52,7 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
   Duration _remaining = Duration.zero;
   bool _submitting = false; // 防重入（审查 P0-2：同步置位）
   bool _finished = false; // 已交卷（结果弹窗被系统返回键关闭后仍阻止二次交卷）
+  bool _doubtEnabled = true; // 存疑标记开关（设置页持久化，默认开启）
 
   @override
   void initState() {
@@ -74,9 +75,11 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
       final questions = widget.presetQuestions != null
           ? widget.presetQuestions!
           : await repo.questionsByIds(widget.paper.questionIds);
+      final doubt = await repo.doubtEnabled();
       if (!mounted) return;
       setState(() {
         _questions = questions;
+        _doubtEnabled = doubt;
         _startedAt = DateTime.now();
         _remaining = Duration(minutes: widget.paper.durationMin);
         _loading = false;
@@ -390,23 +393,24 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              // 存疑标记（◆ 菱形，答题卡虚线待回看）
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => _toggleFlag(q.id),
-                child: Padding(
-                  padding: const EdgeInsets.all(4),
-                  child: Icon(
-                    _flagged.contains(q.id)
-                        ? Icons.diamond
-                        : Icons.diamond_outlined,
-                    size: 18,
-                    color: _flagged.contains(q.id)
-                        ? const Color(0xFFE0A13C)
-                        : colors.text3,
+              // 存疑标记（◆ 菱形，答题卡虚线待回看；设置页开关控制）
+              if (_doubtEnabled)
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => _toggleFlag(q.id),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(
+                      _flagged.contains(q.id)
+                          ? Icons.diamond
+                          : Icons.diamond_outlined,
+                      size: 18,
+                      color: _flagged.contains(q.id)
+                          ? const Color(0xFFE0A13C)
+                          : colors.text3,
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: IOSSpacing.s16),

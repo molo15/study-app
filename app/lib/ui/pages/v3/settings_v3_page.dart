@@ -38,6 +38,7 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
   bool _loading = true;
   StudyGoal _goal = const StudyGoal();
   bool _reviewEnabled = false;
+  bool _doubtEnabled = true;
   int _bankCount = 0;
   int _streak = 0;
 
@@ -52,12 +53,14 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
       final repo = await ref.read(quizRepositoryProvider);
       final goal = await repo.studyGoal() ?? const StudyGoal();
       final review = await repo.reviewModeEnabled();
+      final doubt = await repo.doubtEnabled();
       final banks = await repo.banks(includeHidden: true);
       final stats = await repo.studyStats();
       if (!mounted) return;
       setState(() {
         _goal = goal;
         _reviewEnabled = review;
+        _doubtEnabled = doubt;
         _bankCount = banks.fold<int>(0, (s, b) => s + b.active);
         _streak = _calcStreak(stats.daily);
         _loading = false;
@@ -587,13 +590,18 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
             ),
             IOSListItem(
               title: '存疑标记 ◆',
-              subtitle: '模拟考会话级 · 待接入',
+              subtitle: '模拟考答题时标记存疑题目',
               leading: _circleIcon(colors.primary, Icons.diamond_outlined),
               trailing: CupertinoSwitch(
-                value: false,
+                value: _doubtEnabled,
                 activeTrackColor: colors.primary,
-                onChanged: (_) =>
-                    showAppToast(context, '存疑标记将在模拟考功能接入后开放'),
+                onChanged: (v) async {
+                  setState(() => _doubtEnabled = v);
+                  try {
+                    final repo = await ref.read(quizRepositoryProvider);
+                    await repo.setDoubtEnabled(v);
+                  } catch (_) {}
+                },
               ),
             ),
           ],

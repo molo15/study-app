@@ -76,6 +76,17 @@ mixin _SettingsMixin on RepositoryMixinBase {
         enabled ? 'true' : 'false',
       );
 
+  /// 模拟考存疑标记◆开关（默认开启；关闭时模拟考答题页不显示 diamond 按钮）
+  Future<bool> doubtEnabled() async {
+    final v = await setting(QuizRepository.mockDoubtEnabledKey);
+    return v == null || v == 'true'; // 默认开启
+  }
+
+  Future<void> setDoubtEnabled(bool enabled) => setSetting(
+        QuizRepository.mockDoubtEnabledKey,
+        enabled ? 'true' : 'false',
+      );
+
   Future<void> setPracticeTimerVisible(bool visible) => setSetting(
     QuizRepository.practiceTimerVisibleKey,
     visible ? 'true' : 'false',
