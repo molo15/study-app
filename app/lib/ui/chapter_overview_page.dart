@@ -1,4 +1,4 @@
-/// 章节知识概览页（P2，formatVersion=4）
+﻿/// 章节知识概览页（P2，formatVersion=4）
 ///
 /// 进入章节刷题前先看知识概览：章节 summary + 知识点树（每点关联题数、
 /// 高频标记、摘要、作答进度），并可从概览直达「刷题」或「背题模式」。
@@ -479,17 +479,18 @@ class _KnowledgeCardState extends State<_KnowledgeCard> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                TextButton.icon(
+                IOSButton(
+                  label: '背题',
+                  icon: Icons.style_outlined,
+                  type: IOSButtonType.text,
                   onPressed: widget.onMemorize,
-                  icon: Icon(Icons.style_outlined,
-                      size: 18, color: colors.primary),
-                  label: Text('背题', style: IOSTypography.callout(color: colors.primary)),
                 ),
                 const SizedBox(width: IOSSpacing.s4),
-                TextButton.icon(
+                IOSButton(
+                  label: '刷题',
+                  icon: Icons.play_arrow,
+                  type: IOSButtonType.text,
                   onPressed: widget.onPractice,
-                  icon: Icon(Icons.play_arrow, size: 18, color: colors.primary),
-                  label: Text('刷题', style: IOSTypography.callout(color: colors.primary)),
                 ),
               ],
             ),

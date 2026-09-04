@@ -22,6 +22,7 @@ import '../services/app_log.dart';
 import 'theme/ios_animations.dart';
 import 'theme/ios_tokens.dart';
 import 'widgets/ios_action_sheet.dart';
+import 'widgets/ios_button.dart';
 
 import 'theme_controller.dart';
 
@@ -333,29 +334,46 @@ class _PracticePageState extends ConsumerState<PracticePage>
     if (!mounted) return;
     final key = widget.progressKey;
     if (key == null) return;
-    final continueFromHere = await showDialog<bool>(
+    final continueFromHere = await showIOSModalSheet<bool>(
       context: context,
-      barrierDismissible: false,
-      builder: (ctx) => PopScope(
-        canPop: false,
-        child: AlertDialog(
-          title: const Text('继续上次进度？'),
-          content: Text(
-            '上次刷到第 ${resumeIndex + 1} / $total 题。\n'
-            '「继续」保留当前作答进度与答题卡，「重新开始」清空进度从头刷。',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('重新开始'),
+      maxHeightFactor: 0.42,
+      builder: (ctx) {
+        final c = IOSColors.of(ctx);
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: IOSSpacing.s16),
+            Text('继续上次进度？', style: IOSTypography.title3(color: c.text)),
+            const SizedBox(height: IOSSpacing.s12),
+            Text(
+              '上次刷到第 ${resumeIndex + 1} / $total 题。\n'
+              '「继续」保留当前作答进度与答题卡，「重新开始」清空进度从头刷。',
+              style: IOSTypography.body(color: c.text2),
             ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('继续'),
+            const SizedBox(height: IOSSpacing.s20),
+            Row(
+              children: [
+                Expanded(
+                  child: IOSButton(
+                    label: '重新开始',
+                    type: IOSButtonType.text,
+                    onPressed: () => Navigator.of(ctx).pop(false),
+                  ),
+                ),
+                const SizedBox(width: IOSSpacing.s12),
+                Expanded(
+                  child: IOSButton(
+                    label: '继续',
+                    type: IOSButtonType.primary,
+                    onPressed: () => Navigator.of(ctx).pop(true),
+                  ),
+                ),
+              ],
             ),
           ],
-        ),
-      ),
+        );
+      },
     );
     if (!mounted) return;
     _startPracticeTimer(); // 恢复计时（弹窗等待时间不计入）

@@ -1,4 +1,4 @@
-/// 背题模式容器页（P2 · 知识点卡）
+﻿/// 背题模式容器页（P2 · 知识点卡）
 ///
 /// 顶部两个 Tab：`知识点卡`（提炼要点，默认） / `题目背诵`（逐题卡流）。
 /// - 知识点卡：KnowledgeMemorizePage（每张卡一个知识点，要点高亮，会/不会推流）
@@ -13,6 +13,9 @@ import '../data/quiz_repository.dart';
 import '../models/models.dart';
 import 'glass_app_bar.dart';
 import 'knowledge_memorize_page.dart';
+import 'theme/ios_animations.dart';
+import 'theme/ios_tokens.dart';
+import 'widgets/liquid_glass.dart';
 import 'memorize_page.dart';
 import 'practice_page.dart';
 import 'app_routes.dart';
@@ -95,7 +98,7 @@ class _MemorizeTabsPageState extends ConsumerState<MemorizeTabsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final colors = IOSColors.of(context);
     return Scaffold(
       appBar: GlassAppBar(
         title: Text(widget.title),
@@ -107,15 +110,12 @@ class _MemorizeTabsPageState extends ConsumerState<MemorizeTabsPage> {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
-                child: Container(
-                  height: 38,
+                child: LiquidGlass(
+                  variant: LiquidGlassVariant.thin,
+                  borderRadius: BorderRadius.circular(IOSRadius.pill),
+                  showShadow: false,
                   padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest.withValues(
-                      alpha: 0.6,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
+                  height: 38,
                   child: Row(
                     children: [
                       _Segment(
@@ -141,25 +141,40 @@ class _MemorizeTabsPageState extends ConsumerState<MemorizeTabsPage> {
                   child: Row(
                     children: [
                       Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(3),
-                          child: LinearProgressIndicator(
-                            value: widget.knowledge.isEmpty
-                                ? 0
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final progress = widget.knowledge.isEmpty
+                                ? 0.0
                                 : ((_kpMastered ?? 0) / widget.knowledge.length)
-                                    .clamp(0.0, 1.0),
-                            minHeight: 4,
-                            backgroundColor:
-                                theme.colorScheme.surfaceContainerHighest,
-                          ),
+                                    .clamp(0.0, 1.0);
+                            return Stack(
+                              children: [
+                                Container(
+                                  height: 5,
+                                  decoration: BoxDecoration(
+                                    color: colors.fill2,
+                                    borderRadius: BorderRadius.circular(IOSRadius.pill),
+                                  ),
+                                ),
+                                FractionallySizedBox(
+                                  widthFactor: progress,
+                                  child: Container(
+                                    height: 5,
+                                    decoration: BoxDecoration(
+                                      color: colors.primary,
+                                      borderRadius: BorderRadius.circular(IOSRadius.pill),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        '知识点已掌握 ${_kpMastered ?? 0}/${widget.knowledge.length}',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.outline,
-                        ),
+                        '已掌握 ${_kpMastered ?? 0}/${widget.knowledge.length}',
+                        style: IOSTypography.caption1(color: colors.text2),
                       ),
                     ],
                   ),
@@ -203,40 +218,33 @@ class _Segment extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final colors = IOSColors.of(context);
+    final anim = IOSAnimations.of(context);
+    final fg = selected ? colors.primary : colors.text2;
     return Expanded(
-      child: Material(
-        color: selected
-            ? theme.colorScheme.primaryContainer
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(17),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(17),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 7),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  size: 16,
-                  color: selected
-                      ? theme.colorScheme.onPrimaryContainer
-                      : theme.colorScheme.outline,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: anim.effectiveDuration(IOSDuration.fast),
+          curve: anim.effectiveCurve(IOSCurve.press),
+          padding: const EdgeInsets.symmetric(vertical: 7),
+          decoration: BoxDecoration(
+            color: selected ? colors.primaryBg : Colors.transparent,
+            borderRadius: BorderRadius.circular(IOSRadius.pill),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 16, color: fg),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: IOSTypography.callout(color: fg).copyWith(
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: selected
-                        ? theme.colorScheme.onPrimaryContainer
-                        : theme.colorScheme.outline,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

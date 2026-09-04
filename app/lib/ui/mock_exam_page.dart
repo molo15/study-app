@@ -256,7 +256,9 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
           ],
         ),
         actions: [
-          TextButton(
+          IOSButton(
+            label: '查看逐题解析',
+            type: IOSButtonType.text,
             onPressed: () {
               Navigator.of(context).pop(); // 关结果弹窗
               Navigator.of(context).push(
@@ -269,8 +271,6 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
                 ),
               );
             },
-            child: Text('查看逐题解析',
-                style: IOSTypography.callout(color: IOSColors.of(context).primary)),
           ),
           IOSButton(
             label: '完成',
