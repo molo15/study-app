@@ -22,7 +22,7 @@ class _SummaryView extends StatelessWidget {
     final theme = Theme.of(context);
     final rate = total == 0 ? 0.0 : correct / total * 100;
     return Scaffold(
-      appBar: GlassAppBar(title: const Text('刷题完成')),
+      appBar: AppBar(title: const Text('刷题完成')),
       body: Center(
         // SingleChildScrollView：防止小屏/横屏/大字体溢出（设计方案 §8）
         child: SingleChildScrollView(
