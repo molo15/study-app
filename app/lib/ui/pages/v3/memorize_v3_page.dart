@@ -110,6 +110,7 @@ class _MemorizeV3PageState extends ConsumerState<MemorizeV3Page> {
         ),
         // 按科目背诵
         IOSListGroup(
+          animate: true,
           title: '按科目背诵',
           items: [
             for (final bank in _banks)

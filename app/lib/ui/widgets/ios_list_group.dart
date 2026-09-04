@@ -19,6 +19,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/ios_animations.dart';
 import '../theme/ios_tokens.dart';
+import 'ios_animated_item.dart';
 
 /// 分组列表容器
 class IOSListGroup extends StatelessWidget {
@@ -29,6 +30,7 @@ class IOSListGroup extends StatelessWidget {
     this.footer,
     this.margin,
     this.padding,
+    this.animate = false,
   });
 
   /// 组标题（footnote 大小，大写风格）
@@ -42,6 +44,9 @@ class IOSListGroup extends StatelessWidget {
 
   final EdgeInsetsGeometry? margin;
   final EdgeInsetsGeometry? padding;
+
+  /// 是否启用列表项 stagger 入场动效（默认关闭；设置页等静态列表无需动画）
+  final bool animate;
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +90,10 @@ class IOSListGroup extends StatelessWidget {
             child: Column(
               children: [
                 for (var i = 0; i < items.length; i++) ...[
-                  items[i],
+                  if (animate)
+                    IOSAnimatedItem(index: i, child: items[i])
+                  else
+                    items[i],
                   if (i < items.length - 1)
                     Divider(
                       height: IOSGlass.borderWidth,

@@ -271,6 +271,7 @@ class HomeV3PageState extends ConsumerState<HomeV3Page> {
         ],
         // 快捷入口
         IOSListGroup(
+          animate: true,
           title: '快捷入口',
           items: [
             IOSListItem(
@@ -306,6 +307,7 @@ class HomeV3PageState extends ConsumerState<HomeV3Page> {
         ),
         // 题库列表
         IOSListGroup(
+          animate: true,
           title: '题库 · 共 $_totalCount 题',
           items: [
             for (final bank in _banks)
