@@ -33,10 +33,6 @@ jobs:
         working-directory: app
         run: flutter pub get
 
-      - name: Install CocoaPods
-        working-directory: app/ios
-        run: pod install --repo-update
-
       - name: Clear code signing (unsigned CI build)
         working-directory: app/ios
         run: |
