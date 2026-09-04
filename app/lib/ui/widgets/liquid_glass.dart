@@ -1,4 +1,4 @@
-/// V3 iOS 液态玻璃容器（Liquid Glass）
+﻿/// V3 iOS 液态玻璃容器（Liquid Glass）
 ///
 /// 结构：BackdropFilter(blur) + 半透明底 + 0.5px 边框 + 顶部 40% 高光渐变 + 阴影
 /// 三档模糊强度：thin(18) / regular(24) / thick(32)
@@ -110,7 +110,8 @@ class LiquidGlass extends StatelessWidget {
           color: colors.glassBorder,
           width: IOSGlass.borderWidth,
         ),
-        boxShadow: showShadow ? IOSShadow.glass(dark: dark) : null,
+        // 阴影移到 ClipRRect 外层：原 boxShadow 在此处会被外层圆角裁剪成
+        // 左右两侧圆弧状块（底栏左右"圆弧填充"根因）
       ),
       child: Stack(
         children: [
@@ -156,8 +157,19 @@ class LiquidGlass extends StatelessWidget {
       ),
     );
 
+    // 阴影在 ClipRRect 外层：在胶囊外正常展开，不被圆角裁剪成圆弧块
+    final withShadow = showShadow
+        ? DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: radius,
+              boxShadow: IOSShadow.glass(dark: dark),
+            ),
+            child: filtered,
+          )
+        : filtered;
+
     // RepaintBoundary 隔离模糊重绘
-    final isolated = RepaintBoundary(child: filtered);
+    final isolated = RepaintBoundary(child: withShadow);
 
     if (margin != null) {
       return Padding(padding: margin!, child: isolated);

@@ -225,6 +225,11 @@ class _FullScreenBackGestureDetectorState<T>
           width: widget.gestureWidth,
           child: Listener(
             onPointerDown: (event) {
+              // 变灰卡死根因修复：弹窗（bottom sheet/dialog/overlay）在场时，
+              // 当前路由不再 isCurrent，此时不把指针加入手势识别器。
+              // 原实现无条件 addPointer，HorizontalDragGestureRecognizer 会在竞技场中
+              // 阻止 ModalBarrier 的 tap 识别，导致 barrier 出现但点不动、用户卡死。
+              if (!widget.route.isCurrent) return;
               _recognizer.addPointer(event);
             },
             behavior: HitTestBehavior.translucent,
@@ -241,7 +246,7 @@ IOSPageRoute<T> iosPageRoute<T>(
   WidgetBuilder builder, {
   RouteSettings? settings,
   bool fullscreenDialog = false,
-  double gestureWidthRatio = 1.0,
+  double gestureWidthRatio = 0.4,
 }) =>
     IOSPageRoute<T>(
       builder: builder,

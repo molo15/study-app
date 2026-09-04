@@ -513,7 +513,8 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
                     (constraints.maxWidth / 48).floor().clamp(4, 10);
                 return GridView.builder(
                   shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
+                  // 内容多时允许内部滚动，避免溢出弹窗高度（R4 复查新增）
+                  physics: const ClampingScrollPhysics(),
                   padding: const EdgeInsets.only(bottom: 8),
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: cols,
