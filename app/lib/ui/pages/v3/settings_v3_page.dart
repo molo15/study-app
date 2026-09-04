@@ -578,10 +578,12 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
               title: '审题标记 🚩',
               subtitle: '练习重点题 · 落库 review_flags',
               leading: _circleIcon(colors.primary, Icons.flag_outlined),
-              trailing: CupertinoSwitch(
+              trailing: Switch(
                 value: _reviewEnabled,
                 activeTrackColor: colors.primary,
-                thumbColor: Colors.white,
+                inactiveTrackColor: colors.fill2,
+                activeThumbColor: Colors.white,
+                inactiveThumbColor: Colors.white,
                 onChanged: (v) async {
                   setState(() => _reviewEnabled = v);
                   final repo = await ref.read(quizRepositoryProvider);
@@ -593,10 +595,12 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
               title: '存疑标记 ◆',
               subtitle: '模拟考答题时标记存疑题目',
               leading: _circleIcon(colors.primary, Icons.diamond_outlined),
-              trailing: CupertinoSwitch(
+              trailing: Switch(
                 value: _doubtEnabled,
                 activeTrackColor: colors.primary,
-                thumbColor: Colors.white,
+                inactiveTrackColor: colors.fill2,
+                activeThumbColor: Colors.white,
+                inactiveThumbColor: Colors.white,
                 onChanged: (v) async {
                   setState(() => _doubtEnabled = v);
                   try {
@@ -634,10 +638,12 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
               title: '减少动效',
               subtitle: '弱化过渡动画 · 更流畅',
               leading: _circleIcon(colors.warning, Icons.speed_outlined),
-              trailing: CupertinoSwitch(
+              trailing: Switch(
                 value: reduceMotion,
                 activeTrackColor: colors.primary,
-                thumbColor: Colors.white,
+                inactiveTrackColor: colors.fill2,
+                activeThumbColor: Colors.white,
+                inactiveThumbColor: Colors.white,
                 onChanged: (v) async {
                   final config =
                       await ref.read(themeControllerProvider.future);
