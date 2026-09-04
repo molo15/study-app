@@ -58,9 +58,9 @@ class _QuestionView extends StatelessWidget {
           ]
         : question.options;
     return AnimatedSwitcher(
-      duration: reduceMotion ? Duration.zero : AppAnim.grade,
-      switchInCurve: AppAnim.standard,
-      switchOutCurve: AppAnim.standard,
+      duration: reduceMotion ? Duration.zero : IOSDuration.standard,
+      switchInCurve: IOSCurve.standard,
+      switchOutCurve: IOSCurve.standard,
       // 只显示当前 child：避免新旧 ListView 叠加导致 TextField 串题（测试 P1-5）
       layoutBuilder: (currentChild, previousChildren) => currentChild!,
       transitionBuilder: (child, animation) => FadeTransition(
@@ -277,7 +277,7 @@ class _OptionTileState extends State<_OptionTile>
   @override
   void initState() {
     super.initState();
-    _shakeCtrl = AnimationController(vsync: this, duration: AppAnim.shake);
+    _shakeCtrl = AnimationController(vsync: this, duration: IOSDuration.slow);
   }
 
   @override
@@ -341,13 +341,13 @@ class _OptionTileState extends State<_OptionTile>
         ? (widget.reduceMotion ? 1.0 : 1.03)
         : (widget.selected && !widget.submitted ? 1.01 : 1.0);
     final scaleCurve =
-        widget.submitted && isCorrect ? AppAnim.elastic : AppAnim.standard;
+        widget.submitted && isCorrect ? Curves.elasticOut : IOSCurve.standard;
 
     return Transform.translate(
       offset: Offset(shakeDx, 0),
       child: AnimatedScale(
         scale: scale,
-        duration: widget.reduceMotion ? Duration.zero : AppAnim.grade,
+        duration: widget.reduceMotion ? Duration.zero : IOSDuration.standard,
         curve: scaleCurve,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
@@ -675,8 +675,8 @@ class _ResultCard extends StatelessWidget {
     // P0 手感：滑入 + 淡入（reduceMotion 时直接显示）
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
-      duration: reduceMotion ? Duration.zero : AppAnim.slideIn,
-      curve: AppAnim.standard,
+      duration: reduceMotion ? Duration.zero : IOSDuration.standard,
+      curve: IOSCurve.standard,
       builder: (context, value, child) => Opacity(
         opacity: value,
         child: Transform.translate(

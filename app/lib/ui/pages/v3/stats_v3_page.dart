@@ -16,6 +16,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/quiz_repository.dart';
 import '../../../models/models.dart';
+import '../../responsive.dart';
 import '../../theme/ios_tokens.dart';
 import '../../widgets/ios_card.dart';
 import '../../widgets/ios_list_group.dart';
@@ -90,7 +91,10 @@ class StatsV3PageState extends ConsumerState<StatsV3Page> {
     final s = _stats!;
     // 首次使用 / 无作答：空态引导
     if (s.totalAnswered == 0) {
-      return ListView(
+      return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: effectiveContentWidth(context)),
+        child: ListView(
         padding: const EdgeInsets.fromLTRB(
           IOSSpacing.s16,
           IOSSpacing.s8,
@@ -116,7 +120,9 @@ class StatsV3PageState extends ConsumerState<StatsV3Page> {
             ),
           ),
         ],
-      );
+        ),
+      ),
+    );
     }
 
     final chapters = s.byChapter
@@ -125,7 +131,10 @@ class StatsV3PageState extends ConsumerState<StatsV3Page> {
         ? chapters.sublist(0, 8)
         : chapters;
 
-    return ListView(
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: effectiveContentWidth(context)),
+        child: ListView(
       padding: const EdgeInsets.fromLTRB(
         IOSSpacing.s16,
         IOSSpacing.s8,
@@ -218,6 +227,8 @@ class StatsV3PageState extends ConsumerState<StatsV3Page> {
             ),
           ),
       ],
+        ),
+      ),
     );
   }
 

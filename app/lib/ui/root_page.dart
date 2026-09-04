@@ -17,6 +17,7 @@ import 'pages/v3/memorize_v3_page.dart';
 import 'pages/v3/settings_v3_page.dart';
 import 'pages/v3/stats_v3_page.dart';
 import 'responsive.dart';
+import 'theme/ios_animations.dart';
 import 'widgets/app_sidebar.dart';
 import 'widgets/floating_tab_bar.dart';
 import 'widgets/ios_install_guide.dart';
@@ -144,7 +145,7 @@ class _SmoothTabViewState extends State<_SmoothTabView>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 300), // 慢速档
+    duration: IOSDuration.fast, // Tab 切换：150ms 快速响应（规格 tabSwitch）
   );
 
   @override
@@ -169,9 +170,14 @@ class _SmoothTabViewState extends State<_SmoothTabView>
 
   @override
   Widget build(BuildContext context) {
+    final anim = IOSAnimations.of(context);
+    // Reduce Motion：跳过 Tab 切换上滑动画，直接显示
+    if (anim.reduceMotion) {
+      return IndexedStack(index: widget.index, children: widget.children);
+    }
     final curved = CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeOutCubic,
+      curve: anim.effectiveCurve(IOSCurve.standard),
     );
     // 仅轻微上滑过渡（v1.1.3：去掉透明度淡入，避免切换瞬间背景透出，显得卡顿）
     return SlideTransition(

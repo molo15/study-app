@@ -19,9 +19,9 @@ import '../data/grading.dart';
 import '../data/quiz_repository.dart';
 import '../models/models.dart';
 import '../services/app_log.dart';
+import 'theme/ios_animations.dart';
 import 'theme/ios_tokens.dart';
 
-import 'widgets/animation_constants.dart';
 import 'theme_controller.dart';
 
 import 'glass_app_bar.dart';

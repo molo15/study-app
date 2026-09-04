@@ -12,6 +12,8 @@
 /// 旧 V2 SettingsPage 保留（lib/ui/settings_page.dart），本页为 V3 替换实现。
 library;
 
+import 'dart:math';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,6 +22,7 @@ import '../../../data/quiz_repository.dart';
 import '../../../models/models.dart';
 import '../../../services/export_helper.dart';
 import '../../app_toast.dart';
+import '../../responsive.dart';
 import '../../theme/ios_tokens.dart';
 import '../../theme_controller.dart';
 import '../../widgets/ios_list_group.dart';
@@ -226,6 +229,139 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
     );
   }
 
+  /// 每日目标编辑面板：启用开关 + 每日新题/复习步进器（步长 10，0~200）
+  void _pickDailyGoal(IOSColorScheme colors) async {
+    var enabled = _goal.enabled;
+    var dailyNew = _goal.dailyNew;
+    var dailyReview = _goal.dailyReview;
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetCtx) {
+        final sheetColors = IOSColors.of(sheetCtx);
+        return StatefulBuilder(
+          builder: (ctx, setSheet) => SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: IOSSpacing.s16,
+                    horizontal: IOSSpacing.s24,
+                  ),
+                  child: Text('每日目标',
+                      style: IOSTypography.title3(color: sheetColors.text)),
+                ),
+                SwitchListTile(
+                  title: Text('启用每日目标',
+                      style: IOSTypography.body(color: sheetColors.text)),
+                  subtitle: Text('首页显示今日进度与考试倒计时',
+                      style: IOSTypography.caption1(color: sheetColors.text2)),
+                  value: enabled,
+                  activeTrackColor: sheetColors.primary,
+                  onChanged: (v) => setSheet(() => enabled = v),
+                ),
+                _stepperRow(
+                  label: '每日新题',
+                  value: dailyNew,
+                  enabled: enabled,
+                  colors: sheetColors,
+                  onChanged: (v) => setSheet(() => dailyNew = v),
+                ),
+                _stepperRow(
+                  label: '每日复习',
+                  value: dailyReview,
+                  enabled: enabled,
+                  colors: sheetColors,
+                  onChanged: (v) => setSheet(() => dailyReview = v),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(IOSSpacing.s16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(),
+                          child: Text('取消',
+                              style: IOSTypography.body(
+                                  color: sheetColors.text2)),
+                        ),
+                      ),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () async {
+                            final goal = StudyGoal(
+                              examDate: _goal.examDate,
+                              dailyNew: dailyNew,
+                              dailyReview: dailyReview,
+                              enabled: enabled,
+                            );
+                            final repo =
+                                await ref.read(quizRepositoryProvider);
+                            await repo.setStudyGoal(goal);
+                            if (!mounted) return;
+                            setState(() => _goal = goal);
+                            if (ctx.mounted) Navigator.of(ctx).pop();
+                          },
+                          child: Text('保存',
+                              style: IOSTypography.body(
+                                  color: sheetColors.text)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _stepperRow({
+    required String label,
+    required int value,
+    required bool enabled,
+    required IOSColorScheme colors,
+    required ValueChanged<int> onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: IOSSpacing.s16,
+        vertical: IOSSpacing.s4,
+      ),
+      child: Row(
+        children: [
+          Text(label,
+              style: IOSTypography.body(
+                  color: enabled ? colors.text : colors.text3)),
+          const Spacer(),
+          IconButton(
+            icon: Icon(Icons.remove_circle_outline,
+                color: enabled ? colors.primary : colors.text3, size: 28),
+            onPressed: enabled && value > 0
+                ? () => onChanged(max(0, value - 10))
+                : null,
+          ),
+          SizedBox(
+            width: 48,
+            child: Text('$value',
+                textAlign: TextAlign.center,
+                style: IOSTypography.title3(
+                    color: enabled ? colors.text : colors.text3)),
+          ),
+          IconButton(
+            icon: Icon(Icons.add_circle_outline,
+                color: enabled ? colors.primary : colors.text3, size: 28),
+            onPressed: enabled
+                ? () => onChanged(min(200, value + 10))
+                : null,
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _exportBackup() async {
     try {
       final repo = await ref.read(quizRepositoryProvider);
@@ -244,6 +380,92 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
       if (!mounted) return;
       showAppToast(context, '导出失败：$e');
     }
+  }
+
+  void _showMemorizeModeInfo(IOSColorScheme colors) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) {
+        final c = IOSColors.of(dialogCtx);
+        return AlertDialog(
+          title: Text('背题模式',
+              style: IOSTypography.title3(color: c.text)),
+          content: Text(
+            '背题支持两种学习形态：\n\n'
+            '• 知识卡片：正面题目 / 背面答案，点击翻转记忆\n'
+            '• 题目模式：直接显示题干与选项，自测后判分\n\n'
+            '进入背题页后可在顶部切换模式。当前版本默认题目模式。',
+            style: IOSTypography.footnote(color: c.text2),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(),
+              child: Text('知道了',
+                  style: IOSTypography.body(color: c.primary)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showHelp(IOSColorScheme colors) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) {
+        final c = IOSColors.of(dialogCtx);
+        return AlertDialog(
+          title: Text('使用帮助',
+              style: IOSTypography.title3(color: c.text)),
+          content: Text(
+            '快速上手：\n\n'
+            '1. 「今日」页查看待复习与新题队列，点击开始练习\n'
+            '2. 答题后四档评分（忘记/模糊/良好/完美），系统按间隔重复调度\n'
+            '3. 「背题」中央圆钮进入科目背诵，支持翻转记忆\n'
+            '4. 「统计」查看正确率、近 7 日趋势与薄弱章节\n'
+            '5. 「我的」设置深色模式、审题标记与每日目标\n\n'
+            '数据全部保存在本机，自动存档。',
+            style: IOSTypography.footnote(color: c.text2),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(),
+              child: Text('好的',
+                  style: IOSTypography.body(color: c.primary)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showFeedback(IOSColorScheme colors) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogCtx) {
+        final c = IOSColors.of(dialogCtx);
+        return AlertDialog(
+          title: Text('意见反馈',
+              style: IOSTypography.title3(color: c.text)),
+          content: Text(
+            '遇到问题或有改进建议？\n\n'
+            '当前版本为本地单机应用，反馈渠道建设中。\n\n'
+            '你可以：\n'
+            '• 记录问题截图与复现步骤\n'
+            '• 在 GitHub 仓库提交 Issue\n'
+            '• 或直接在使用中留意，后续版本将内置反馈表单',
+            style: IOSTypography.footnote(color: c.text2),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogCtx).pop(),
+              child: Text('好的',
+                  style: IOSTypography.body(color: c.primary)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showAbout(IOSColorScheme colors) {
@@ -288,7 +510,10 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
     final pref = themeConfig?.themePreference ?? ThemePreference.system;
     final reduceMotion = themeConfig?.reduceMotion ?? false;
 
-    return ListView(
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: effectiveContentWidth(context)),
+        child: ListView(
       padding: EdgeInsets.only(
         left: IOSBreakpoint.compactPadding,
         right: IOSBreakpoint.compactPadding,
@@ -329,7 +554,7 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
                   : '未开启',
               leading: _circleIcon(colors.success, Icons.flag_outlined),
               showChevron: true,
-              onTap: () => showAppToast(context, '每日目标调整将在后续版本开放'),
+              onTap: () => _pickDailyGoal(colors),
             ),
           ],
         ),
@@ -344,7 +569,7 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
               subtitle: '知识卡片 / 题目 双模式',
               leading: _circleIcon(colors.warning, Icons.style_outlined),
               showChevron: true,
-              onTap: () => showAppToast(context, '背题模式设置将在后续版本开放'),
+              onTap: () => _showMemorizeModeInfo(colors),
             ),
             IOSListItem(
               title: '审题标记 🚩',
@@ -443,13 +668,13 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
               title: '使用帮助',
               leading: _circleIcon(colors.primary, Icons.help_outline),
               showChevron: true,
-              onTap: () => showAppToast(context, '使用帮助将在后续版本开放'),
+              onTap: () => _showHelp(colors),
             ),
             IOSListItem(
               title: '意见反馈',
               leading: _circleIcon(colors.warning, Icons.chat_outlined),
               showChevron: true,
-              onTap: () => showAppToast(context, '意见反馈将在后续版本开放'),
+              onTap: () => _showFeedback(colors),
             ),
             IOSListItem(
               title: '关于',
@@ -461,6 +686,8 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
           ],
         ),
       ],
+        ),
+      ),
     );
   }
 

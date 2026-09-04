@@ -19,6 +19,8 @@ import 'package:go_router/go_router.dart';
 import '../../../data/quiz_repository.dart';
 import '../../../data/seed_loader.dart';
 import '../../../models/models.dart';
+import '../../responsive.dart';
+import '../../theme/ios_animations.dart';
 import '../../theme/ios_page_route.dart';
 import '../../theme/ios_tokens.dart';
 import '../../widgets/circular_ring.dart';
@@ -198,7 +200,10 @@ class HomeV3PageState extends ConsumerState<HomeV3Page> {
         ),
       );
     }
-    return ListView(
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: effectiveContentWidth(context)),
+        child: ListView(
       // 底部留白防悬浮 TabBar 遮挡（V3 §3.3 kTContentBottomInset）
       padding: const EdgeInsets.fromLTRB(
         IOSSpacing.s16,
@@ -318,6 +323,8 @@ class HomeV3PageState extends ConsumerState<HomeV3Page> {
           ],
         ),
       ],
+        ),
+      ),
     );
   }
 
@@ -439,7 +446,7 @@ class HomeV3PageState extends ConsumerState<HomeV3Page> {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 100),
+        duration: IOSDuration.highlight,
         padding: const EdgeInsets.symmetric(
           horizontal: IOSSpacing.s12,
           vertical: IOSSpacing.s12,

@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/quiz_repository.dart';
+import '../../responsive.dart';
 import '../../theme/ios_page_route.dart';
 import '../../theme/ios_tokens.dart';
 import '../../widgets/ios_card.dart';
@@ -66,7 +67,10 @@ class _MemorizeV3PageState extends ConsumerState<MemorizeV3Page> {
     if (_loading) {
       return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
     }
-    return ListView(
+    return Center(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: effectiveContentWidth(context)),
+        child: ListView(
       // 底部留白防悬浮 TabBar 遮挡（V3 §3.3）
       padding: const EdgeInsets.fromLTRB(
         IOSSpacing.s16,
@@ -119,6 +123,8 @@ class _MemorizeV3PageState extends ConsumerState<MemorizeV3Page> {
           ],
         ),
       ],
+        ),
+      ),
     );
   }
 
