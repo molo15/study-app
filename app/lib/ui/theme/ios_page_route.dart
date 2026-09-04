@@ -1,4 +1,4 @@
-/// V3 iOS 全屏滑动返回 PageRoute
+﻿/// V3 iOS 全屏滑动返回 PageRoute
 ///
 /// 用户需求："不需要在边界向右滑动仍可返回"——Flutter 默认 CupertinoPageRoute
 /// 只支持左边缘滑动返回（gestureWidth 默认为屏幕宽度的 1/10，约 40pt）。
@@ -97,38 +97,117 @@ class _FullScreenBackGestureDetector<T> extends StatefulWidget {
 }
 
 class _FullScreenBackGestureDetectorState<T>
-    extends State<_FullScreenBackGestureDetector<T>> {
+    extends State<_FullScreenBackGestureDetector<T>>
+    with TickerProviderStateMixin {
   late final HorizontalDragGestureRecognizer _recognizer;
+  bool _isBackGesture = false; // 方向锁定后接管（规避横向滚动冲突）
+  double _dragOffset = 0; // 当前右移距离
+  AnimationController? _snap; // 未超阈回弹动画
+
+  /// 接管返回手势所需的最小右移距离（pt），避免误触
+  static const double _lockThreshold = 12;
+  /// 右滑速度阈值（pt/s）
+  static const double _velocityThreshold = 300;
+  /// 松手时决定是否 pop 的位移阈值（相对屏幕宽度比例）
+  static const double _popRatio = 0.25;
 
   @override
   void initState() {
     super.initState();
     _recognizer = HorizontalDragGestureRecognizer()
-      ..onStart = (_) {}
-      ..onUpdate = (_) {}
+      ..onStart = _handleDragStart
+      ..onUpdate = _handleDragUpdate
       ..onEnd = _handleDragEnd
-      ..onCancel = () {};
+      ..onCancel = _handleDragCancel;
   }
 
   @override
   void dispose() {
+    _snap?.dispose();
     _recognizer.dispose();
     super.dispose();
   }
 
-  void _handleDragEnd(DragEndDetails details) {
-    // 阶段1：向右快速滑动时触发 pop
-    // 阶段4：根据拖拽进度和速度决定是否完成返回
-    if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
-      Navigator.of(context).maybePop();
+  void _handleDragStart(DragStartDetails details) {
+    _isBackGesture = false;
+    _dragOffset = 0;
+    _snap?.dispose();
+    _snap = null;
+  }
+
+  void _handleDragUpdate(DragUpdateDetails details) {
+    final delta = details.primaryDelta ?? 0;
+    if (!_isBackGesture) {
+      // 方向锁定：左滑透传给内部横向滚动；右滑超阈值才接管为返回手势
+      if (delta < 0) return;
+      _dragOffset += delta;
+      if (_dragOffset > _lockThreshold) {
+        _isBackGesture = true;
+        setState(() {});
+      }
+      return;
     }
+    _dragOffset += delta;
+    if (_dragOffset < 0) _dragOffset = 0;
+    setState(() {});
+  }
+
+  void _handleDragEnd(DragEndDetails details) {
+    if (!_isBackGesture) return;
+    final v = details.primaryVelocity ?? 0;
+    final width = MediaQuery.of(context).size.width;
+    final threshold = width * _popRatio;
+    if (v > _velocityThreshold || _dragOffset > threshold) {
+      Navigator.of(context).pop();
+      return;
+    }
+    // 未超阈：回弹到原位
+    final from = _dragOffset;
+    _snap = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 180),
+    );
+    _snap!.addListener(() {
+      if (mounted) {
+        setState(() => _dragOffset = from * (1 - _snap!.value));
+      }
+    });
+    _snap!.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _snap?.dispose();
+        _snap = null;
+        if (mounted) setState(() => _dragOffset = 0);
+      }
+    });
+    _snap!.forward();
+  }
+
+  void _handleDragCancel() {
+    _isBackGesture = false;
+    _dragOffset = 0;
+    if (mounted) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final progress = width == 0
+        ? 0.0
+        : (_dragOffset / (width * 0.4)).clamp(0.0, 1.0);
     return Stack(
       children: [
-        widget.child,
+        // 下层渐显：右侧露出暗色底（模拟下层页面压暗，随拖拽加深）
+        Positioned.fill(
+          child: IgnorePointer(
+            child: ColoredBox(
+              color: CupertinoColors.black.withValues(alpha: 0.35 * progress),
+            ),
+          ),
+        ),
+        Transform.translate(
+          offset: Offset(_dragOffset, 0),
+          child: widget.child,
+        ),
         // 全屏手势识别区域：从左边缘延伸到 gestureWidth
         Positioned(
           left: 0,

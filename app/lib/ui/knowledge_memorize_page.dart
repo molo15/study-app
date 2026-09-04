@@ -1,4 +1,4 @@
-/// 知识点卡背题模式（P2 · 知识点卡，v11 背题存档）
+﻿/// 知识点卡背题模式（P2 · 知识点卡，v11 背题存档）
 ///
 /// 「不背单词式」知识点卡片流：每张卡 = 一个知识点（名称 + 提炼要点 summary，
 /// 关键术语高亮），点「背会了/还不会」推进。
@@ -10,14 +10,15 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'widgets/app_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/quiz_repository.dart';
 import '../models/models.dart';
-import 'theme_controller.dart';
 import 'glass_app_bar.dart';
+import 'theme/ios_tokens.dart';
 import 'widgets/flippable_card.dart';
+import 'widgets/ios_button.dart';
+import 'widgets/ios_card.dart';
 
 class KnowledgeMemorizePage extends ConsumerStatefulWidget {
   const KnowledgeMemorizePage({
@@ -204,9 +205,10 @@ class _KnowledgeMemorizePageState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colors = IOSColors.of(context);
     final Widget body;
     if (_loading) {
-      body = const Center(child: CircularProgressIndicator());
+      body = Center(child: CircularProgressIndicator(color: colors.primary));
     } else {
       body = _finished ? _buildSummary(theme) : _buildCard(theme);
     }
@@ -224,6 +226,7 @@ class _KnowledgeMemorizePageState
     final kp = _current;
     // 队列为空（极端边界）时回到总结视图，避免强解包崩溃
     if (kp == null) return _buildSummary(theme);
+    final colors = IOSColors.of(context);
     final total = _all.length;
     final masteredNow = _mastered.length + _preMastered;
     return ListView(
@@ -233,21 +236,39 @@ class _KnowledgeMemorizePageState
         Row(
           children: [
             Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: total == 0 ? 0 : masteredNow / total,
-                  minHeight: 6,
-                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                ),
+              child: LayoutBuilder(
+                builder: (ctx, cons) {
+                  final ratio = (total == 0 ? 0.0 : masteredNow / total)
+                      .clamp(0.0, 1.0)
+                      .toDouble();
+                  return Stack(
+                    children: [
+                      Container(
+                        width: cons.maxWidth,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: colors.fill2,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                      if (ratio > 0)
+                        Container(
+                          width: cons.maxWidth * ratio,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: colors.primary,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                    ],
+                  );
+                },
               ),
             ),
             const SizedBox(width: 10),
             Text(
               '已会 $masteredNow / $total',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.outline,
-              ),
+              style: IOSTypography.footnote(color: colors.text2),
             ),
           ],
         ),
@@ -255,9 +276,7 @@ class _KnowledgeMemorizePageState
         if (_pending.isNotEmpty)
           Text(
             '还有 ${_pending.length} 个知识点没记住，稍后会再推给你',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.tertiary,
-            ),
+            style: IOSTypography.footnote(color: colors.warning),
           ),
         const SizedBox(height: 12),
         // 知识点卡（3D 翻转：正面知识点名 → 背面要点）
@@ -274,33 +293,34 @@ class _KnowledgeMemorizePageState
         if (!_revealed)
           SizedBox(
             width: double.infinity,
-            child: FilledButton.icon(
+            child: IOSButton(
               onPressed: _reveal,
-              icon: const Icon(Icons.visibility_outlined),
-              label: const Text('展开要点'),
+              icon: Icons.visibility_outlined,
+              label: '展开要点',
+              expand: true,
             ),
           )
         else ...[
           Row(
             children: [
               Expanded(
-                child: OutlinedButton.icon(
+                child: IOSButton(
                   onPressed: _again,
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(0, 52),
-                    foregroundColor: theme.colorScheme.error,
-                  ),
-                  icon: const Icon(Icons.replay),
-                  label: const Text('还不会'),
+                  type: IOSButtonType.text,
+                  icon: Icons.replay,
+                  label: '还不会',
+                  textColor: colors.danger,
+                  height: 52,
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: FilledButton.icon(
+                child: IOSButton(
                   onPressed: _know,
-                  style: FilledButton.styleFrom(minimumSize: const Size(0, 52)),
-                  icon: const Icon(Icons.check),
-                  label: const Text('背会了'),
+                  type: IOSButtonType.primary,
+                  icon: Icons.check,
+                  label: '背会了',
+                  height: 52,
                 ),
               ),
             ],
@@ -308,9 +328,12 @@ class _KnowledgeMemorizePageState
         ],
         const SizedBox(height: 12),
         // 提前结束
-        TextButton(
-          onPressed: _finishEarly,
-          child: const Text('结束本次背题'),
+        Center(
+          child: IOSButton(
+            onPressed: _finishEarly,
+            type: IOSButtonType.text,
+            label: '结束本次背题',
+          ),
         ),
       ],
     );
@@ -318,32 +341,20 @@ class _KnowledgeMemorizePageState
 
   /// 卡正面：知识点名 + 章节 + 轻点提示
   Widget _frontCard(ThemeData theme, KnowledgePoint kp) {
-    final config = ref.watch(themeControllerProvider).asData?.value;
-    final accent = config?.accent ?? const Color(0xFF4F7CD4);
-    final dark = config?.darkMode ?? false;
-    final base = dark ? const Color(0xFF2B3646) : Colors.white;
+    final colors = IOSColors.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            base.withValues(alpha: dark ? 0.9 : 0.78),
-            base.withValues(alpha: dark ? 0.7 : 0.40),
-          ],
-        ),
+        color: colors.card,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: dark ? 0.2 : 0.7),
-        ),
+        border: Border.all(color: colors.cardBorder),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (kp.hot) ...[
-            Icon(Icons.local_fire_department, size: 20, color: theme.colorScheme.tertiary),
+            Icon(Icons.local_fire_department, size: 20, color: colors.warning),
             const SizedBox(height: 8),
           ],
           // 长知识点名保护：最多 4 行，超出省略
@@ -354,10 +365,9 @@ class _KnowledgeMemorizePageState
                 textAlign: TextAlign.center,
                 maxLines: 6,
                 overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleLarge?.copyWith(
+                style: IOSTypography.title2(color: colors.text).copyWith(
                   fontWeight: FontWeight.w800,
                   height: 1.35,
-                  color: theme.colorScheme.onSurface,
                 ),
               ),
             ),
@@ -365,25 +375,27 @@ class _KnowledgeMemorizePageState
           const SizedBox(height: 10),
           Text(
             '${widget.chapter} · 知识点',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.outline,
-            ),
+            style: IOSTypography.footnote(color: colors.text2),
           ),
           const SizedBox(height: 28),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
-              color: accent.withValues(alpha: 0.12),
+              color: colors.primaryBg,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.touch_app, size: 14, color: accent),
+                Icon(Icons.touch_app, size: 14, color: colors.primary),
                 const SizedBox(width: 6),
                 Text(
                   '轻点卡片查看要点',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: accent),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: colors.primary,
+                  ),
                 ),
               ],
             ),
@@ -395,36 +407,22 @@ class _KnowledgeMemorizePageState
 
   /// 卡背面：要点完整展开 + 关联题入口
   Widget _backCard(ThemeData theme, KnowledgePoint kp) {
-    final config = ref.watch(themeControllerProvider).asData?.value;
-    final dark = config?.darkMode ?? false;
-    final base = dark ? const Color(0xFF2B3646) : Colors.white;
+    final colors = IOSColors.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            base.withValues(alpha: dark ? 0.92 : 0.80),
-            base.withValues(alpha: dark ? 0.72 : 0.42),
-          ],
-        ),
+        color: colors.card,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: dark ? 0.2 : 0.7),
-        ),
+        border: Border.all(color: colors.cardBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             '要点',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              color: theme.colorScheme.primary,
-            ),
+            style: IOSTypography.caption1(color: colors.primary)
+                .copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 10),
           Expanded(
@@ -433,37 +431,32 @@ class _KnowledgeMemorizePageState
                   ? _HighlightSummary(text: kp.summary, term: kp.name)
                   : Text(
                       '（本章节暂未提炼要点，可直接练习关联题目）',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.outline,
-                        fontStyle: FontStyle.italic,
-                      ),
+                      style: IOSTypography.footnote(color: colors.text2)
+                          .copyWith(fontStyle: FontStyle.italic),
                     ),
             ),
           ),
           const SizedBox(height: 10),
           // 关联题入口
           if (kp.questionCount > 0)
-            InkWell(
+            GestureDetector(
               onTap: () => widget.onPracticeQuestions?.call(kp),
-              borderRadius: BorderRadius.circular(10),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  color: theme.colorScheme.primary.withValues(alpha: 0.10),
+                  color: colors.primaryBg,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.edit_note, size: 16, color: theme.colorScheme.primary),
+                    Icon(Icons.edit_note, size: 16, color: colors.primary),
                     const SizedBox(width: 6),
                     Text(
                       '本章 ${kp.questionCount} 题可练 →',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: IOSTypography.footnote(color: colors.primary)
+                          .copyWith(fontWeight: FontWeight.w700),
                     ),
                   ],
                 ),
@@ -472,9 +465,7 @@ class _KnowledgeMemorizePageState
           else
             Text(
               '轻点卡片返回',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.outline,
-              ),
+              style: IOSTypography.footnote(color: colors.text2),
             ),
         ],
       ),
@@ -482,100 +473,118 @@ class _KnowledgeMemorizePageState
   }
 
   Widget _buildSummary(ThemeData theme) {
+    final colors = IOSColors.of(context);
     final total = _all.length;
     final mastered = _mastered.length + _preMastered;
     final ratio = total == 0 ? 0.0 : mastered / total;
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 96),
       children: [
-        AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.symmetric(vertical: 6), 
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                Icon(
-                  _allMastered
-                      ? Icons.workspace_premium_outlined
-                      : Icons.emoji_events_outlined,
-                  size: 48,
-                  color: theme.colorScheme.primary,
-                ),
+        IOSCard(
+          child: Column(
+            children: [
+              Icon(
+                _allMastered
+                    ? Icons.workspace_premium_outlined
+                    : Icons.emoji_events_outlined,
+                size: 48,
+                color: colors.primary,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                _allMastered ? '本章知识点已全部背会' : '本轮知识点背题完成',
+                style: IOSTypography.title3(color: colors.text)
+                    .copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '已掌握 $mastered / $total · ${(ratio * 100).toStringAsFixed(0)}%',
+                style: IOSTypography.body(color: colors.text),
+              ),
+              const SizedBox(height: 8),
+              LayoutBuilder(
+                builder: (ctx, cons) {
+                  final r = ratio.clamp(0.0, 1.0).toDouble();
+                  return Stack(
+                    children: [
+                      Container(
+                        width: cons.maxWidth,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: colors.fill2,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                      if (r > 0)
+                        Container(
+                          width: cons.maxWidth * r,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: colors.primary,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+              if (_allMastered) ...[
                 const SizedBox(height: 12),
                 Text(
-                  _allMastered ? '本章知识点已全部背会' : '本轮知识点背题完成',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                  '进度已存档，之后进入无需重背',
+                  style: IOSTypography.footnote(color: colors.text2),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  '已掌握 $mastered / $total · ${(ratio * 100).toStringAsFixed(0)}%',
-                  style: theme.textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: ratio,
-                    minHeight: 8,
-                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                  ),
-                ),
-                if (_allMastered) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    '进度已存档，之后进入无需重背',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.outline,
-                    ),
-                  ),
-                ],
               ],
-            ),
+            ],
           ),
         ),
         if (_notYet.isNotEmpty) ...[
           const SizedBox(height: 16),
           Text(
             '本次尚未背会（已存档，下次进入继续）',
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            style: IOSTypography.subheadline(color: colors.text)
+                .copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
           for (final kp in _notYet.take(50))
-            AppCard(padding: EdgeInsets.zero, margin: EdgeInsets.zero,
-              child: ListTile(
-                dense: true,
-                leading: kp.hot
-                    ? Icon(
-                        Icons.local_fire_department,
-                        size: 18,
-                        color: theme.colorScheme.tertiary,
-                      )
-                    : null,
-                title: Text(
-                  kp.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall,
-                ),
+            IOSCard(
+              showBorder: false,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: Row(
+                children: [
+                  if (kp.hot) ...[
+                    Icon(Icons.local_fire_department,
+                        size: 18, color: colors.warning),
+                    const SizedBox(width: 8),
+                  ],
+                  Expanded(
+                    child: Text(
+                      kp.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: IOSTypography.footnote(color: colors.text),
+                    ),
+                  ),
+                ],
               ),
             ),
         ],
         const SizedBox(height: 20),
         if (_allMastered) ...[
           // 全部掌握：提供重新开始（重置存档）
-          OutlinedButton.icon(
+          IOSButton(
             onPressed: _restartAll,
-            icon: const Icon(Icons.replay),
-            label: const Text('重新背一遍（重置存档）'),
+            type: IOSButtonType.text,
+            icon: Icons.replay,
+            label: '重新背一遍（重置存档）',
           ),
           const SizedBox(height: 8),
         ],
-        FilledButton(
+        IOSButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('完成'),
+          type: IOSButtonType.primary,
+          label: '完成',
+          expand: true,
         ),
       ],
     );
@@ -594,15 +603,13 @@ class _HighlightSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final base = theme.textTheme.bodyMedium?.copyWith(height: 1.55);
-    final hl = TextStyle(
-      color: theme.colorScheme.primary,
+    final colors = IOSColors.of(context);
+    final base = IOSTypography.body(color: colors.text).copyWith(height: 1.55);
+    final hl = IOSTypography.body(color: colors.primary).copyWith(
       fontWeight: FontWeight.w700,
       height: 1.55,
     );
-    final termStyle = theme.textTheme.bodyMedium?.copyWith(
-      color: theme.colorScheme.tertiary,
+    final termStyle = IOSTypography.body(color: colors.warning).copyWith(
       fontWeight: FontWeight.w700,
       height: 1.55,
     );

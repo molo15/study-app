@@ -674,11 +674,13 @@ class StudyStats {
   /// 题型分布（饼图）：single_choice → 已做题数
   final Map<String, int> typeDistribution;
 
-  /// 作答结果分布（饼图）：correct/wrong/partial/skip → 次数
+  /// 作答结果分布（饼图）：correct/wrong/partial → 次数（skip 已排除）
   final Map<String, int> resultDistribution;
 
-  double get accuracy =>
-      totalAnswered == 0 ? 0 : correctCount / totalAnswered * 100;
+  /// B1 审查修复：半对按 0.5 计（多选漏选不再拉低为全错）
+  double get accuracy => totalAnswered == 0
+      ? 0
+      : (correctCount + 0.5 * partialCount) / totalAnswered * 100;
 }
 
 class ChapterStats {
@@ -688,6 +690,7 @@ class ChapterStats {
     required this.total,
     required this.correct,
     required this.wrong,
+    this.partial = 0,
   });
 
   /// 所属题库（多题库：跨库同名章节区分，需求）
@@ -695,9 +698,14 @@ class ChapterStats {
   final String chapter;
   final int total;
   final int correct;
+
+  /// 半对（多选漏选等部分正确），B1 审查修复补充
+  final int partial;
   final int wrong;
 
-  double get accuracy => total == 0 ? 0 : correct / total * 100;
+  /// B1 审查修复：半对按 0.5 计
+  double get accuracy =>
+      total == 0 ? 0 : (correct + 0.5 * partial) / total * 100;
 }
 
 class DailyData {

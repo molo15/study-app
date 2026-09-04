@@ -1,4 +1,4 @@
-/// V3 iOS 风格统计页：学习统计报表。
+﻿/// V3 iOS 风格统计页：学习统计报表。
 ///
 /// 对齐 `docs/prototype/ui-v3-ios.html` 统计页：
 /// - 顶部大标题（largeTitle 34pt）"统计"
@@ -72,7 +72,9 @@ class StatsV3PageState extends ConsumerState<StatsV3Page> {
   Widget build(BuildContext context) {
     final colors = IOSColors.of(context);
     if (_loading) {
-      return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
+      return Center(
+        child: CircularProgressIndicator(strokeWidth: 2.5, color: colors.primary),
+      );
     }
     if (_error != null) {
       return Center(
@@ -209,7 +211,7 @@ class StatsV3PageState extends ConsumerState<StatsV3Page> {
             for (final c in shownChapters)
               IOSListItem(
                 title: c.chapter,
-                subtitle: '${c.correct} 对 / ${c.wrong} 错 · ${c.total} 题',
+                subtitle: "${c.correct} 对${c.partial > 0 ? ' / ${c.partial} 半对' : ''} / ${c.wrong} 错 · ${c.total} 题",
                 leading: _accuracyBadge(c.accuracy, colors),
                 trailing: _accuracyText(c.accuracy, colors),
               ),
@@ -423,14 +425,34 @@ class _TypeDistribution extends StatelessWidget {
                 ),
                 const SizedBox(width: IOSSpacing.s8),
                 Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(3),
-                    child: LinearProgressIndicator(
-                      value: total == 0 ? 0 : e.value / total,
-                      minHeight: 8,
-                      backgroundColor: colors.fill2,
-                      color: colors.primary,
-                    ),
+                  child: LayoutBuilder(
+                    builder: (ctx, cons) {
+                      final ratio =
+                          (total == 0 ? 0.0 : e.value / total)
+                              .clamp(0.0, 1.0)
+                              .toDouble();
+                      return Stack(
+                        children: [
+                          Container(
+                            width: cons.maxWidth,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: colors.fill2,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                          ),
+                          if (ratio > 0)
+                            Container(
+                              width: cons.maxWidth * ratio,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: colors.primary,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(width: IOSSpacing.s8),

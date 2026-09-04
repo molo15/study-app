@@ -1,4 +1,4 @@
-/// V3 iOS 风格背题总览：背题模式中枢（中央圆钮入口页）。
+﻿/// V3 iOS 风格背题总览：背题模式中枢（中央圆钮入口页）。
 ///
 /// 对齐 `docs/prototype/ui-v3-ios.html` 背题总览：
 /// - 顶部大标题（largeTitle 34pt）"背题"
@@ -25,10 +25,10 @@ class MemorizeV3Page extends ConsumerStatefulWidget {
   const MemorizeV3Page({super.key});
 
   @override
-  ConsumerState<MemorizeV3Page> createState() => _MemorizeV3PageState();
+  MemorizeV3PageState createState() => MemorizeV3PageState();
 }
 
-class _MemorizeV3PageState extends ConsumerState<MemorizeV3Page> {
+class MemorizeV3PageState extends ConsumerState<MemorizeV3Page> {
   List<BankInfo> _banks = const [];
   bool _loading = true;
 
@@ -37,6 +37,9 @@ class _MemorizeV3PageState extends ConsumerState<MemorizeV3Page> {
     super.initState();
     _load();
   }
+
+  /// B3 审查修复：切 Tab 刷新（root_page GlobalKey 触发，IndexedStack 常驻不重建）
+  void refresh() => _load();
 
   Future<void> _load() async {
     try {

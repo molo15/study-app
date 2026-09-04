@@ -1,4 +1,4 @@
-/// 刷题页：一次刷题会话（设计方案 §3.5 刷题状态机）
+﻿/// 刷题页：一次刷题会话（设计方案 §3.5 刷题状态机）
 ///
 /// 交互流程：展示题目 → 作答 → 判分 → 展示解析 → 四档评分
 /// （Again/Hard/Good/Easy 进 FSRS 调度）→ 写 answer_logs → 下一题 → 结算页。
@@ -603,7 +603,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
       context: context,
       barrierDismissible: true,
       barrierLabel: '答题卡',
-      barrierColor: Colors.black.withValues(alpha: 0.25),
+      barrierColor: Colors.black.withValues(alpha: 0.35), // B2 遮罩对齐 iOS 弹层
       transitionDuration: const Duration(milliseconds: 320),
       pageBuilder: (ctx, a1, a2) => Align(
         // 平板右下 / 桌面右侧

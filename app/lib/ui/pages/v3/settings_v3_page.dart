@@ -1,4 +1,4 @@
-/// V3 iOS 风格「我的」页（设置中心）
+﻿/// V3 iOS 风格「我的」页（设置中心）
 ///
 /// 对齐 `docs/prototype/ui-v3-ios.html` 的 me 页设计稿：
 /// - profile 头（头像 + 昵称 + 目标 + 徽章）
@@ -31,6 +31,7 @@ import '../../widgets/ios_list_group.dart';
 import '../../theme/ios_page_route.dart';
 import 'bank_manage_v3_page.dart';
 import '../../widgets/ios_action_sheet.dart';
+import '../../widgets/ios_switch.dart';
 
 class SettingsV3Page extends ConsumerStatefulWidget {
   const SettingsV3Page({super.key});
@@ -168,13 +169,17 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
                 padding: const EdgeInsets.symmetric(
                   horizontal: IOSSpacing.s20,
                 ),
-                child: TextField(
+                child: CupertinoTextField(
                   controller: schoolController,
                   textInputAction: TextInputAction.done,
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    prefixIcon: Icon(Icons.school_outlined, size: 20),
-                    hintText: '目标院校（如：陕西师范大学）',
+                  placeholder: '目标院校（如：陕西师范大学）',
+                  prefix: const Padding(
+                    padding: EdgeInsets.only(left: 8),
+                    child: Icon(Icons.school_outlined, size: 20),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: IOSSpacing.s12,
+                    vertical: IOSSpacing.s8,
                   ),
                 ),
               ),
@@ -194,15 +199,17 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: TextButton(
+                      child: IOSButton(
+                        type: IOSButtonType.text,
+                        label: '取消',
                         onPressed: () => Navigator.of(sheetCtx).pop(),
-                        child: Text('取消',
-                            style: IOSTypography.body(
-                                color: sheetColors.text2)),
                       ),
                     ),
+                    const SizedBox(width: IOSSpacing.s8),
                     Expanded(
-                      child: FilledButton(
+                      child: IOSButton(
+                        type: IOSButtonType.primary,
+                        label: '保存',
                         onPressed: () async {
                           final date = picked;
                           Navigator.of(sheetCtx).pop();
@@ -218,9 +225,6 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
                           if (!mounted) return;
                           setState(() => _goal = goal);
                         },
-                        child: Text('保存',
-                            style: IOSTypography.body(
-                                color: sheetColors.text)),
                       ),
                     ),
                   ],
@@ -254,14 +258,25 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
                   child: Text('每日目标',
                       style: IOSTypography.title3(color: sheetColors.text)),
                 ),
-                SwitchListTile(
-                  title: Text('启用每日目标',
-                      style: IOSTypography.body(color: sheetColors.text)),
-                  subtitle: Text('首页显示今日进度与考试倒计时',
-                      style: IOSTypography.caption1(color: sheetColors.text2)),
-                  value: enabled,
-                  activeTrackColor: sheetColors.primary,
-                  onChanged: (v) => setSheet(() => enabled = v),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('启用每日目标',
+                              style: IOSTypography.body(color: sheetColors.text)),
+                          const SizedBox(height: IOSSpacing.s4),
+                          Text('首页显示今日进度与考试倒计时',
+                              style: IOSTypography.caption1(color: sheetColors.text2)),
+                        ],
+                      ),
+                    ),
+                    IOSSwitch(
+                      value: enabled,
+                      onChanged: (v) => setSheet(() => enabled = v),
+                    ),
+                  ],
                 ),
                 _stepperRow(
                   label: '每日新题',
@@ -282,15 +297,17 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
                   child: Row(
                     children: [
                       Expanded(
-                        child: TextButton(
+                        child: IOSButton(
+                          type: IOSButtonType.text,
+                          label: '取消',
                           onPressed: () => Navigator.of(ctx).pop(),
-                          child: Text('取消',
-                              style: IOSTypography.body(
-                                  color: sheetColors.text2)),
                         ),
                       ),
+                      const SizedBox(width: IOSSpacing.s8),
                       Expanded(
-                        child: FilledButton(
+                        child: IOSButton(
+                          type: IOSButtonType.primary,
+                          label: '保存',
                           onPressed: () async {
                             final goal = StudyGoal(
                               examDate: _goal.examDate,
@@ -306,9 +323,6 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
                             setState(() => _goal = goal);
                             if (ctx.mounted) Navigator.of(ctx).pop();
                           },
-                          child: Text('保存',
-                              style: IOSTypography.body(
-                                  color: sheetColors.text)),
                         ),
                       ),
                     ],
@@ -466,25 +480,29 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
   }
 
   void _showMemorizeModeInfo(IOSColorScheme colors) {
-    showDialog<void>(
+    showIOSModalSheet<void>(
       context: context,
-      builder: (dialogCtx) {
-        final c = IOSColors.of(dialogCtx);
-        return AlertDialog(
-          title: Text('背题模式',
-              style: IOSTypography.title3(color: c.text)),
-          content: Text(
-            '背题支持两种学习形态：\n\n'
-            '• 知识卡片：正面题目 / 背面答案，点击翻转记忆\n'
-            '• 题目模式：直接显示题干与选项，自测后判分\n\n'
-            '进入背题页后可在顶部切换模式。当前版本默认题目模式。',
-            style: IOSTypography.footnote(color: c.text2),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogCtx).pop(),
-              child: Text('知道了',
-                  style: IOSTypography.body(color: c.primary)),
+      builder: (sheetCtx) {
+        final c = IOSColors.of(sheetCtx);
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: IOSSpacing.s16),
+            Text('背题模式', style: IOSTypography.title3(color: c.text)),
+            const SizedBox(height: IOSSpacing.s12),
+            Text(
+              '背题支持两种学习形态：\n\n'
+              '• 知识卡片：正面题目 / 背面答案，点击翻转记忆\n'
+              '• 题目模式：直接显示题干与选项，自测后判分\n\n'
+              '进入背题页后可在顶部切换模式。当前版本默认题目模式。',
+              style: IOSTypography.footnote(color: c.text2),
+            ),
+            const SizedBox(height: IOSSpacing.s20),
+            IOSButton(
+              expand: true,
+              label: '知道了',
+              onPressed: () => Navigator.of(sheetCtx).pop(),
             ),
           ],
         );
@@ -493,28 +511,32 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
   }
 
   void _showHelp(IOSColorScheme colors) {
-    showDialog<void>(
+    showIOSModalSheet<void>(
       context: context,
-      builder: (dialogCtx) {
-        final c = IOSColors.of(dialogCtx);
-        return AlertDialog(
-          title: Text('使用帮助',
-              style: IOSTypography.title3(color: c.text)),
-          content: Text(
-            '快速上手：\n\n'
-            '1. 「今日」页查看待复习与新题队列，点击开始练习\n'
-            '2. 答题后四档评分（忘记/模糊/良好/完美），系统按间隔重复调度\n'
-            '3. 「背题」中央圆钮进入科目背诵，支持翻转记忆\n'
-            '4. 「统计」查看正确率、近 7 日趋势与薄弱章节\n'
-            '5. 「我的」设置深色模式、审题标记与每日目标\n\n'
-            '数据全部保存在本机，自动存档。',
-            style: IOSTypography.footnote(color: c.text2),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogCtx).pop(),
-              child: Text('好的',
-                  style: IOSTypography.body(color: c.primary)),
+      builder: (sheetCtx) {
+        final c = IOSColors.of(sheetCtx);
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: IOSSpacing.s16),
+            Text('使用帮助', style: IOSTypography.title3(color: c.text)),
+            const SizedBox(height: IOSSpacing.s12),
+            Text(
+              '快速上手：\n\n'
+              '1. 「今日」页查看待复习与新题队列，点击开始练习\n'
+              '2. 答题后四档评分（忘记/模糊/良好/完美），系统按间隔重复调度\n'
+              '3. 「背题」进入科目背诵，支持翻转记忆\n'
+              '4. 「统计」查看正确率、近 7 日趋势与薄弱章节\n'
+              '5. 「我的」设置深色模式、审题标记与每日目标\n\n'
+              '数据全部保存在本机，自动存档。',
+              style: IOSTypography.footnote(color: c.text2),
+            ),
+            const SizedBox(height: IOSSpacing.s20),
+            IOSButton(
+              expand: true,
+              label: '好的',
+              onPressed: () => Navigator.of(sheetCtx).pop(),
             ),
           ],
         );
@@ -523,27 +545,31 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
   }
 
   void _showFeedback(IOSColorScheme colors) {
-    showDialog<void>(
+    showIOSModalSheet<void>(
       context: context,
-      builder: (dialogCtx) {
-        final c = IOSColors.of(dialogCtx);
-        return AlertDialog(
-          title: Text('意见反馈',
-              style: IOSTypography.title3(color: c.text)),
-          content: Text(
-            '遇到问题或有改进建议？\n\n'
-            '当前版本为本地单机应用，反馈渠道建设中。\n\n'
-            '你可以：\n'
-            '• 记录问题截图与复现步骤\n'
-            '• 在 GitHub 仓库提交 Issue\n'
-            '• 或直接在使用中留意，后续版本将内置反馈表单',
-            style: IOSTypography.footnote(color: c.text2),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogCtx).pop(),
-              child: Text('好的',
-                  style: IOSTypography.body(color: c.primary)),
+      builder: (sheetCtx) {
+        final c = IOSColors.of(sheetCtx);
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: IOSSpacing.s16),
+            Text('意见反馈', style: IOSTypography.title3(color: c.text)),
+            const SizedBox(height: IOSSpacing.s12),
+            Text(
+              '遇到问题或有改进建议？\n\n'
+              '当前版本为本地单机应用，反馈渠道建设中。\n\n'
+              '你可以：\n'
+              '• 记录问题截图与复现步骤\n'
+              '• 在 GitHub 仓库提交 Issue\n'
+              '• 或直接在使用中留意，后续版本将内置反馈表单',
+              style: IOSTypography.footnote(color: c.text2),
+            ),
+            const SizedBox(height: IOSSpacing.s20),
+            IOSButton(
+              expand: true,
+              label: '好的',
+              onPressed: () => Navigator.of(sheetCtx).pop(),
             ),
           ],
         );
@@ -552,22 +578,26 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
   }
 
   void _showAbout(IOSColorScheme colors) {
-    showDialog<void>(
+    showIOSModalSheet<void>(
       context: context,
-      builder: (dialogCtx) {
-        final dialogColors = IOSColors.of(dialogCtx);
-        return AlertDialog(
-          title: Text('关于',
-              style: IOSTypography.title3(color: dialogColors.text)),
-          content: Text(
-            '考研刷题\n\nv$kArchiveAppVersion · iOS 风格\n\n五科题库 · 数据自动存档\n学习数据与进度仅保存在本机。',
-            style: IOSTypography.footnote(color: dialogColors.text2),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogCtx).pop(),
-              child: Text('好的',
-                  style: IOSTypography.body(color: dialogColors.primary)),
+      builder: (sheetCtx) {
+        final c = IOSColors.of(sheetCtx);
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: IOSSpacing.s16),
+            Text('关于', style: IOSTypography.title3(color: c.text)),
+            const SizedBox(height: IOSSpacing.s12),
+            Text(
+              '考研刷题\n\nv$kArchiveAppVersion · iOS 风格\n\n五科题库 · 数据自动存档\n学习数据与进度仅保存在本机。',
+              style: IOSTypography.footnote(color: c.text2),
+            ),
+            const SizedBox(height: IOSSpacing.s20),
+            IOSButton(
+              expand: true,
+              label: '好的',
+              onPressed: () => Navigator.of(sheetCtx).pop(),
             ),
           ],
         );
@@ -658,12 +688,8 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
               title: '审题标记 🚩',
               subtitle: '练习重点题 · 落库 review_flags',
               leading: _circleIcon(colors.primary, Icons.flag_outlined),
-              trailing: Switch(
+              trailing: IOSSwitch(
                 value: _reviewEnabled,
-                activeTrackColor: colors.primary,
-                inactiveTrackColor: colors.fill2,
-                activeThumbColor: Colors.white,
-                inactiveThumbColor: Colors.white,
                 onChanged: (v) async {
                   setState(() => _reviewEnabled = v);
                   final repo = await ref.read(quizRepositoryProvider);
@@ -675,12 +701,8 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
               title: '存疑标记 ◆',
               subtitle: '模拟考答题时标记存疑题目',
               leading: _circleIcon(colors.primary, Icons.diamond_outlined),
-              trailing: Switch(
+              trailing: IOSSwitch(
                 value: _doubtEnabled,
-                activeTrackColor: colors.primary,
-                inactiveTrackColor: colors.fill2,
-                activeThumbColor: Colors.white,
-                inactiveThumbColor: Colors.white,
                 onChanged: (v) async {
                   setState(() => _doubtEnabled = v);
                   try {
@@ -718,12 +740,8 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
               title: '减少动效',
               subtitle: '弱化过渡动画 · 更流畅',
               leading: _circleIcon(colors.warning, Icons.speed_outlined),
-              trailing: Switch(
+              trailing: IOSSwitch(
                 value: reduceMotion,
-                activeTrackColor: colors.primary,
-                inactiveTrackColor: colors.fill2,
-                activeThumbColor: Colors.white,
-                inactiveThumbColor: Colors.white,
                 onChanged: (v) async {
                   final config =
                       await ref.read(themeControllerProvider.future);

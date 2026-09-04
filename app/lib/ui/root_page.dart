@@ -1,4 +1,4 @@
-/// 应用根（UI v3 · iOS 风格）：今日 / 题库 / [背题] / 统计 / 我的。
+﻿/// 应用根（UI v3 · iOS 风格）：今日 / 题库 / [背题] / 统计 / 我的。
 ///
 /// V3 导航：
 /// - compact / medium（手机 / 平板）：底部胶囊悬浮 TabBar（统一一行 5 Tab）
@@ -38,6 +38,7 @@ class _RootPageState extends ConsumerState<RootPage> {
   final GlobalKey<HomeV3PageState> _homeKey = GlobalKey();
   final GlobalKey<BankHomePageState> _bankKey = GlobalKey();
   final GlobalKey<StatsV3PageState> _statsKey = GlobalKey();
+  final GlobalKey<MemorizeV3PageState> _memorizeKey = GlobalKey();
 
   @override
   void initState() {
@@ -94,6 +95,7 @@ class _RootPageState extends ConsumerState<RootPage> {
     });
     if (i == 0) _homeKey.currentState?.refresh();
     if (i == 1) _bankKey.currentState?.refresh();
+    if (i == 2) _memorizeKey.currentState?.refresh();
     if (i == 3) _statsKey.currentState?.refresh();
   }
 
@@ -107,15 +109,19 @@ class _RootPageState extends ConsumerState<RootPage> {
       onNotification: _onScroll,
       // IndexedStack 常驻五页（状态保留、切换零重建）+ 慢速轻微上滑过渡（v1.1.3）
       // 背景由 main.dart _BackgroundStack 统一提供
-      child: _SmoothTabView(
+      child: SafeArea(
+        // B3 审查修复：Tab 页顶部统一安全区（修复题库/今日标题与状态栏重叠）
+        bottom: false,
+        child: _SmoothTabView(
         index: _index,
         children: [
           HomeV3Page(key: _homeKey),      // 今日信息流（V3）
           BankHomePage(key: _bankKey),   // 题库
-          const MemorizeV3Page(), // 背题（V3）
+          MemorizeV3Page(key: _memorizeKey), // 背题（V3）
           StatsV3Page(key: _statsKey),     // 统计（V3）
           const SettingsV3Page(), // 我的（V3 设置中心）
-        ],
+          ],
+        ),
       ),
     );
 

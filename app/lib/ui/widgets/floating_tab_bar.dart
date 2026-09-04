@@ -1,4 +1,4 @@
-/// V3 iOS 胶囊形悬浮 Tab Bar（统一一行版）
+﻿/// V3 iOS 胶囊形悬浮 Tab Bar（统一一行版）
 ///
 /// 底部 5 Tab 等宽排列：今日 / 题库 / 背题 / 统计 / 我的
 /// 无中央凸起圆钮（对齐酷安底栏：统一一行、液态玻璃胶囊）。
@@ -118,7 +118,7 @@ class FloatingTabBar extends StatelessWidget {
 }
 
 /// 单个 Tab 按钮（统一一行，等宽）
-class _TabButton extends StatelessWidget {
+class _TabButton extends StatefulWidget {
   const _TabButton({
     required this.item,
     required this.selected,
@@ -130,19 +130,35 @@ class _TabButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_TabButton> createState() => _TabButtonState();
+}
+
+class _TabButtonState extends State<_TabButton> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final colors = dark ? IOSColors.dark : IOSColors.light;
     final anim = IOSAnimations.of(context);
+    final item = widget.item;
+    final selected = widget.selected;
 
     final color = selected ? colors.primary : colors.text2;
+    // B4 审查修复：按压反馈（选中态轻微收缩、未选中态明显收缩）
+    final scale = _pressed
+        ? (selected ? 1.02 : 0.92)
+        : (selected ? 1.06 : 1.0);
 
     return Expanded(
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: onTap,
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTap: widget.onTap,
         child: AnimatedScale(
-          scale: selected ? 1.06 : 1.0,
+          scale: scale,
           duration: anim.effectiveDuration(IOSDuration.fast),
           curve: anim.effectiveCurve(IOSCurve.press),
           child: Column(

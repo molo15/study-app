@@ -1,4 +1,4 @@
-part of 'practice_page.dart';
+﻿part of 'practice_page.dart';
 
 class _AnswerSheet extends StatelessWidget {
   const _AnswerSheet({
@@ -26,7 +26,6 @@ class _AnswerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final correct = results.where((g) => g == Grade.correct).length;
     final wrong =
         results.where((g) => g == Grade.wrong || g == Grade.partial).length;
@@ -48,15 +47,16 @@ class _AnswerSheet extends StatelessWidget {
                   icon: const Icon(Icons.arrow_back),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
-                Text('答题卡', style: theme.textTheme.titleMedium),
+                Text('答题卡',
+                    style: IOSTypography.title3(
+                        color: IOSColors.of(context).text)),
                 const Spacer(),
                 Padding(
                   padding: const EdgeInsets.only(right: 16),
                   child: Text(
                     '本轮 ${queue.length} 题',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.outline,
-                    ),
+                    style: IOSTypography.footnote(
+                        color: IOSColors.of(context).text2),
                   ),
                 ),
               ],
@@ -108,21 +108,24 @@ class _AnswerSheet extends StatelessWidget {
                 shrinkWrap: true,
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                 children: [
-                  for (final type in [
+                  // B4 审查修复：按题型分组 staggered 入场（每分组延迟 70ms）
+                  for (final e in <QuestionType>[
                     QuestionType.singleChoice,
                     QuestionType.multiChoice,
                     QuestionType.trueFalse,
                     QuestionType.blank,
                     QuestionType.shortAnswer,
-                  ])
-                    if (queue.any((q) => q.type == type))
-                      _TypeSection(
-                        type: type,
+                  ].where((t) => queue.any((q) => q.type == t)).toList().indexed)
+                    _StaggerIn(
+                      index: e.$1,
+                      child: _TypeSection(
+                        type: e.$2,
                         queue: queue,
                         results: results,
                         currentIndex: currentIndex,
                         onJump: onJump,
                       ),
+                    ),
                 ],
               ),
             ),
@@ -143,29 +146,25 @@ class _Metric extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final colors = IOSColors.of(context);
     return Expanded(
       child: Container(
         margin: const EdgeInsets.only(right: 8),
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
+          color: colors.fill2,
+          borderRadius: BorderRadius.circular(IOSRadius.sm),
         ),
         child: Column(
           children: [
             Text(
               '$value',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w500,
-                color: valueColor,
-              ),
+              style: IOSTypography.title2(color: valueColor ?? colors.text)
+                  .copyWith(fontWeight: FontWeight.w600),
             ),
             Text(
               label,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.outline,
-              ),
+              style: IOSTypography.caption1(color: colors.text2),
             ),
           ],
         ),
@@ -184,7 +183,7 @@ class _Legend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final colors = IOSColors.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -200,9 +199,7 @@ class _Legend extends StatelessWidget {
         const SizedBox(width: 3),
         Text(
           label,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+          style: IOSTypography.caption1(color: colors.text2),
         ),
       ],
     );
@@ -227,7 +224,6 @@ class _TypeSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final indices = <int>[
       for (var i = 0; i < queue.length; i++)
         if (queue[i].type == type) i,
@@ -251,34 +247,40 @@ class _TypeSection extends StatelessWidget {
             children: [
               Text(
                 typeLabel(type),
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
+                style: IOSTypography.title3(
+                  color: IOSColors.of(context).text,
+                ).copyWith(fontWeight: FontWeight.w600),
               ),
               Text(
                 '${indices.length} 题 · 对 $correct 错 $wrong 未答 $unanswered',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.outline,
+                style: IOSTypography.footnote(
+                  color: IOSColors.of(context).text2,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 6),
-          GridView.count(
-            crossAxisCount: 6,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 6,
-            crossAxisSpacing: 6,
-            children: [
-              for (final i in indices)
-                _Cell(
-                  index: i,
-                  grade: i < results.length ? results[i] : null,
-                  isCurrent: i == currentIndex,
-                  onTap: () => _confirmJump(context, i),
-                ),
-            ],
+          LayoutBuilder(
+            builder: (ctx, constraints) {
+              // B2 审查修复：列数随容器宽度自适应（每格最小约 42pt）
+              final cols = (constraints.maxWidth / 48).floor().clamp(4, 10);
+              return GridView.count(
+                crossAxisCount: cols,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 6,
+                crossAxisSpacing: 6,
+                children: [
+                  for (final i in indices)
+                    _Cell(
+                      index: i,
+                      grade: i < results.length ? results[i] : null,
+                      isCurrent: i == currentIndex,
+                      onTap: () => _confirmJump(context, i),
+                    ),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -287,22 +289,18 @@ class _TypeSection extends StatelessWidget {
 
   /// 点格子 → 确认弹窗 → 确认后收起并跳题
   Future<void> _confirmJump(BuildContext context, int index) async {
-    final ok = await showDialog<bool>(
+    final ok = await showIOSActionSheet<bool>(
       context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: Text('跳转到第 ${index + 1} 题？'),
-        content: const Text('当前题未作答将保留为未答，可随时跳回继续。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogCtx).pop(false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogCtx).pop(true),
-            child: const Text('跳转'),
-          ),
-        ],
-      ),
+      title: '跳转到第 ${index + 1} 题？',
+      items: [
+        IOSActionItem(
+          value: true,
+          title: '跳转',
+          subtitle: '当前题未作答将保留为未答',
+          icon: Icons.north_east,
+        ),
+      ],
+      cancelLabel: '取消',
     );
     if (ok == true && context.mounted) {
       Navigator.of(context).pop(); // 收起答题卡
@@ -312,7 +310,8 @@ class _TypeSection extends StatelessWidget {
 }
 
 /// 单个题号格子
-class _Cell extends StatelessWidget {
+/// B2 审查修复：InkWell 水波纹 → 无涟漪按压（缩放 0.9 + 120ms）
+class _Cell extends StatefulWidget {
   const _Cell({
     required this.index,
     required this.grade,
@@ -326,8 +325,16 @@ class _Cell extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_Cell> createState() => _CellState();
+}
+
+class _CellState extends State<_Cell> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final grade = widget.grade;
+    final isCurrent = widget.isCurrent;
     final Color bg;
     final Color fg;
     if (grade == Grade.correct) {
@@ -340,25 +347,86 @@ class _Cell extends StatelessWidget {
       bg = _AnswerSheet._greyBg;
       fg = _AnswerSheet._greyFg;
     }
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(8),
-          border: isCurrent
-              ? Border.all(color: _AnswerSheet._currentBorder, width: 2)
-              : Border.all(color: Colors.transparent),
-        ),
-        child: Text(
-          '${index + 1}',
-          style: theme.textTheme.labelMedium?.copyWith(
-            color: fg,
-            fontWeight: isCurrent ? FontWeight.w500 : FontWeight.w400,
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _pressed ? 0.9 : 1.0,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        child: Container(
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(8),
+            border: isCurrent
+                ? Border.all(color: _AnswerSheet._currentBorder, width: 2)
+                : Border.all(color: Colors.transparent),
+          ),
+          child: Text(
+            '${widget.index + 1}',
+            style: IOSTypography.caption1(color: fg).copyWith(
+              fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w400,
+            ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// B4 审查修复：分组 stagger 入场动画（淡入 + 轻微上移，指数递增延迟）
+class _StaggerIn extends StatefulWidget {
+  const _StaggerIn({required this.index, required this.child});
+
+  final int index;
+  final Widget child;
+
+  @override
+  State<_StaggerIn> createState() => _StaggerInState();
+}
+
+class _StaggerInState extends State<_StaggerIn>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: IOSDuration.standard,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.index == 0) {
+      _controller.value = 1;
+    } else {
+      Future.delayed(Duration(milliseconds: 70 * widget.index), () {
+        if (mounted) _controller.forward();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final anim = IOSAnimations.of(context);
+    if (anim.reduceMotion) return widget.child;
+    return FadeTransition(
+      opacity: _controller.drive(CurveTween(curve: IOSCurve.fadeIn)),
+      child: SlideTransition(
+        position: _controller.drive(
+          Tween<Offset>(
+            begin: const Offset(0, 0.05),
+            end: Offset.zero,
+          ).chain(CurveTween(curve: IOSCurve.standard)),
+        ),
+        child: widget.child,
       ),
     );
   }

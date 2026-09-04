@@ -1,4 +1,4 @@
-/// V3 iOS 风格底部选择弹窗（Action Sheet）
+﻿/// V3 iOS 风格底部选择弹窗（Action Sheet）
 ///
 /// 替代 Material showModalBottomSheet 的安卓味实现：
 /// - 顶部大圆角 + 毛玻璃背景
@@ -23,6 +23,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../theme/ios_animations.dart';
 import '../theme/ios_tokens.dart';
 import 'liquid_glass.dart';
 
@@ -204,19 +205,9 @@ class _IOSActionSheetView<T> extends StatelessWidget {
                 borderRadius: BorderRadius.circular(IOSRadius.md),
                 showShadow: false,
                 padding: EdgeInsets.zero,
-                child: InkWell(
+                child: _SheetCancelButton(
+                  label: cancelLabel,
                   onTap: () => Navigator.of(context).pop(),
-                  child: SizedBox(
-                    height: 52,
-                    child: Center(
-                      child: Text(
-                        cancelLabel,
-                        style: IOSTypography.body(
-                          color: colors.primary,
-                        ).copyWith(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ),
                 ),
               ),
             ),
@@ -228,7 +219,7 @@ class _IOSActionSheetView<T> extends StatelessWidget {
 }
 
 /// 单行选项
-class _ActionRow<T> extends StatelessWidget {
+class _ActionRow<T> extends StatefulWidget {
   const _ActionRow({
     required this.item,
     required this.selected,
@@ -240,47 +231,112 @@ class _ActionRow<T> extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_ActionRow<T>> createState() => _ActionRowState<T>();
+}
+
+class _ActionRowState<T> extends State<_ActionRow<T>> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
     final colors = IOSColors.of(context);
+    final anim = IOSAnimations.of(context);
+    final item = widget.item;
     final titleColor = item.destructive ? colors.danger : colors.text;
 
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: IOSSpacing.s16,
-          vertical: IOSSpacing.s12,
-        ),
-        child: Row(
-          children: [
-            if (item.icon != null) ...[
-              Icon(item.icon, size: 22, color: titleColor),
-              const SizedBox(width: IOSSpacing.s12),
-            ],
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.title,
-                    style: IOSTypography.body(color: titleColor),
-                  ),
-                  if (item.subtitle != null) ...[
-                    const SizedBox(height: 2),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _pressed ? 0.98 : 1.0,
+        duration: anim.effectiveDuration(IOSDuration.fast),
+        curve: anim.effectiveCurve(IOSCurve.press),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: IOSSpacing.s16,
+            vertical: IOSSpacing.s12,
+          ),
+          child: Row(
+            children: [
+              if (item.icon != null) ...[
+                Icon(item.icon, size: 22, color: titleColor),
+                const SizedBox(width: IOSSpacing.s12),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      item.subtitle!,
-                      style: IOSTypography.caption1(color: colors.text2),
+                      item.title,
+                      style: IOSTypography.body(color: titleColor),
                     ),
+                    if (item.subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        item.subtitle!,
+                        style: IOSTypography.caption1(color: colors.text2),
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
+              // 选中态：蓝色对勾
+              if (widget.selected)
+                Icon(Icons.check, color: colors.primary, size: 22)
+              else
+                const SizedBox(width: 22),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 取消按钮（无涟漪按压，对齐 iOS）
+class _SheetCancelButton extends StatefulWidget {
+  const _SheetCancelButton({
+    required this.label,
+    required this.onTap,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  State<_SheetCancelButton> createState() => _SheetCancelButtonState();
+}
+
+class _SheetCancelButtonState extends State<_SheetCancelButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = IOSColors.of(context);
+    final anim = IOSAnimations.of(context);
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _pressed ? 0.98 : 1.0,
+        duration: anim.effectiveDuration(IOSDuration.fast),
+        curve: anim.effectiveCurve(IOSCurve.press),
+        child: SizedBox(
+          height: 52,
+          child: Center(
+            child: Text(
+              widget.label,
+              style: IOSTypography.body(
+                color: colors.primary,
+              ).copyWith(fontWeight: FontWeight.w600),
             ),
-            // 选中态：蓝色对勾
-            if (selected)
-              Icon(Icons.check, color: colors.primary, size: 22)
-            else
-              const SizedBox(width: 22),
-          ],
+          ),
         ),
       ),
     );

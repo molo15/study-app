@@ -329,9 +329,10 @@ mixin _MockMixin on RepositoryMixinBase {
   /// 汇总统计：作答量/正确率/用时/章节分布/近 7 日做题数/到期未复习数
   /// （bankId=null 全局；byChapter 按 (bank_id, chapter) 分组，跨库同名章节不混淆）
   Future<StudyStats> studyStats({String? bankId}) async {
+    // B1 审查修复：统计口径统一——含归档（只隐藏题位、历史成绩保留）+ 排除未答(skip)
     final whereLog = bankId == null
-        ? '1=1'
-        : "al.question_id IN (SELECT id FROM questions WHERE bank_id = ? AND status = 'active')";
+        ? "al.result != 'skip'"
+        : "al.question_id IN (SELECT id FROM questions WHERE bank_id = ?) AND al.result != 'skip'";
     final logArgs = bankId == null ? <Object?>[] : <Object?>[bankId];
     final total =
         Sqflite.firstIntValue(
@@ -376,12 +377,12 @@ mixin _MockMixin on RepositoryMixinBase {
     final dueTotal = await dueCount(bankId: bankId);
 
     // 题型分布（饼图）：按 questions.type 统计已作答的题（join answer_logs）
-    // 与总览计数一致，仅统计 active 题，避免归档题历史拉高饼图（审查修复）
+    // B1 审查修复：口径与总览统一——含归档、排除未答(skip)
     final typeRows = await _db.rawQuery('''
       SELECT q.type, COUNT(*) AS cnt
       FROM answer_logs al
       JOIN questions q ON q.id = al.question_id
-      WHERE 1=1 AND q.status = 'active'
+      WHERE al.result != 'skip'
         ${bankId == null ? '' : "AND q.bank_id = ?"}
       GROUP BY q.type
       ORDER BY cnt DESC
@@ -390,12 +391,13 @@ mixin _MockMixin on RepositoryMixinBase {
       for (final r in typeRows) (r['type'] as String): (r['cnt'] as int?) ?? 0,
     };
 
-    // 作答结果分布（饼图）：correct/wrong/partial/skip
+    // 作答结果分布（饼图）：correct/wrong/partial
+    // B1 审查修复：排除未答(skip)，与总览口径一致（普通刷题本就不记未答）
     final resultRows = await _db.rawQuery('''
       SELECT result, COUNT(*) AS cnt
       FROM answer_logs al
-      WHERE 1=1
-        ${bankId == null ? '' : "AND al.question_id IN (SELECT id FROM questions WHERE bank_id = ? AND status = 'active')"}
+      WHERE al.result != 'skip'
+        ${bankId == null ? '' : "AND al.question_id IN (SELECT id FROM questions WHERE bank_id = ?)"}
       GROUP BY result
     ''', bankId == null ? <Object?>[] : <Object?>[bankId]);
     final resultDistribution = {
@@ -404,14 +406,16 @@ mixin _MockMixin on RepositoryMixinBase {
     };
 
     // 各章节分布：按 (bank_id, chapter) 分组
+    // B1 审查修复：章节口径与总览统一——含归档、排除未答(skip)、补 partial
     final chapterRows = await _db.rawQuery('''
       SELECT q.bank_id, q.chapter,
              COUNT(*) AS total,
              SUM(CASE WHEN al.result = 'correct' THEN 1 ELSE 0 END) AS correct,
+             SUM(CASE WHEN al.result = 'partial' THEN 1 ELSE 0 END) AS partial,
              SUM(CASE WHEN al.result = 'wrong' THEN 1 ELSE 0 END) AS wrong
       FROM answer_logs al
       JOIN questions q ON q.id = al.question_id
-      WHERE q.status = 'active' AND q.chapter IS NOT NULL AND q.chapter != ''
+      WHERE q.chapter IS NOT NULL AND q.chapter != '' AND al.result != 'skip'
         ${bankId == null ? '' : "AND q.bank_id = ?"}
       GROUP BY q.bank_id, q.chapter
       ORDER BY q.bank_id, q.chapter
@@ -423,12 +427,13 @@ mixin _MockMixin on RepositoryMixinBase {
             chapter: (r['chapter'] as String?) ?? '',
             total: r['total'] as int,
             correct: (r['correct'] as int?) ?? 0,
+            partial: (r['partial'] as int?) ?? 0,
             wrong: (r['wrong'] as int?) ?? 0,
           ),
         )
         .toList();
 
-    // 近 7 日每日做题数（index 0 = 今天）
+    // 近 7 日每日做题数（index 6 = 今天，由早到晚）
     final daily = <DailyData>[];
     final today = DateTime.now();
     final startOfToday = DateTime(

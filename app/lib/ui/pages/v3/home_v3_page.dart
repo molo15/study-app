@@ -1,4 +1,4 @@
-/// V3 iOS 风格首页：今日任务优先 + 快捷入口 + 题库列表。
+﻿/// V3 iOS 风格首页：今日任务优先 + 快捷入口 + 题库列表。
 ///
 /// 对齐 `docs/prototype/ui-v3-ios.html` 首页设计稿：
 /// - 顶部大标题（largeTitle 34pt）"今日"
@@ -252,7 +252,7 @@ class HomeV3PageState extends ConsumerState<HomeV3Page> {
                   final repo = await ref.read(quizRepositoryProvider);
                   final questions = await repo.newQuestions(
                     bankId: _currentBankId,
-                    limit: _newCount,
+                    limit: 30, // B3 审查修复：单轮最多 30 题，避免一次拉全部新题卡顿
                   );
                   if (!mounted || questions.isEmpty) return;
                   _push(PracticePage(
