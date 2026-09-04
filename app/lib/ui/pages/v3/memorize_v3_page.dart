@@ -12,14 +12,13 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../data/quiz_repository.dart';
 import '../../responsive.dart';
-import '../../theme/ios_page_route.dart';
 import '../../theme/ios_tokens.dart';
 import '../../widgets/ios_card.dart';
 import '../../widgets/ios_list_group.dart';
-import '../../chapter_overview_list_page.dart';
 
 class MemorizeV3Page extends ConsumerStatefulWidget {
   const MemorizeV3Page({super.key});
@@ -57,11 +56,11 @@ class MemorizeV3PageState extends ConsumerState<MemorizeV3Page> {
   }
 
   void _openBank(BankInfo bank) {
-    Navigator.of(context).push(
-      iosPageRoute<dynamic>(
-        (_) => ChapterOverviewListPage(bankId: bank.bankId, bankName: bank.name),
-      ),
-    );
+    // R3 修复：原实现 Navigator.push(ChapterOverviewListPage) 与章节页内部
+    // context.go('/bank/xx/chapter/xx') 混用，go_router 在栈底重建 BankPage+Chapter 两层，
+    // 叠加 push 层形成"看似一层、实际多层"（右滑需多次返回）。
+    // 改为统一走 go_router 嵌套路由，栈 = RootPage → BankPage → 章节列表 → 章节概览。
+    context.go('/bank/${bank.bankId}/chapters');
   }
 
   @override

@@ -1,4 +1,4 @@
-/// V3 iOS 风格设计令牌（Design Tokens）
+﻿/// V3 iOS 风格设计令牌（Design Tokens）
 ///
 /// 全部值从 `docs/prototype/ui-v3-ios.html` 精确提取，禁止魔法数字。
 /// 后续所有页面/组件必须通过本文件取色/取尺寸，不得硬编码。
@@ -360,17 +360,19 @@ class IOSShadow {
 
   static List<BoxShadow> glass({bool dark = false}) => [
         BoxShadow(
-          color: dark ? const Color(0x80000000) : const Color(0x1A000000),
-          blurRadius: 32,
-          offset: const Offset(0, 8),
+          // P1-2：深色阴影过重（0x80=alpha0.5 纯黑）会在胶囊边缘形成黑晕，
+          // 减到 0x3D(alpha0.24) 并收窄模糊
+          color: dark ? const Color(0x3D000000) : const Color(0x1A000000),
+          blurRadius: 24,
+          offset: const Offset(0, 6),
         ),
       ];
 
   static List<BoxShadow> tab({bool dark = false}) => [
         BoxShadow(
-          color: dark ? const Color(0x80000000) : const Color(0x1F000000),
-          blurRadius: 32,
-          offset: const Offset(0, 8),
+          color: dark ? const Color(0x3D000000) : const Color(0x1F000000),
+          blurRadius: 24,
+          offset: const Offset(0, 6),
         ),
       ];
 

@@ -513,6 +513,8 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
   void _showHelp(IOSColorScheme colors) {
     showIOSModalSheet<void>(
       context: context,
+      // P2-3：内容少，maxHeightFactor 从 0.82 降到 0.5，避免下方大片空白
+      maxHeightFactor: 0.5,
       builder: (sheetCtx) {
         final c = IOSColors.of(sheetCtx);
         return Column(
@@ -521,16 +523,17 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
           children: [
             const SizedBox(height: IOSSpacing.s16),
             Text('使用帮助', style: IOSTypography.title3(color: c.text)),
+            const SizedBox(height: IOSSpacing.s16),
+            // P2-3：footnote 小字 -> body，列表化排版（每条独立行 + 间距）
+            _helpItem(c, '1', '「今日」页查看待复习与新题队列，点击开始练习'),
+            _helpItem(c, '2', '答题后四档评分，系统按间隔重复调度'),
+            _helpItem(c, '3', '「背题」进入科目背诵，支持翻转记忆'),
+            _helpItem(c, '4', '「统计」查看正确率、近 7 日趋势与薄弱章节'),
+            _helpItem(c, '5', '「我的」设置深色模式、审题标记与每日目标'),
             const SizedBox(height: IOSSpacing.s12),
             Text(
-              '快速上手：\n\n'
-              '1. 「今日」页查看待复习与新题队列，点击开始练习\n'
-              '2. 答题后四档评分（忘记/模糊/良好/完美），系统按间隔重复调度\n'
-              '3. 「背题」进入科目背诵，支持翻转记忆\n'
-              '4. 「统计」查看正确率、近 7 日趋势与薄弱章节\n'
-              '5. 「我的」设置深色模式、审题标记与每日目标\n\n'
               '数据全部保存在本机，自动存档。',
-              style: IOSTypography.footnote(color: c.text2),
+              style: IOSTypography.footnote(color: c.text3),
             ),
             const SizedBox(height: IOSSpacing.s20),
             IOSButton(
@@ -544,9 +547,36 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
     );
   }
 
+  /// P2-3：帮助条目（序号 + 正文，body 字号，行间距清晰）
+  Widget _helpItem(IOSColorScheme c, String num, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: IOSSpacing.s8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 22,
+            child: Text(
+              num,
+              style: IOSTypography.body(color: c.primary)
+                  .copyWith(fontWeight: FontWeight.w600),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              text,
+              style: IOSTypography.body(color: c.text2),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showFeedback(IOSColorScheme colors) {
     showIOSModalSheet<void>(
       context: context,
+      maxHeightFactor: 0.5,
       builder: (sheetCtx) {
         final c = IOSColors.of(sheetCtx);
         return Column(
@@ -557,14 +587,18 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
             Text('意见反馈', style: IOSTypography.title3(color: c.text)),
             const SizedBox(height: IOSSpacing.s12),
             Text(
-              '遇到问题或有改进建议？\n\n'
-              '当前版本为本地单机应用，反馈渠道建设中。\n\n'
-              '你可以：\n'
-              '• 记录问题截图与复现步骤\n'
-              '• 在 GitHub 仓库提交 Issue\n'
-              '• 或直接在使用中留意，后续版本将内置反馈表单',
-              style: IOSTypography.footnote(color: c.text2),
+              '遇到问题或有改进建议？',
+              style: IOSTypography.body(color: c.text),
             ),
+            const SizedBox(height: IOSSpacing.s8),
+            Text(
+              '当前版本为本地单机应用，反馈渠道建设中。',
+              style: IOSTypography.footnote(color: c.text3),
+            ),
+            const SizedBox(height: IOSSpacing.s16),
+            _helpItem(c, '•', '记录问题截图与复现步骤'),
+            _helpItem(c, '•', '在 GitHub 仓库提交 Issue'),
+            _helpItem(c, '•', '后续版本将内置反馈表单'),
             const SizedBox(height: IOSSpacing.s20),
             IOSButton(
               expand: true,
@@ -580,6 +614,7 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
   void _showAbout(IOSColorScheme colors) {
     showIOSModalSheet<void>(
       context: context,
+      maxHeightFactor: 0.45,
       builder: (sheetCtx) {
         final c = IOSColors.of(sheetCtx);
         return Column(
@@ -588,10 +623,23 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
           children: [
             const SizedBox(height: IOSSpacing.s16),
             Text('关于', style: IOSTypography.title3(color: c.text)),
-            const SizedBox(height: IOSSpacing.s12),
+            const SizedBox(height: IOSSpacing.s16),
             Text(
-              '考研刷题\n\nv$kArchiveAppVersion · iOS 风格\n\n五科题库 · 数据自动存档\n学习数据与进度仅保存在本机。',
-              style: IOSTypography.footnote(color: c.text2),
+              '考研刷题',
+              style: IOSTypography.title2(color: c.text),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: IOSSpacing.s8),
+            Text(
+              'v$kArchiveAppVersion · iOS 风格',
+              style: IOSTypography.body(color: c.text2),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: IOSSpacing.s16),
+            Text(
+              '五科题库 · 数据自动存档\n学习数据与进度仅保存在本机。',
+              style: IOSTypography.footnote(color: c.text3),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: IOSSpacing.s20),
             IOSButton(

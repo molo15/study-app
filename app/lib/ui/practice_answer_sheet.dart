@@ -15,7 +15,8 @@ class _AnswerSheet extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onJump;
 
-  // 三态底色（答题卡风格：浅底深字，深浅模式通用）
+  // 三态底色（答题卡风格：浅色用浅底深字，深色用 IOSColors 深色语义色）
+  // P1-1 修复：原硬编码浅色常量在深色模式下显示米黄大色块/黄线，改为随主题切换
   static const _greenBg = Color(0xFFEAF3DE);
   static const _greenFg = Color(0xFF2E7D32);
   static const _redBg = Color(0xFFFCEBEB);
@@ -23,6 +24,33 @@ class _AnswerSheet extends StatelessWidget {
   static const _greyBg = Color(0xFFF1EFE8);
   static const _greyFg = Color(0xFF6B6B67);
   static const _currentBorder = Color(0xFF378ADD);
+
+  /// 深色模式下的三态底色（低饱和深底 + 高对比前景）
+  static const _greenBgDark = Color(0xFF1C2B1E);
+  static const _greenFgDark = Color(0xFF7DD68A);
+  static const _redBgDark = Color(0xFF331F20);
+  static const _redFgDark = Color(0xFFF28B82);
+  static const _greyBgDark = Color(0xFF2A2A2C);
+  static const _greyFgDark = Color(0xFFB0B0B0);
+  static const _currentBorderDark = Color(0xFF5AA7F0);
+
+  /// 当前主题下的三态底色
+  static Color greenBg(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? _greenBgDark : _greenBg;
+  static Color greenFg(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? _greenFgDark : _greenFg;
+  static Color redBg(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? _redBgDark : _redBg;
+  static Color redFg(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? _redFgDark : _redFg;
+  static Color greyBg(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? _greyBgDark : _greyBg;
+  static Color greyFg(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? _greyFgDark : _greyFg;
+  static Color currentBorder(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? _currentBorderDark
+          : _currentBorder;
 
   @override
   Widget build(BuildContext context) {
@@ -71,12 +99,12 @@ class _AnswerSheet extends StatelessWidget {
                   _Metric(
                     label: '答对',
                     value: correct,
-                    valueColor: _semantic(context, _greenFg, _kSuccessDark),
+                    valueColor: _semantic(context, _AnswerSheet.greenFg(context), _kSuccessDark),
                   ),
                   _Metric(
                     label: '答错',
                     value: wrong,
-                    valueColor: _semantic(context, _redFg, _kErrorDark),
+                    valueColor: _semantic(context, _AnswerSheet.redFg(context), _kErrorDark),
                   ),
                 ],
               ),
@@ -87,16 +115,17 @@ class _AnswerSheet extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  _Legend(color: _greenBg, label: '对'),
+                  _Legend(color: _AnswerSheet.greenBg(context), label: '对'),
                   const SizedBox(width: 10),
-                  _Legend(color: _redBg, label: '错'),
+                  _Legend(color: _AnswerSheet.redBg(context), label: '错'),
                   const SizedBox(width: 10),
-                  _Legend(color: _greyBg, label: '未答'),
+                  _Legend(color: _AnswerSheet.greyBg(context), label: '未答'),
                   const SizedBox(width: 10),
                   _Legend(
                     color: Colors.transparent,
                     label: '当前',
-                    border: Border.all(color: _currentBorder, width: 2),
+                    border: Border.all(
+                        color: _AnswerSheet.currentBorder(context), width: 2),
                   ),
                 ],
               ),
@@ -338,14 +367,14 @@ class _CellState extends State<_Cell> {
     final Color bg;
     final Color fg;
     if (grade == Grade.correct) {
-      bg = _AnswerSheet._greenBg;
-      fg = _AnswerSheet._greenFg;
+      bg = _AnswerSheet.greenBg(context);
+      fg = _AnswerSheet.greenFg(context);
     } else if (grade == Grade.wrong || grade == Grade.partial) {
-      bg = _AnswerSheet._redBg;
-      fg = _AnswerSheet._redFg;
+      bg = _AnswerSheet.redBg(context);
+      fg = _AnswerSheet.redFg(context);
     } else {
-      bg = _AnswerSheet._greyBg;
-      fg = _AnswerSheet._greyFg;
+      bg = _AnswerSheet.greyBg(context);
+      fg = _AnswerSheet.greyFg(context);
     }
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
@@ -362,7 +391,7 @@ class _CellState extends State<_Cell> {
             color: bg,
             borderRadius: BorderRadius.circular(8),
             border: isCurrent
-                ? Border.all(color: _AnswerSheet._currentBorder, width: 2)
+                ? Border.all(color: _AnswerSheet.currentBorder(context), width: 2)
                 : Border.all(color: Colors.transparent),
           ),
           child: Text(

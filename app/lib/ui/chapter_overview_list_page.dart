@@ -1,4 +1,4 @@
-/// 章节知识概览列表页（P2 · V3 iOS 风格）
+﻿/// 章节知识概览列表页（P2 · V3 iOS 风格）
 ///
 /// 题库 → 独立「章节知识概览」入口：列出全库各章的知识概览卡片
 /// （章名 + 知识点数 + 题数 + 章节摘要），点击进入单章 ChapterOverviewPage
@@ -106,7 +106,9 @@ class _ChapterOverviewListPageState
                           children: [
                             if (isWideScreen(context))
                               // 宽屏（平板/桌面）章节两列（P3 对齐原型 chaps）
+                              // P2-4：加 alignment.center，横屏内容居中不偏右
                               Wrap(
+                                alignment: WrapAlignment.center,
                                 spacing: 12,
                                 runSpacing: 12,
                                 children: [

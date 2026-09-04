@@ -1,4 +1,4 @@
-/// 模拟卷页面（需求：允许用户刷模拟卷）
+﻿/// 模拟卷页面（需求：允许用户刷模拟卷）
 ///
 /// 流程：入场确认 → 限时答题（暂存不判分）→ 答题卡跳题 → 交卷统一判分
 /// → 成绩单存档（mock_sessions）+ 逐题日志（answer_logs mode=mock, session_id）。
@@ -493,85 +493,86 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
     final colors = IOSColors.of(context);
     showIOSModalSheet(
       context: context,
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        maxChildSize: 0.85,
-        minChildSize: 0.3,
-        expand: false,
-        builder: (ctx, scrollController) => Padding(
-          padding: const EdgeInsets.all(IOSSpacing.s16),
-          child: Column(
-            children: [
-              Text(
-                '答题卡（已答 ${_answers.length}/${_questions.length}）',
-                style: IOSTypography.title3(color: colors.text)
-                    .copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: IOSSpacing.s12),
-              Expanded(
-                child: GridView.builder(
-                  controller: scrollController,
+      // P2-2：去掉内层 DraggableScrollableSheet（与 showIOSModalSheet 双层容器
+      // 导致顶部大片空白）；直接 Column + 可滚动 GridView，与刷题答题卡统一。
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(IOSSpacing.s16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '答题卡（已答 ${_answers.length}/${_questions.length}）',
+              style: IOSTypography.title3(color: colors.text)
+                  .copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: IOSSpacing.s12),
+            // 响应式列数：每格最小约 48pt，4-10 列（与刷题答题卡一致）
+            LayoutBuilder(
+              builder: (ctx, constraints) {
+                final cols =
+                    (constraints.maxWidth / 48).floor().clamp(4, 10);
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
                   padding: const EdgeInsets.only(bottom: 8),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 6,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: cols,
                     crossAxisSpacing: 8,
                     mainAxisSpacing: 8,
                   ),
                   itemCount: _questions.length,
-                  itemBuilder: (_, i) => SizedBox(
-                    height: 48,
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.pop(ctx);
-                        setState(() => _index = i);
-                      },
-                      customBorder: const CircleBorder(),
-                      child: Center(
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: _answers.containsKey(_questions[i].id)
-                                ? colors.primary
-                                : colors.fill2,
-                            shape: BoxShape.circle,
-                            border: _flagged.contains(_questions[i].id)
-                                ? Border.all(
-                                    color: IOSSystemColors.yellow,
-                                    width: 1.6,
-                                    style: BorderStyle.solid,
-                                  )
-                                : null,
-                          ),
-                          child: Text(
-                            '${i + 1}',
-                            style: IOSTypography.caption1(
-                                    color: _answers.containsKey(_questions[i].id)
-                                        ? Colors.white
-                                        : colors.text)
-                                .copyWith(fontWeight: FontWeight.w600),
-                          ),
+                  itemBuilder: (_, i) => GestureDetector(
+                    // P2-2：InkWell 水波纹 -> GestureDetector（深色无涟漪，iOS 风格）
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      setState(() => _index = i);
+                    },
+                    child: Center(
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: _answers.containsKey(_questions[i].id)
+                              ? colors.primary
+                              : colors.fill2,
+                          shape: BoxShape.circle,
+                          border: _flagged.contains(_questions[i].id)
+                              ? Border.all(
+                                  color: IOSSystemColors.yellow,
+                                  width: 1.6,
+                                  style: BorderStyle.solid,
+                                )
+                              : null,
+                        ),
+                        child: Text(
+                          '${i + 1}',
+                          style: IOSTypography.caption1(
+                                  color:
+                                      _answers.containsKey(_questions[i].id)
+                                          ? Colors.white
+                                          : colors.text)
+                              .copyWith(fontWeight: FontWeight.w600),
                         ),
                       ),
                     ),
                   ),
-                ),
+                );
+              },
+            ),
+            const SizedBox(height: IOSSpacing.s16),
+            SizedBox(
+              width: double.infinity,
+              child: IOSButton(
+                label: '交卷',
+                icon: Icons.flag_outlined,
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _submitAll();
+                },
               ),
-              const SizedBox(height: IOSSpacing.s16),
-              SizedBox(
-                width: double.infinity,
-                child: IOSButton(
-                  label: '交卷',
-                  icon: Icons.flag_outlined,
-                  onPressed: () {
-                    Navigator.pop(ctx);
-                    _submitAll();
-                  },
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

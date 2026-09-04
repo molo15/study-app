@@ -33,11 +33,11 @@ class IOSPageRoute<T> extends CupertinoPageRoute<T> {
     super.settings,
     super.maintainState = true,
     super.fullscreenDialog = false,
-    this.gestureWidthRatio = 1.0,
+    this.gestureWidthRatio = 0.4,
   });
 
   /// 手势识别区域占屏幕宽度的比例
-  /// - 1.0 = 全屏（默认，用户需求）
+  /// - 0.4 = 左侧 40% 屏宽（默认：兼顾"非边缘右滑"与页面内部横向交互）
   /// - 0.9 = 90% 屏幕宽度
   /// - 0.1 = iOS 默认（约 40pt 左边缘）
   final double gestureWidthRatio;
@@ -129,6 +129,13 @@ class _FullScreenBackGestureDetectorState<T>
   }
 
   void _handleDragStart(DragStartDetails details) {
+    // 弹窗/对话框（modal barrier）在场时禁用手势：bottom sheet 等 overlay 会盖住当前路由，
+    // 此时右滑应作用于弹窗自身的关闭手势，而非页面返回。
+    if (!widget.route.isCurrent || widget.route.animation?.status != AnimationStatus.completed) {
+      _isBackGesture = false;
+      _dragOffset = 0;
+      return;
+    }
     _isBackGesture = false;
     _dragOffset = 0;
     _snap?.dispose();
@@ -185,6 +192,8 @@ class _FullScreenBackGestureDetectorState<T>
   void _handleDragCancel() {
     _isBackGesture = false;
     _dragOffset = 0;
+    _snap?.dispose();
+    _snap = null;
     if (mounted) setState(() {});
   }
 

@@ -233,46 +233,49 @@ class _KnowledgeMemorizePageState
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
       children: [
         // 进度（含存档已掌握 + 本会话新背会）
-        Row(
-          children: [
-            Expanded(
-              child: LayoutBuilder(
-                builder: (ctx, cons) {
-                  final ratio = (total == 0 ? 0.0 : masteredNow / total)
-                      .clamp(0.0, 1.0)
-                      .toDouble();
-                  return Stack(
-                    children: [
-                      Container(
-                        width: cons.maxWidth,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: colors.fill2,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                      ),
-                      if (ratio > 0)
+        // P2-1：embedded 模式下 MemorizeTabsPage 顶部已有整章进度条，此处不重复
+        if (!widget.embedded) ...[
+          Row(
+            children: [
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (ctx, cons) {
+                    final ratio = (total == 0 ? 0.0 : masteredNow / total)
+                        .clamp(0.0, 1.0)
+                        .toDouble();
+                    return Stack(
+                      children: [
                         Container(
-                          width: cons.maxWidth * ratio,
+                          width: cons.maxWidth,
                           height: 6,
                           decoration: BoxDecoration(
-                            color: colors.primary,
+                            color: colors.fill2,
                             borderRadius: BorderRadius.circular(999),
                           ),
                         ),
-                    ],
-                  );
-                },
+                        if (ratio > 0)
+                          Container(
+                            width: cons.maxWidth * ratio,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: colors.primary,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              '已会 $masteredNow / $total',
-              style: IOSTypography.footnote(color: colors.text2),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
+              const SizedBox(width: 10),
+              Text(
+                '已会 $masteredNow / $total',
+                style: IOSTypography.footnote(color: colors.text2),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+        ],
         if (_pending.isNotEmpty)
           Text(
             '还有 ${_pending.length} 个知识点没记住，稍后会再推给你',
