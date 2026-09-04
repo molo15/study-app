@@ -45,8 +45,8 @@ String typeLabel(QuestionType type) => switch (type) {
   QuestionType.trueFalse => '判断',
 };
 
-/// 语义色集中定义（审查 P2：判分/评分色不再散落魔法值）
-/// 深色模式用亮色变体保证对比度（UI 复审 P1-1）
+/// 语义色集中定义（practice_answer_sheet.dart 引用，勿删）
+/// 深色模式用亮色变体保证对比度
 const _kSuccessDark = Color(0xFF81C784);
 const _kWarning = Color(0xFFB2780A);
 const _kWarningDark = Color(0xFFE2B93B);
@@ -55,18 +55,14 @@ const _kErrorDark = Color(0xFFF2B8B5);
 Color _semantic(BuildContext context, Color light, Color dark) =>
     Theme.of(context).brightness == Brightness.dark ? dark : light;
 
+/// 题型颜色（V3 令牌化：用 iOS 系统色）
 Color typeColor(BuildContext context, QuestionType type) {
-  final dark = Theme.of(context).brightness == Brightness.dark;
   return switch (type) {
-    QuestionType.singleChoice =>
-      dark ? const Color(0xFF6BD4D8) : const Color(0xFF00696D),
-    QuestionType.multiChoice =>
-      dark ? const Color(0xFF9FA8DA) : const Color(0xFF525E7D),
-    QuestionType.blank =>
-      dark ? const Color(0xFFCE93D8) : const Color(0xFF7D5260),
-    QuestionType.shortAnswer =>
-      dark ? const Color(0xFF80CBC4) : const Color(0xFF4A6364),
-    QuestionType.trueFalse => dark ? _kWarningDark : _kWarning,
+    QuestionType.singleChoice => IOSSystemColors.teal,
+    QuestionType.multiChoice => IOSSystemColors.purple,
+    QuestionType.blank => IOSSystemColors.indigo,
+    QuestionType.shortAnswer => IOSSystemColors.green,
+    QuestionType.trueFalse => _semantic(context, _kWarning, _kWarningDark),
   };
 }
 
@@ -632,26 +628,14 @@ class _PracticePageState extends ConsumerState<PracticePage>
               borderRadius: isDesktop
                   ? null
                   : BorderRadius.circular(26), // 平板 r-lg
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
-                  color: Color(0x26263A5C),
+                  color: IOSColors.of(context).cardBorder,
                   blurRadius: 44,
-                  offset: Offset(0, 14),
+                  offset: const Offset(0, 14),
                 ),
               ],
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: isDesktop
-                    ? const [
-                        Color(0xEBE7EEF7),
-                        Color(0xEBC9D7EA),
-                      ]
-                    : const [
-                        Color(0xFFE7EEF7),
-                        Color(0xFFC9D7EA),
-                      ],
-              ),
+              color: IOSColors.of(context).card,
             ),
             child: ClipRRect(
               borderRadius: isDesktop

@@ -406,7 +406,7 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
                           : Icons.diamond_outlined,
                       size: 18,
                       color: _flagged.contains(q.id)
-                          ? const Color(0xFFE0A13C)
+                          ? IOSSystemColors.yellow
                           : colors.text3,
                     ),
                   ),
@@ -543,7 +543,7 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
                             shape: BoxShape.circle,
                             border: _flagged.contains(_questions[i].id)
                                 ? Border.all(
-                                    color: const Color(0xFFE0A13C),
+                                    color: IOSSystemColors.yellow,
                                     width: 1.6,
                                     style: BorderStyle.solid,
                                   )
