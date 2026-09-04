@@ -581,6 +581,7 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
               trailing: CupertinoSwitch(
                 value: _reviewEnabled,
                 activeTrackColor: colors.primary,
+                thumbColor: Colors.white,
                 onChanged: (v) async {
                   setState(() => _reviewEnabled = v);
                   final repo = await ref.read(quizRepositoryProvider);
@@ -595,6 +596,7 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
               trailing: CupertinoSwitch(
                 value: _doubtEnabled,
                 activeTrackColor: colors.primary,
+                thumbColor: Colors.white,
                 onChanged: (v) async {
                   setState(() => _doubtEnabled = v);
                   try {
@@ -635,6 +637,7 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
               trailing: CupertinoSwitch(
                 value: reduceMotion,
                 activeTrackColor: colors.primary,
+                thumbColor: Colors.white,
                 onChanged: (v) async {
                   final config =
                       await ref.read(themeControllerProvider.future);
