@@ -837,7 +837,9 @@ class _V3PracticeAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onAnswerSheet;
 
   @override
-  Size get preferredSize => const Size.fromHeight(72);
+  // 刷题页顶栏统一修复：原固定 72 从屏幕 y=0 开始，与状态栏重叠；
+  // 改为 110 给 SafeArea 顶部状态栏留空间（与其他 V3 页面统一）。
+  Size get preferredSize => const Size.fromHeight(110);
 
   static String _fmt(int seconds) {
     final m = seconds ~/ 60;
@@ -848,17 +850,32 @@ class _V3PracticeAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final colors = IOSColors.of(context);
-    return Container(
-      color: Colors.transparent,
-      height: 72,
-      child: Column(
-        children: [
-          Expanded(
-            child: Row(
-              children: [
-                const SizedBox(width: IOSSpacing.s16),
-                Text(title, style: IOSTypography.headline(color: colors.text)),
-                const Spacer(),
+    // SafeArea 顶部避开状态栏（时间/电量/信号），底部不需要（进度条在底栏内）
+    return SafeArea(
+      top: true,
+      bottom: false,
+      child: Container(
+        color: Colors.transparent,
+        child: Column(
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  // 返回按钮：刷题页通过 Navigator.push 进入，pop() 可正常返回；
+                  // 与设置页/统计页等其他 V3 页面统一，用户不再依赖左滑手势退出。
+                  IconButton(
+                    tooltip: '返回',
+                    visualDensity: VisualDensity.compact,
+                    icon: Icon(
+                      Icons.arrow_back_ios_new,
+                      color: colors.primary,
+                      size: 18,
+                    ),
+                    onPressed: () => Navigator.of(context).maybePop(),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(title, style: IOSTypography.headline(color: colors.text)),
+                  const Spacer(),
                 if (showTimer) ...[
                   Icon(Icons.timer_outlined, size: 16, color: colors.text2),
                   const SizedBox(width: 4),
@@ -905,6 +922,7 @@ class _V3PracticeAppBar extends StatelessWidget implements PreferredSizeWidget {
             ),
           const SizedBox(height: 10),
         ],
+      ),
       ),
     );
   }
