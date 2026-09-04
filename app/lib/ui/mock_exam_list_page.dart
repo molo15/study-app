@@ -12,6 +12,7 @@ import 'composite_loading_page.dart';
 import 'app_routes.dart';
 import 'responsive.dart';
 import 'theme/ios_tokens.dart';
+import 'widgets/ios_animated_item.dart';
 import 'widgets/ios_button.dart';
 import 'widgets/ios_card.dart';
 
@@ -107,51 +108,57 @@ class _MockExamListPageState extends ConsumerState<MockExamListPage> {
                           // 综合模拟卷：随机组卷入口（恒置顶）
                           final sessions =
                               _history['composite'] ?? const <MockSession>[];
-                          return _PaperCard(
-                            name: _composite.name,
-                            subtitle:
-                                '150 分 · 5 科随机组卷 · 限时 180 分钟'
-                                '${sessions.isNotEmpty ? ' · 最近 ${sessions.first.score} / 150' : ''}',
-                            icon: Icons.auto_awesome,
-                            iconColor: colors.primary,
-                            onHistory: () =>
-                                Navigator.of(context).push(
-                                  AppPageRoute(
-                                    builder: (_) =>
-                                        MockHistoryPage(paper: _composite),
+                          return IOSAnimatedItem(
+                            index: index,
+                            child: _PaperCard(
+                              name: _composite.name,
+                              subtitle:
+                                  '150 分 · 5 科随机组卷 · 限时 180 分钟'
+                                  '${sessions.isNotEmpty ? ' · 最近 ${sessions.first.score} / 150' : ''}',
+                              icon: Icons.auto_awesome,
+                              iconColor: colors.primary,
+                              onHistory: () =>
+                                  Navigator.of(context).push(
+                                    AppPageRoute(
+                                      builder: (_) =>
+                                          MockHistoryPage(paper: _composite),
+                                    ),
                                   ),
-                                ),
-                            onTap: () async {
-                              await Navigator.of(context).push(
-                                AppPageRoute(
-                                    builder: (_) =>
-                                        const CompositeLoadingPage()),
-                              );
-                              _load(); // 从考试页返回后刷新历史成绩（缺陷 #1）
-                            },
+                              onTap: () async {
+                                await Navigator.of(context).push(
+                                  AppPageRoute(
+                                      builder: (_) =>
+                                          const CompositeLoadingPage()),
+                                );
+                                _load(); // 从考试页返回后刷新历史成绩（缺陷 #1）
+                              },
+                            ),
                           );
                         }
                         final p = _papers[index - 1];
                         final sessions =
                             _history[p.id] ?? const <MockSession>[];
-                        return _PaperCard(
-                          name: p.name,
-                          subtitle:
-                              '${p.questionIds.length} 题 · 限时 ${p.durationMin} 分钟'
-                              '${sessions.isNotEmpty ? ' · 最近 ${sessions.first.score} 分' : ''}',
-                          icon: Icons.assignment_outlined,
-                          iconColor: IOSSystemColors.purple,
-                          onHistory: () => Navigator.of(context).push(
-                            AppPageRoute(
-                              builder: (_) => MockHistoryPage(paper: p),
+                        return IOSAnimatedItem(
+                          index: index,
+                          child: _PaperCard(
+                            name: p.name,
+                            subtitle:
+                                '${p.questionIds.length} 题 · 限时 ${p.durationMin} 分钟'
+                                '${sessions.isNotEmpty ? ' · 最近 ${sessions.first.score} 分' : ''}',
+                            icon: Icons.assignment_outlined,
+                            iconColor: IOSSystemColors.purple,
+                            onHistory: () => Navigator.of(context).push(
+                              AppPageRoute(
+                                builder: (_) => MockHistoryPage(paper: p),
+                              ),
                             ),
+                            onTap: () async {
+                              await Navigator.of(context).push(
+                                AppPageRoute(builder: (_) => MockExamPage(paper: p)),
+                              );
+                              _load(); // 从考试页返回后刷新历史成绩（缺陷 #1）
+                            },
                           ),
-                          onTap: () async {
-                            await Navigator.of(context).push(
-                              AppPageRoute(builder: (_) => MockExamPage(paper: p)),
-                            );
-                            _load(); // 从考试页返回后刷新历史成绩（缺陷 #1）
-                          },
                         );
                       },
                     ),

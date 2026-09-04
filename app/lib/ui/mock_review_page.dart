@@ -13,6 +13,7 @@ import '../models/models.dart';
 import 'practice_page.dart' show typeColor, typeLabel;
 import 'responsive.dart';
 import 'theme/ios_tokens.dart';
+import 'widgets/ios_animated_item.dart';
 import 'widgets/ios_button.dart';
 import 'widgets/ios_card.dart';
 
@@ -204,7 +205,9 @@ class _MockReviewPageState extends State<MockReviewPage> {
                       };
                       final bank = mockBankLabel(q.bankId);
                       final isFlagged = widget.flagged.contains(q.id);
-                      return IOSCard(
+                      return IOSAnimatedItem(
+                        index: index,
+                        child: IOSCard(
                         padding: EdgeInsets.zero,
                         margin: const EdgeInsets.only(bottom: IOSSpacing.s8),
                         onTap: () => _showDetail(context, index),
@@ -248,7 +251,8 @@ class _MockReviewPageState extends State<MockReviewPage> {
                             ],
                           ),
                         ),
-                      );
+                      ),
+                    );
                     },
                   ),
                 ),

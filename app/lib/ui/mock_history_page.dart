@@ -13,6 +13,7 @@ import 'mock_review_page.dart';
 import 'app_routes.dart';
 import 'responsive.dart';
 import 'theme/ios_tokens.dart';
+import 'widgets/ios_animated_item.dart';
 import 'widgets/ios_card.dart';
 
 class MockHistoryPage extends ConsumerStatefulWidget {
@@ -140,13 +141,16 @@ class _MockHistoryPageState extends ConsumerState<MockHistoryPage> {
                           children: [
                             _StatsCard(sessions: _sessions, full: _full),
                             const SizedBox(height: IOSSpacing.s16),
-                            for (final s in _sessions)
-                              _SessionCard(
-                                session: s,
-                                full: _full,
-                                timeText:
-                                    '${_fmtTime(s.submittedAt)} · 用时 ${s.durationMin} 分钟',
-                                onTap: () => _openReview(s),
+                            for (final entry in _sessions.asMap().entries)
+                              IOSAnimatedItem(
+                                index: entry.key,
+                                child: _SessionCard(
+                                  session: entry.value,
+                                  full: _full,
+                                  timeText:
+                                      '${_fmtTime(entry.value.submittedAt)} · 用时 ${entry.value.durationMin} 分钟',
+                                  onTap: () => _openReview(entry.value),
+                                ),
                               ),
                           ],
                         ),

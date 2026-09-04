@@ -13,6 +13,7 @@ import '../data/quiz_repository.dart';
 import '../models/models.dart';
 import 'responsive.dart';
 import 'theme/ios_tokens.dart';
+import 'widgets/ios_animated_item.dart';
 import 'widgets/ios_card.dart';
 
 class ChapterOverviewListPage extends ConsumerStatefulWidget {
@@ -109,21 +110,27 @@ class _ChapterOverviewListPageState
                                 spacing: 12,
                                 runSpacing: 12,
                                 children: [
-                                  for (final ov in _overviews)
-                                    SizedBox(
-                                      width:
-                                          (effectiveContentWidth(context) - 32 - 12) / 2,
-                                      child: _ChapterOverviewCard(
-                                        overview: ov,
-                                        onTap: () => _openChapter(ov),
+                                  for (final entry in _overviews.asMap().entries)
+                                    IOSAnimatedItem(
+                                      index: entry.key,
+                                      child: SizedBox(
+                                        width:
+                                            (effectiveContentWidth(context) - 32 - 12) / 2,
+                                        child: _ChapterOverviewCard(
+                                          overview: entry.value,
+                                          onTap: () => _openChapter(entry.value),
+                                        ),
                                       ),
                                     ),
                                 ],
                               )
                             else
-                              for (final ov in _overviews) ...[
-                                _ChapterOverviewCard(
-                                    overview: ov, onTap: () => _openChapter(ov)),
+                              for (final entry in _overviews.asMap().entries) ...[
+                                IOSAnimatedItem(
+                                  index: entry.key,
+                                  child: _ChapterOverviewCard(
+                                      overview: entry.value, onTap: () => _openChapter(entry.value)),
+                                ),
                                 const SizedBox(height: IOSSpacing.s12),
                               ],
                           ],

@@ -15,6 +15,7 @@ import 'practice_page.dart';
 import 'app_routes.dart';
 import 'responsive.dart';
 import 'theme/ios_tokens.dart';
+import 'widgets/ios_animated_item.dart';
 import 'widgets/ios_button.dart';
 import 'widgets/ios_card.dart';
 
@@ -169,7 +170,9 @@ class _WrongBookPageState extends ConsumerState<WrongBookPage> {
                 itemCount: _questions.length,
                 itemBuilder: (context, index) {
                   final q = _questions[index];
-                  return IOSCard(
+                  return IOSAnimatedItem(
+                    index: index,
+                    child: IOSCard(
                     padding: EdgeInsets.zero,
                     margin: const EdgeInsets.symmetric(vertical: IOSSpacing.s8),
                     child: ListTile(
@@ -207,7 +210,8 @@ class _WrongBookPageState extends ConsumerState<WrongBookPage> {
                       ),
                       onTap: _openPractice,
                     ),
-                  );
+                  ),
+                );
                 },
               ),
             ),
