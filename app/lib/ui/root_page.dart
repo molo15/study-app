@@ -14,9 +14,9 @@ import '../services/auto_archive_service.dart';
 import 'bank_home_page.dart';
 import 'pages/v3/home_v3_page.dart';
 import 'pages/v3/memorize_v3_page.dart';
+import 'pages/v3/settings_v3_page.dart';
 import 'pages/v3/stats_v3_page.dart';
 import 'responsive.dart';
-import 'settings_page.dart';
 import 'widgets/app_sidebar.dart';
 import 'widgets/floating_tab_bar.dart';
 import 'widgets/ios_install_guide.dart';
@@ -94,7 +94,7 @@ class _RootPageState extends ConsumerState<RootPage> {
           const BankHomePage(),  // 题库
           const MemorizeV3Page(), // 背题（中央圆钮入口，V3）
           StatsV3Page(key: _statsKey),     // 统计（V3）
-          const SettingsPage(),  // 我的（替代设置）
+          const SettingsV3Page(), // 我的（V3 设置中心）
         ],
       ),
     );
