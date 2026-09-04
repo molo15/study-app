@@ -33,8 +33,19 @@ jobs:
         working-directory: app
         run: flutter pub get
 
+      - name: Disable code signing in Xcode project
+        working-directory: app/ios
+        run: |
+          sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' Runner.xcodeproj/project.pbxproj
+          echo "CODE_SIGN_STYLE after:"
+          grep 'CODE_SIGN_STYLE' Runner.xcodeproj/project.pbxproj | head -3
+
       - name: Build iOS (release, no codesign)
         working-directory: app
+        env:
+          CODE_SIGNING_REQUIRED: "NO"
+          CODE_SIGNING_ALLOWED: "NO"
+          CODE_SIGN_IDENTITY: ""
         run: |
           rm -f ios/Podfile ios/Podfile.lock
           flutter build ios --release --no-codesign
