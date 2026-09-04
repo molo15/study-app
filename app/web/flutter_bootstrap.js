@@ -40,17 +40,30 @@ if (!window._flutter) {
 }
 _flutter.buildConfig = {"engineRevision":"5d531788691ec3404cac0cee66ead4007b177363","wasmHashes":{"canvaskit.wasm":"2898c0795cf4a694e86ee3445c7414c2503fbcb46967154762f50ebde988da04","chromium/canvaskit.wasm":"ba4024133403777f41c709b9e76e9f4bdb76c73d33adba8645527a59d815d824","skwasm.wasm":"a957befea55cf597eeebcf3286f1b88f463f3ad8bfc13e55aa8f5d34cd2ade4d","skwasm_heavy.wasm":"781a14fc7e9cd387ee6df4a056f62af7e940c60cc42ce04571cc2e810042c588","webparagraph/canvaskit.wasm":"7a61c4ad71781875a80bbfc5ee6e49686dd190d629e0fe986d3ecc05ada58856","wimp.wasm":"7474f6074c42c4be503c9059c9b5058e468a68a8917ac6c3607f0da4922f7e5a","sqlite3.wasm":"8766db025f5d5b6f24c6a51cc9dec843ab7a7720e3dfa5b47d70d33db96d506b"},"builds":[{"compileTarget":"dart2js","renderer":"canvaskit","mainJsPath":"main.dart.js"},{}]};
 
+// canvasKitBaseUrl: load CanvasKit engine locally instead of Google gstatic CDN.
+// fontFallbackBaseUrl: CanvasKit fetches CJK glyph-fallback shards from
+// https://fonts.gstatic.com/s/ by default, which hangs for a long time when the
+// CDN is unreachable. Point it at a same-origin path that does not exist so the
+// requests fail fast with 404 and the engine falls back to the local NotoSansSC
+// subset. sw.js also intercepts any stray gstatic/googleapis request as a
+// second line of defense.
 _flutter.loader.load({
-  config: { canvasKitBaseUrl: "canvaskit" }
+  config: {
+    canvasKitBaseUrl: "canvaskit",
+    fontFallbackBaseUrl: "font-fallback/s/"
+  }
 });
 
-// PWA 离线缓存：load 完成后注册自定义 Service Worker（sw.js），不阻塞首帧。
-// 构建指纹由 tools/post_build_sw.py 写入 build/web/sw.js；每次构建后 sw.js 内容变化，
-// 浏览器检测到更新后自动重建缓存（App Shell 预缓存 + 静态资源缓存优先 + 导航网络优先）。
+// PWA offline cache: register the custom Service Worker (sw.js) immediately after
+// bootstrap parses, instead of waiting for window.load. On slow networks large assets
+// delay load indefinitely, which previously prevented SW installation and forced a
+// full cold start every visit. Registration/install run in the background.
+// updateViaCache:'none' forces the browser to revalidate sw.js over the network on
+// every update check, so a fixed SW can never be held back by HTTP caching.
+// The build fingerprint is injected into build/web/sw.js by tools/post_build_sw.py;
+// any sw.js change after a rebuild is detected and the app-shell cache is rebuilt.
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function () {
-    navigator.serviceWorker.register('sw.js').catch(function (err) {
-      console.warn('Service worker registration failed:', err);
-    });
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(function (err) {
+    console.warn('Service worker registration failed:', err);
   });
 }

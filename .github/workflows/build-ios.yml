@@ -1,4 +1,4 @@
-name: Build iOS IPA
+﻿name: Build iOS IPA
 
 on:
   workflow_dispatch:
@@ -33,8 +33,21 @@ jobs:
         working-directory: app
         run: flutter pub get
 
+      - name: Install CocoaPods
+        working-directory: app/ios
+        run: pod install --repo-update
+
+      - name: Clear code signing (unsigned CI build)
+        working-directory: app/ios
+        run: |
+          sed -i '' 's/DEVELOPMENT_TEAM = [^;]*;/DEVELOPMENT_TEAM = "";/g' Runner.xcodeproj/project.pbxproj
+          echo "DEVELOPMENT_TEAM cleared:"
+
       - name: Build iOS (release, no codesign)
         working-directory: app
+        env:
+          CODE_SIGNING_ALLOWED: "NO"
+          CODE_SIGNING_REQUIRED: "NO"
         run: |
           rm -f ios/Podfile ios/Podfile.lock
           flutter build ios --release --no-codesign

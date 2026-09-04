@@ -33,22 +33,93 @@
   <title>考研刷题</title>
   <link rel="manifest" href="manifest.json">
 
-  <!-- 启动加载优化：preload 并行预下载主程序与渲染引擎（默认 chromium 变体），
-       与 flutter_bootstrap.js 的解析/注入并行，避免串行等待。
-       实际不支持的浏览器会自动回退 full 变体，此 preload 仅作预热不阻塞。 -->
-  <link rel="preload" href="main.dart.js" as="script">
-  <link rel="preload" href="canvaskit/chromium/canvaskit.js" as="script">
-  <link rel="preload" href="canvaskit/chromium/canvaskit.wasm" as="fetch" type="application/wasm">
-  <!-- 中文字体 2.9MB（woff2 已压缩，无法再 gzip）preload 与主程序并行下载，
-       避免 FontLoader 在 main.dart.js 执行后才开始拉取（字体 preload 需 crossorigin）。 -->
-  <link rel="preload" href="assets/assets/fonts/NotoSansSC-subset.woff2" as="font" type="font/woff2" crossorigin>
+  <!-- 启动加载优化：preload 与 flutter_bootstrap.js 的解析/注入并行。
+       CanvasKit 变体必须与 flutter_bootstrap.js 的引擎选择逻辑一致：
+       - Chromium 内核（Chrome/Edge，具备 ImageDecoder + v8BreakIterator）使用 chromium/ 子目录变体；
+       - WebKit（Safari 与 iOS 全系浏览器）/Firefox 不支持 chromium 变体，使用根目录 full 变体。
+       写死 chromium 变体会导致 iPad/iPhone 白下载 5.4MB 后再重下 7.3MB full 变体。
+       canvaskit.js 由 import()（CORS）加载、.wasm 由 fetch() 加载，preload 必须带 crossorigin；
+       main.dart.js 由 <script> 加载（no-cors），不带 crossorigin。 -->
+  <script>
+  (function () {
+    try {
+      var engine = navigator.vendor === 'Google Inc.' || navigator.userAgent.indexOf('Edg/') !== -1
+        ? 'blink'
+        : navigator.vendor === 'Apple Computer, Inc.' ? 'webkit'
+        : navigator.vendor === '' && navigator.userAgent.indexOf('Firefox') !== -1 ? 'gecko'
+        : 'unknown';
+      var hasImageCodecs = typeof ImageDecoder !== 'undefined' && engine === 'blink';
+      var hasBreakIterators = typeof Intl.v8BreakIterator !== 'undefined'
+        && typeof Intl.Segmenter !== 'undefined';
+      var useChromiumVariant = hasImageCodecs && hasBreakIterators;
+      var ckDir = useChromiumVariant ? 'canvaskit/chromium/' : 'canvaskit/';
+      function preload(href, as, type, crossOrigin) {
+        var l = document.createElement('link');
+        l.rel = 'preload';
+        l.href = href;
+        l.as = as;
+        if (type) l.type = type;
+        if (crossOrigin) l.crossOrigin = 'anonymous';
+        document.head.appendChild(l);
+      }
+      // 主程序（script 标签加载，no-cors）
+      preload('main.dart.js', 'script');
+      // 实际使用的 CanvasKit 变体
+      preload(ckDir + 'canvaskit.js', 'script', null, true);
+      preload(ckDir + 'canvaskit.wasm', 'fetch', 'application/wasm', true);
+      // 中文字体（woff2 已压缩，无法再 gzip）：Regular 子集，主题统一用 w400
+      preload('assets/assets/fonts/NotoSansSC-subset.woff2', 'font', 'font/woff2', true);
+    } catch (e) {
+      // preload 仅为加速优化，失败时引擎自行按默认顺序加载，不影响功能
+      console.warn('preload bootstrap failed:', e);
+    }
+  })();
+  </script>
 </head>
 <body>
+  <!-- 首屏启动遮罩：Flutter 挂载 flutter-glass-pane 后由内联脚本淡出移除；
+       避免弱网/wasm 编译期间纯白屏让用户误以为卡死。 -->
+  <div id="app-boot-splash" style="position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:linear-gradient(160deg,#eef3fa,#f8fbff);">
+    <div style="width:38px;height:38px;border:3px solid rgba(61,111,196,.18);border-top-color:#3d6fc4;border-radius:50%;animation:appBootSpin .85s linear infinite;"></div>
+    <div style="font-size:16px;font-weight:600;color:#1e2a3c;letter-spacing:2px;">考研刷题</div>
+    <div id="app-boot-tip" style="font-size:12.5px;color:#6b778c;">正在加载学习引擎，首次打开需下载资源，请稍候…</div>
+  </div>
+  <style>@keyframes appBootSpin{to{transform:rotate(360deg)}}</style>
+
   <!--
     Flutter 启动加载优化：canvaskit 本地化通过自定义 web/flutter_bootstrap.js 配置
-    useLocalCanvasKit:true 实现（canvaskit 从本地 web/canvaskit/ 加载，
-    免 Google gstatic CDN，国内更快更稳）。
+    canvasKitBaseUrl:"canvaskit" 实现（canvaskit 从本地加载，免 Google gstatic CDN，国内更快更稳）。
   -->
   <script src="flutter_bootstrap.js" async></script>
+
+  <script>
+  (function () {
+    var splash = document.getElementById('app-boot-splash');
+    if (!splash) return;
+    var finished = false;
+    function removeSplash() {
+      if (finished) return;
+      finished = true;
+      splash.style.transition = 'opacity .45s ease';
+      splash.style.opacity = '0';
+      setTimeout(function () {
+        if (splash.parentNode) splash.parentNode.removeChild(splash);
+      }, 500);
+    }
+    // Flutter Web 引擎挂载 flutter-glass-pane 即代表首帧管线就绪
+    try {
+      var observer = new MutationObserver(function () {
+        // Flutter 旧版引擎挂载 flutter-glass-pane，新版（3.27+）挂载 flutter-view，两者都要识别
+        if (document.querySelector('flutter-glass-pane, flutter-view')) {
+          observer.disconnect();
+          setTimeout(removeSplash, 300);
+        }
+      });
+      observer.observe(document.body, { childList: true });
+    } catch (e) { /* 旧浏览器无 MutationObserver 时走兜底定时 */ }
+    // 兜底：30s 后无论如何移除，避免引擎异常时永久遮罩
+    setTimeout(removeSplash, 30000);
+  })();
+  </script>
 </body>
 </html>

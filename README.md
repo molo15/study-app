@@ -1,16 +1,20 @@
 # 考研刷题 App（study_app）
 
+> 当前版本：App **v1.4.0** · 题库包 **v0.14.1**（formatVersion=4）· 5 科 4500+ 题
+
 ## 项目总览
 
 考研专业课刷题应用：内置 5 科题库（现代汉语 / 古代汉语 / 中国古代文学史 / 中国现代文学史 / 中国当代文学史），
 Flutter 客户端 + Python/Node 题库生产线。核心机制：间隔重复（FSRS）+ 基础/测试双轨 +
-知识点树（章节知识概览）+ 背题模式 + 模拟卷。
+知识点树（章节知识概览）+ 背题模式（不背单词式推送）+ 综合模拟卷（随机组卷）。
+
+**多端方向**：以 Web 为核心，文件存档为数据中枢，后续封装 APK / EXE。当前 Flutter 客户端为主力交付物，Web spike 已启动。
 
 ## 目录结构
 
 ```
 D:\study_app
-├── app/                  # Flutter 客户端（唯一对外交付物）
+├── app/                  # Flutter 客户端（当前主力交付物）
 │   ├── lib/
 │   │   ├── main.dart     # 入口（含全局 FrostBackground 背景层）
 │   │   ├── models/       # 领域模型（Question/BankManifest/KnowledgePoint/StudyGoal...）
@@ -18,19 +22,22 @@ D:\study_app
 │   │   ├── services/     # 日志、导出工具
 │   │   ├── ui/           # 页面（首页/题库/章节概览/刷题/背题/错题本/统计/我的/模拟卷...）
 │   │   │   └── widgets/  # 通用组件（FrostBackground/GlassCard/AppCard/GlassTabBar/CircularRing...）
-│   │   ├── assets/banks/ # 内置题库包（5 库 zip，formatVersion=4，v0.14.0）
-│   │   ├── test/         # 单元 + 组件测试（67 个）
+│   │   ├── assets/banks/ # 内置题库包（5 库 zip，formatVersion=4，v0.14.1）
+│   │   ├── test/         # 单元 + 组件测试
 │   │   └── pubspec.yaml  # 依赖：riverpod/sqflite/fsrs/archive/fl_chart...
 ├── tools/seed-builder/   # 题库生产线（Python 为主，Node.js 辅助思源导出）
-│   ├── pipeline/         # 活跃流水线脚本（打包/校验/覆盖率/出题，见其 README）
+│   ├── pipeline/         # 活跃流水线脚本（打包/校验/覆盖率/出题）
 │   ├── src/              # 历史脚本（清洗/打包旧版本）
 │   ├── scripts/          # 出题/合并脚本
 │   ├── out/              # 中间产物（materials/skeleton/knowledge/packages/reports...）
 │   └── scratch/          # 一次性临时脚本
-├── resource/             # 未使用的设计素材
 ├── docs/                 # 设计文档（见下方「文档索引」）
+│   ├── prototype/        # UI 设计稿（ui-v2-cold-frost.html — 四形态可交互原型）
+│   └── archive/          # 归档：早期设计文档 / 过程性审查报告
+├── resource/             # 未使用的设计素材
 ├── logs/                 # 构建/运行日志（归档）
 ├── screenshots/          # 开发期截图（归档）
+├── release/              # 发布产物（APK / Web build）
 └── archive/              # 历史备份文件（.bak 等）
 ```
 
@@ -42,29 +49,44 @@ D:\study_app
    ▼
 seed-builder（Python 生产线）
    ├─ 素材结构化：skeleton / materials JSON（章节 → 知识点）
-   ├─ 出题生成：gen_*.py（基础题=知识直问直答；测试题=简答/名解/论述）
-   ├─ 打包：pack_v013.py → v0.13.0（选项洗牌 + answer 文本编码 + knowledge/overviews），
-   │        再跑 mc_expand_*×5 → v0.14.0（多选扩充）
+   ├─ 出题生成：gen_*.py（基础题=知识直问直答；测试题=简答/名解）
+   ├─ 打包：pack_v013.py → v0.14.x（选项洗牌 + answer 文本编码 + knowledge/overviews）
    └─ 校验：verify_*.py（模拟 App 解析：answer 文本→key 映射 / 覆盖率 / 强去重 / P0-P2 分级）
    ▼
 app/assets/banks/*.zip（5 库题库包，随 APK 内置）
    ▼
-Flutter App
+Flutter App（当前主力）
    ├─ seed_loader → SQLite（questions/knowledge_points/chapter_overviews/answer_logs/card_scheduling）
    ├─ fsrs 包：间隔重复调度（desired_retention 可调）
    ├─ Riverpod：状态管理（databaseProvider / quizRepositoryProvider / srsProvider）
    └─ 页面：首页(考试倒计时·象征性) → 题库 → 章节概览(知识点树) → 刷题/背题/模拟卷
+   ▼
+Web 端（spike 进行中，未来核心）
+   ├─ 以 Web 为核心构建，响应式适配手机/平板/桌面
+   ├─ 文件存档为数据中枢（.zip 包含全部状态：做题记录/FSRS 状态/设置/统计）
+   ├─ 自动存档 + 主动导出/导入，任意端互通
+   └─ 后续封装为 APK（WebView）/ EXE（桌面容器）
 ```
+
+## 多端与存档机制
+
+- **数据中枢**：文件存档（.zip），包含做题记录、FSRS 调度状态、设置、统计、审题标记等全部状态
+- **存档方式**：自动存档（开关）+ 主动导出/导入；覆盖压缩机制避免文件过多过大
+- **端对应**：Web（核心）→ APK（WebView 封装）→ EXE（桌面容器）；当前 Flutter APK 为过渡主力
+- **目标设备**：iPad mini 5 / iQOO 手机 / iQOO 平板 / 电脑
 
 ## 关键约定
 
 - **题库包格式**：zip = `manifest.json` + `questions/基础-<章>.json` + `questions/测试-<章>.json`；
   `manifest.formatVersion=4`（knowledge 树 + overviews）；选择题 `answer` 为**正确项文本**（洗牌后重算），
   App 端 `Question.fromBankJson` 映射回 key（兼容旧包 key 编码）
+- **当前题库版本**：现汉/古汉/现文 **v0.14.1**，当代/古文 **v0.14.0**
 - **判分**：集合判分 + `answerVariants` 要点分组；填空/简答部分得分（全部命中 correct / 部分 partial / 零命中 wrong）
-- **背题模式**：不背单词式推送（不会的卡每隔 5 张推回），不进 FSRS/错题本
+- **背题模式**：不背单词式推送（不会的卡每隔 N 张推回），不进 FSRS/错题本；背题卡由基础题自动派生
+- **审题标记**：旗子标记，可开关（默认关），用于标记存疑题目；非收藏功能
 - **数据库**：`app_database.dart` 版本 v9，升级走 `onUpgrade` 增量迁移
 - **Repository**：单一 `QuizRepository` + 多个 `part` mixin（settings/questions/knowledge/srs/mock/export）
+- **通知功能**：当前未实现（无 local_notifications 依赖），不做
 
 ## UI 主题体系（冷磨砂 v2）
 
@@ -95,18 +117,35 @@ Flutter App
 
 ## 文档索引（docs/）
 
+### 核心设计文档（根目录，当前有效）
+
 | 文档 | 内容 |
 |---|---|
-| `UI-v2-冷磨砂实施方案-v1.0.md` | 冷磨砂 UI 改造方案 + P0–P3 执行记录与验收（含存疑/审题标记语义） |
-| `UI与动效优化设计方案-v1.md` / `界面UI改版设计方案-v1.0.md` | 更早的 UI 设计方案 |
-| `设计理念.md` / `设计理念落位-差距审查报告-2026-08-31.md` | 产品设计核心与落位审查 |
-| `设计方案-考研刷题App.md` / `重新设计-题库与学习体验-v1.0.md` | 产品整体设计与题库重设计 |
-| `题型规划.md` / `题库包结构规划.md` / `题库总报告-v0.12.0.md` | 题型/题库包/题库分布 |
-| `题库恢复与扩充规划案-v1.0.md` / `题库复审提炼方案-v1.0.md` | 题库扩充与提炼方案 |
-| `正式发行版-全面审核报告-2026-08-29.md` / `综合模拟卷架构复查报告.md` | 发行前全面审核 / 模拟卷架构复查 |
-| `PROJECT_PROGRESS_2026-08-24.md` / `项目交接描述-AI版.md` | 进度记录 / 交接说明 |
-| `发布准备-设计规划文档-v1.0.md` | 正式发行准备 |
-| `*.2026-08-2x.md`（重复/冲突/缺解析/剥离重复/审核） | 题库质量专项记录 |
+| `设计理念.md` | 产品核心设计理念（每个环节的设计核心） |
+| `UI-v2-冷磨砂实施方案-v1.0.md` | 冷磨砂 UI 改造方案 + P0–P3 执行记录与验收 |
+| `UI与动效优化设计方案-v1.md` | UI 与动效优化方向（手感/过渡/信息流） |
+| `多端存档同步实施方案-v1.0.md` | 文件存档为核心的多端同步方案（Web→APK/EXE） |
+| `设计稿-各端对应与iOS适配说明.md` | 四形态设计稿对应表 + 响应式断点 + iOS 适配清单 |
+| `PROJECT_PROGRESS_2026-08-24.md` | 项目进度记录 |
+| `项目交接描述-AI版.md` | 项目交接说明（给新 AI 会话的上下文） |
+
+### 设计稿（prototype/）
+
+| 文件 | 内容 |
+|---|---|
+| `prototype/ui-v2-cold-frost.html` | **UI v2 冷磨砂可交互原型**，四形态切换：手机竖屏 / iPad 竖屏 / 平板横屏 / 桌面。覆盖首页信息流、题库、背题卡 3D 翻转、答题、统计、模拟卷、我的等全页面。 |
+
+### 协作提示词
+
+| 文档 | 内容 |
+|---|---|
+| `审查提示词-分对话审查-v1.0.md` | 分对话审查用提示词（代码/题库/UI 审查） |
+| `修理工程师提示词-分对话修复-v1.0.md` | 分对话修复用提示词（含 Ponytail 4 条代码精简纪律：梯子/根因/留痕/留证） |
+
+### 归档（archive/）
+
+- `archive/early-design/` — 早期设计文档（8 月题库分析、旧版 UI 方案等，已被新文档替代）
+- `archive/reviews-2026-09/` — 2026 年 9 月过程性审查报告（PWA/Web 构建/全功能逻辑/性能基线等）
 
 ## 常用命令
 

@@ -10,12 +10,14 @@ import sys
 
 ROOT = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else 'build/web')
 EXTS = {'.wasm', '.js', '.json', '.css', '.html', '.txt', '.svg'}
+# 无扩展名的纯文本文件（如 Flutter 开源许可证声明 NOTICES，1.34MB，gzip 后约 300-400KB）
+EXTRA_FILES = {'NOTICES'}
 
 n = 0
 saved = 0
 for dirpath, _, files in os.walk(ROOT):
     for f in files:
-        if os.path.splitext(f)[1] not in EXTS:
+        if os.path.splitext(f)[1] not in EXTS and f not in EXTRA_FILES:
             continue
         p = os.path.join(dirpath, f)
         gz = p + '.gz'
