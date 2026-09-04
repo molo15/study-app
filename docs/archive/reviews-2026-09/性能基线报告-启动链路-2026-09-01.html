@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>性能基线报告 · 启动链路量化 · 考研刷题 Web</title>
+<style>
+  :root { --ink:#1e2a3c; --ink2:#56647c; --accent:#4f7cd4; --accent2:#7aa2ee; --ok:#3fa88a; --warn:#e0a13c; --err:#d4646a; --line:#e3eaf4; --bg:#f6f9fd; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:'PingFang SC','Microsoft YaHei',Roboto,sans-serif; color:var(--ink); background:linear-gradient(160deg,#eef3fa,#f8fbff); line-height:1.65; }
+  .wrap { max-width:960px; margin:0 auto; padding:32px 24px 60px; }
+  h1 { font-size:26px; margin:0 0 6px; }
+  .sub { color:var(--ink2); font-size:14px; margin-bottom:24px; }
+  .card { background:rgba(255,255,255,.86); border:1px solid var(--line); border-radius:18px; padding:20px 22px; margin-bottom:18px; box-shadow:0 6px 20px rgba(38,58,92,.06); }
+  .card h2 { font-size:17px; margin:0 0 12px; display:flex; align-items:center; gap:8px; }
+  .card h2 .tag { font-size:11px; padding:2px 8px; border-radius:20px; color:#fff; }
+  .tag.blue { background:var(--accent); } .tag.green { background:var(--ok); } .tag.orange { background:var(--warn); } .tag.red { background:var(--err); }
+  table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  th,td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); }
+  th { background:rgba(79,124,212,.07); color:var(--ink2); font-weight:600; font-size:12.5px; }
+  td.num { font-variant-numeric:tabular-nums; }
+  .big { font-size:30px; font-weight:700; color:var(--accent); }
+  .big small { font-size:13px; color:var(--ink2); font-weight:400; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; margin-bottom:6px; }
+  .kpi { background:rgba(255,255,255,.9); border:1px solid var(--line); border-radius:16px; padding:14px 16px; }
+  .kpi .lbl { font-size:12px; color:var(--ink2); }
+  .kpi .val { font-size:24px; font-weight:700; margin-top:2px; }
+  .kpi .val small { font-size:12px; color:var(--ink2); font-weight:400; }
+  .pill { display:inline-block; font-size:11px; padding:1px 8px; border-radius:12px; margin-right:4px; }
+  .pill.p0 { background:#fdeaea; color:var(--err); } .pill.p1 { background:#fdf3e0; color:var(--warn); } .pill.p2 { background:#e8eefb; color:var(--accent); }
+  .note { font-size:12.5px; color:var(--ink2); background:rgba(79,124,212,.05); border-left:3px solid var(--accent2); padding:8px 12px; border-radius:6px; margin-top:10px; }
+  .warn { border-left-color:var(--warn); background:rgba(224,161,60,.07); }
+  .ok { border-left-color:var(--ok); background:rgba(63,168,138,.07); }
+  code { background:rgba(79,124,212,.08); padding:1px 6px; border-radius:5px; font-size:12.5px; font-family:Consolas,Menlo,monospace; }
+  pre { background:#1e2a3c; color:#dfe8f5; border-radius:12px; padding:14px 16px; font-size:12px; overflow-x:auto; line-height:1.55; }
+  .timeline { width:100%; }
+  .tl-row { display:grid; grid-template-columns:110px 1fr; align-items:center; margin-bottom:7px; }
+  .tl-name { font-size:12.5px; color:var(--ink2); text-align:right; padding-right:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tl-track { position:relative; height:26px; background:rgba(79,124,212,.05); border-radius:6px; }
+  .tl-bar { position:absolute; top:3px; height:20px; border-radius:5px; display:flex; align-items:center; padding:0 8px; font-size:11px; color:#fff; white-space:nowrap; }
+  .axis { height:18px; position:relative; margin-top:4px; }
+  .axis span { position:absolute; font-size:10.5px; color:var(--ink2); transform:translateX(-50%); }
+  .axis i { position:absolute; top:0; width:1px; height:8px; background:var(--line); }
+  .flow { display:flex; flex-wrap:wrap; gap:10px; align-items:stretch; margin-top:8px; }
+  .flow .step { flex:1 1 130px; background:rgba(255,255,255,.8); border:1px solid var(--line); border-radius:12px; padding:10px 12px; font-size:12px; }
+  .flow .step b { display:block; font-size:13px; margin-bottom:2px; }
+  .flow .step .t { color:var(--accent); font-weight:700; font-size:12px; }
+  .arrow { align-self:center; color:var(--ink2); font-size:16px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media(max-width:720px){ .grid2{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>性能基线报告 · 启动链路量化</h1>
+  <div class="sub">考研刷题 Web（Flutter Web / canvaskit / PWA） · 2026-09-01 · 构建 BUILD_ID 6226b0818e84</div>
+
+  <!-- 摘要 -->
+  <div class="card">
+    <h2><span class="tag blue">摘要</span> 结论先行</h2>
+    <div class="kpis">
+      <div class="kpi"><div class="lbl">冷加载（首次访问）</div><div class="val">4.74<small>s FCP</small></div></div>
+      <div class="kpi"><div class="lbl">热加载（SW 缓存命中）</div><div class="val">3.34<small>s FCP</small></div></div>
+      <div class="kpi"><div class="lbl">冷加载总传输</div><div class="val">13.2<small>MB</small></div></div>
+      <div class="kpi"><div class="lbl">热加载网络传输</div><div class="val">0<small>KB</small></div></div>
+    </div>
+    <p style="font-size:14px;margin:12px 0 0;">
+      实测（本地服务器，未开 HTTP 压缩）：首屏内容（FCP）冷加载 <b>4.74s</b>、热加载 <b>3.34s</b>。
+      热加载与冷加载差距仅 1.4s，说明<b>瓶颈主要在 CPU（canvaskit wasm 编译 + main.dart.js 执行 ≈ 3.3s），其次才是网络传输（13.2MB）</b>。
+      三项高杠杆优化（preload 并行下载、字体加载不阻塞首帧、消除外部字体回退）预期可将冷加载 FCP 压到 <b>3s 以内</b>。
+    </p>
+  </div>
+
+  <!-- 实测方法 -->
+  <div class="card">
+    <h2><span class="tag blue">方法</span> 实测方式（可复现）</h2>
+    <table>
+      <tr><th style="width:180px">项</th><th>说明</th></tr>
+      <tr><td>环境</td><td>本机 Chrome（1280×960），本地 HTTP 服务 <code>python -m http.server 8731</code>（无 gzip/brotli，模拟未开压缩的静态部署）</td></tr>
+      <tr><td>冷加载</td><td>CDP <code>Network.clearBrowserCache</code> + 注销 Service Worker + 清空 Cache Storage 后导航 <code>/?v=cold2</code>（URL 带随机参数避开缓存）</td></tr>
+      <tr><td>热加载</td><td>Service Worker 激活并缓存后再次导航（<code>transferSize=0</code> 验证全命中）</td></tr>
+      <tr><td>采集</td><td><code>performance.getEntriesByType('navigation'|'resource'|'paint')</code> 取 Navigation Timing / Resource Timing / FCP；等待 13s 保证 Flutter 渲染与 DB 就绪</td></tr>
+      <tr><td>口径</td><td>FCP = first-contentful-paint；resource 各资源 startTime 相对 navigationStart；传输量 = transferSize</td></tr>
+    </table>
+    <div class="note">复测脚本见文末附录；同一方法与参数重跑即可得到「优化前 vs 优化后」对比。</div>
+  </div>
+
+  <!-- 启动时间线 -->
+  <div class="card">
+    <h2><span class="tag green">数据</span> 冷加载启动时间线（本地，ms）</h2>
+    <div class="timeline">
+      <div class="tl-row"><div class="tl-name">flutter_bootstrap.js</div><div class="tl-track"><div class="tl-bar" style="left:0%;width:0.4%;background:#7aa2ee;">14KB</div></div></div>
+      <div class="tl-row"><div class="tl-name">main.dart.js</div><div class="tl-track"><div class="tl-bar" style="left:3%;width:1.6%;background:#4f7cd4;">3.3MB</div></div></div>
+      <div class="tl-row"><div class="tl-name">canvaskit.js</div><div class="tl-track"><div class="tl-bar" style="left:3%;width:0.2%;background:#4f7cd4;">84KB</div></div></div>
+      <div class="tl-row"><div class="tl-name">canvaskit.wasm</div><div class="tl-track"><div class="tl-bar" style="left:3%;width:1.6%;background:#4f7cd4;">5.3MB</div></div></div>
+      <div class="tl-row"><div class="tl-name">图标字体</div><div class="tl-track"><div class="tl-bar" style="left:11%;width:0.3%;background:#7aa2ee;">Material/Cupertino</div></div></div>
+      <div class="tl-row"><div class="tl-name">Google 字体回退分片</div><div class="tl-track"><div class="tl-bar" style="left:11%;width:30%;background:#e0a13c;">外部 CDN（慢）</div></div></div>
+      <div class="tl-row"><div class="tl-name">NotoSansSC-subset.woff2</div><div class="tl-track"><div class="tl-bar" style="left:40%;width:0.4%;background:#3fa88a;">2.9MB</div></div></div>
+      <div class="tl-row"><div class="tl-name">FCP 首帧</div><div class="tl-track"><div class="tl-bar" style="left:95%;width:1%;background:#d4646a;">4.74s</div></div></div>
+      <div class="axis"><i style="left:0%"></i><span style="left:0%">0</span><i style="left:25%"></i><span style="left:25%">1.2s</span><i style="left:50%"></i><span style="left:50%">2.4s</span><i style="left:75%"></i><span style="left:75%">3.6s</span><i style="left:100%"></i><span style="left:100%">4.8s</span></div>
+    </div>
+    <table style="margin-top:14px">
+      <tr><th>资源</th><th>起始</th><th>耗时</th><th>编码体积</th><th>说明</th></tr>
+      <tr><td>flutter_bootstrap.js</td><td class="num">27ms</td><td class="num">20ms</td><td class="num">14KB</td><td>启动入口</td></tr>
+      <tr><td>main.dart.js</td><td class="num">166ms</td><td class="num">69ms</td><td class="num">3.3MB</td><td>dart2js 主程序（下载快，执行是 CPU 耗时）</td></tr>
+      <tr><td>canvaskit/chromium/canvaskit.js</td><td class="num">165ms</td><td class="num">11ms</td><td class="num">84KB</td><td>渲染引擎 JS 壳</td></tr>
+      <tr><td>canvaskit/chromium/canvaskit.wasm</td><td class="num">165ms</td><td class="num">71ms</td><td class="num">5.3MB</td><td><b>最大单项</b>；与 main.dart.js 并行下载（本地）</td></tr>
+      <tr><td>NotoSansSC-subset.woff2</td><td class="num">2018ms</td><td class="num">20ms</td><td class="num">2.9MB</td><td>中文字体子集；main() 中 await，阻塞 runApp</td></tr>
+      <tr><td>外部字体分片（Google Fonts CDN）</td><td class="num">567ms</td><td class="num">1425ms</td><td class="num">~220KB</td><td>字体回退链触发，慢且可能被墙</td></tr>
+      <tr><td>题库 zip ×5</td><td class="num">6478ms</td><td class="num">~10ms</td><td class="num">1.2MB</td><td>DB 初始化后惰性下载，不阻塞首帧</td></tr>
+    </table>
+  </div>
+
+  <!-- 冷热对比 + 瓶颈 -->
+  <div class="card">
+    <h2><span class="tag green">分析</span> 冷/热对比与瓶颈分解</h2>
+    <table>
+      <tr><th>阶段</th><th>冷加载</th><th>热加载（SW 命中）</th><th>差异归因</th></tr>
+      <tr><td>FCP</td><td class="num">4740ms</td><td class="num">3340ms</td><td>冷比热多 1.4s → 网络传输</td></tr>
+      <tr><td>网络传输</td><td class="num">13.2MB</td><td class="num">0KB</td><td>canvaskit 5.3 + main.js 3.3 + 字体 2.9 + 其他</td></tr>
+      <tr><td>canvaskit wasm 编译 + 主程序执行</td><td class="num">~3.3s</td><td class="num">~3.3s</td><td><b>CPU 硬耗时，冷热相同</b>（热加载下 FCP 仍 3.34s 证明）</td></tr>
+      <tr><td>字体加载阻塞</td><td class="num">~2s</td><td class="num">~1s</td><td>NotoSansSC 2.9MB 在 runApp 前 await</td></tr>
+    </table>
+    <div class="grid2" style="margin-top:14px">
+      <div>
+        <h2 style="font-size:15px;">瓶颈排序（影响 FCP 从大到小）</h2>
+        <ol style="font-size:13.5px;margin:0;padding-left:20px;">
+          <li><b>canvaskit wasm 编译 + main.dart.js 执行（~3.3s CPU）</b>——引擎固有，优化空间小，但可与网络并行</li>
+          <li><b>字体 2.9MB 阻塞首帧</b>——可改为首帧后加载，预期省 1–2s</li>
+          <li><b>冷加载 13.2MB 网络</b>——preload 并行化 + 生产 gzip/brotli 可显著压缩</li>
+          <li><b>外部 Google Fonts 回退分片（~1.4s）</b>——应消除，避免 CDN 慢/被墙</li>
+        </ol>
+      </div>
+      <div>
+        <h2 style="font-size:15px;">资源体积占比（冷加载 13.2MB）</h2>
+        <div style="display:flex;height:22px;border-radius:6px;overflow:hidden;font-size:11px;color:#fff;text-align:center;">
+          <div style="flex:5.3;background:#4f7cd4;line-height:22px;">canvaskit 5.3</div>
+          <div style="flex:3.3;background:#7aa2ee;line-height:22px;">main.js 3.3</div>
+          <div style="flex:2.9;background:#3fa88a;line-height:22px;">字体 2.9</div>
+          <div style="flex:1.7;background:#e0a13c;line-height:22px;">其他 1.7</div>
+        </div>
+        <p style="font-size:12px;color:var(--ink2);margin:6px 0 0;">canvaskit wasm 5.3MB 为最大单项（gzip 后约 2.5MB，brotli 约 2.2MB）。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 优化后复测 -->
+  <div class="card">
+    <h2><span class="tag green">结果</span> P0 优化后复测对比（同方法重跑）</h2>
+    <table>
+      <tr><th>指标</th><th>优化前</th><th>优化后</th><th>提升</th><th>说明</th></tr>
+      <tr><td><b>冷加载 FCP</b></td><td class="num">4740ms</td><td class="num" style="color:var(--ok);font-weight:700">2140ms</td><td><b>-55%</b></td><td>preload 并行 + 字体不阻塞首帧</td></tr>
+      <tr><td><b>热加载 FCP</b></td><td class="num">3340ms</td><td class="num" style="color:var(--ok);font-weight:700">1032ms</td><td><b>-69%</b></td><td>字体不再 await 阻塞 runApp</td></tr>
+      <tr><td>冷加载 main.dart.js / canvaskit 起始</td><td class="num">165ms</td><td class="num">31ms</td><td>-134ms</td><td>preload 与 bootstrap 解析并行</td></tr>
+      <tr><td>冷加载总传输</td><td class="num">13.2MB</td><td class="num">13.2MB</td><td>—</td><td>preload 不减少体积（并行化），体积项待 P1 压缩</td></tr>
+    </table>
+    <div class="note ok">P0 已实施项：① <code>web/index.html</code> 加 <code>&lt;link rel=preload&gt;</code>（main.dart.js + canvaskit.js + canvaskit.wasm）；② <code>lib/main.dart</code> 字体加载改为非阻塞（<code>unawaited</code>，就绪后 <code>ensureVisualUpdate</code> 重绘）。<b>目标达成：冷加载 FCP 压入 3s 以内（2.14s）</b>。</div>
+  </div>
+
+  <!-- 优化清单 -->
+  <div class="card">
+    <h2><span class="tag orange">计划</span> P0 / P1 / P2 优化清单</h2>
+    <table>
+      <tr><th style="width:64px">优先级</th><th>优化项</th><th>改动</th><th>预期收益</th><th>风险</th></tr>
+      <tr>
+        <td><span class="pill p0">P0</span></td>
+        <td><b>preload 并行下载</b><br>index.html 预加载 canvaskit.wasm + main.dart.js</td>
+        <td><code>web/index.html</code> 加 <code>&lt;link rel=preload&gt;</code></td>
+        <td>冷加载网络从串行变并行，生产网络下省 1–3s</td><td>低</td>
+      </tr>
+      <tr>
+        <td><span class="pill p0">P0</span></td>
+        <td><b>字体不阻塞首帧</b><br>NotoSansSC 加载改为 runApp 后</td>
+        <td><code>lib/main.dart</code> 字体 await → 首帧后加载</td>
+        <td>FCP 预期省 1–2s（2.9MB 不再卡在 runApp 前）</td>
+        <td>中：首帧可能短暂 fallback 字体，字体就绪自动替换</td>
+      </tr>
+      <tr>
+        <td><span class="pill p1">P1</span></td>
+        <td><b>消除外部字体回退</b><br>禁止 Google Fonts CDN 分片下载</td>
+        <td>排查 FontManifest / 字体回退链，本地声明覆盖</td>
+        <td>省 ~1.4s 且避免被墙不渲染</td><td>中：需验证中文渲染回退完整性</td>
+      </tr>
+      <tr>
+        <td><span class="pill p1">P1</span></td>
+        <td><b>生产 gzip/brotli</b><br>wasm / js 压缩传输</td>
+        <td>部署层（nginx 等）开启压缩</td>
+        <td>13.2MB → 约 6–7MB，冷加载网络减半</td><td>低（部署配置）</td>
+      </tr>
+      <tr>
+        <td><span class="pill p1">P1</span></td>
+        <td><b>SW shell 预缓存排查</b><br>本次实测 shell 仅缓存 index.html（16 项缺 15）</td>
+        <td>排查 install 时序/并发（本地 python server 并发弱疑似因）</td>
+        <td>离线可靠性 + 热加载更稳</td><td>低</td>
+      </tr>
+      <tr>
+        <td><span class="pill p2">P2</span></td>
+        <td><b>main.dart.js 拆包</b><br>deferred imports 拆非首屏模块</td>
+        <td>重构 import（复杂）</td>
+        <td>gzip 后 1.1MB → 拆半，收益中等</td><td>高（重构风险）</td>
+      </tr>
+    </table>
+    <div class="note warn">本次实测环境为本地 python http.server（无压缩、并发弱），数值为「未压缩部署」基线；生产 nginx + brotli 后网络项收益会放大。</div>
+  </div>
+
+  <!-- 附：发现 -->
+  <div class="card">
+    <h2><span class="tag red">发现</span> 附带问题</h2>
+    <table>
+      <tr><th>问题</th><th>证据</th><th>影响</th></tr>
+      <tr>
+        <td><b>SW shell 预缓存不完整</b></td>
+        <td><code>quiz-shell-6226b0818e84</code> 仅 1 项（index.html），SHELL_ASSETS 共 16 项；手动 fetch 全部 200 正常</td>
+        <td>首访后立即断网，离线只有 index.html（运行时缓存已积累则可用）；本地 python server 并发弱疑为主因，需生产环境复验</td>
+      </tr>
+      <tr>
+        <td><b>外部 Google Fonts 分片下载</b></td>
+        <td>冷加载 KFOm/K3kCo 分片 start=567ms、最长 1425ms，来源 fonts.gstatic.com</td>
+        <td>慢且国内可能被墙；触发自字体回退链</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- 附录：复测脚本 -->
+  <div class="card">
+    <h2><span class="tag blue">附录</span> 复测方法（同参数重跑即可对比）</h2>
+    <pre>// 冷加载：CDP 清缓存 + 注销 SW + 清 Cache Storage 后导航 /?v=&lt;随机&gt;
+// 采集（页面加载 13s 后）：
+performance.getEntriesByType('navigation')[0]   // ttfb / domContentLoadedEventEnd / loadEventEnd
+performance.getEntriesByType('paint')           // first-contentful-paint
+performance.getEntriesByType('resource')        // 各资源 startTime/duration/transferSize
+// 热加载：SW 激活 + 缓存后再次导航，校验 transferSize 全为 0</pre>
+    <div class="note ok">优化后复测：同一浏览器、同一视口、同一 URL 随机参数方案，先冷后热各一次，取 FCP 与总传输对比。</div>
+  </div>
+
+</div>
+</body>
+</html>

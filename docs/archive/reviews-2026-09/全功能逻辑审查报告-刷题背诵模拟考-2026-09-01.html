@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>全功能逻辑审查报告 - 刷题/背诵/模拟考 - 2026-09-01</title>
+<style>
+  :root{
+    --text:#1A1B1C; --sec:#6B7280; --bg:#F4F3EE; --card:#FFFFFF;
+    --border:#E4E3DD; --accent:#9BBBF4; --ok:#52C41A; --warn:#FAAD14; --err:#EA6668;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:'Roboto','PingFang SC','Segoe UI',Arial,sans-serif; background:var(--bg); color:var(--text); line-height:1.6; padding:32px 16px;}
+  .wrap{max-width:1080px; margin:0 auto;}
+  header{background:linear-gradient(135deg,#9BBBF4 0%,#A3D5E8 100%); border-radius:16px; padding:28px 32px; color:#fff; margin-bottom:24px;}
+  header h1{font-size:24px; font-weight:700; margin-bottom:8px;}
+  header .sub{font-size:14px; opacity:.92;}
+  .meta{display:flex; flex-wrap:wrap; gap:10px; margin-top:16px;}
+  .meta span{background:rgba(255,255,255,.25); padding:4px 12px; border-radius:999px; font-size:12px;}
+  h2{font-size:19px; font-weight:700; margin:28px 0 14px; padding-left:12px; border-left:4px solid var(--accent);}
+  h3{font-size:16px; font-weight:600; margin:18px 0 10px;}
+  .card{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px 24px; margin-bottom:16px;}
+  p{margin:8px 0; font-size:14px;}
+  .muted{color:var(--sec); font-size:13px;}
+  table{width:100%; border-collapse:collapse; margin:12px 0; font-size:13.5px;}
+  th{background:#EEF1F7; text-align:left; padding:9px 12px; font-weight:600; border-bottom:1px solid var(--border);}
+  td{padding:9px 12px; border-bottom:1px solid #EFEFEA; vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  .pill{display:inline-block; padding:2px 10px; border-radius:999px; font-size:12px; font-weight:600;}
+  .p-ok{background:#E8F8E4; color:var(--ok);}
+  .p-p1{background:#FDECEA; color:var(--err);}
+  .p-p2{background:#FFF4DC; color:var(--warn);}
+  .p-info{background:#E8F1FB; color:#3A7BD5;}
+  .p-design{background:#EFEBF8; color:#7A5FC0;}
+  .p-warn{background:#FFF8E1; color:#B8860B;}
+  .issue{border:1px solid var(--border); border-radius:12px; padding:16px 20px; margin:14px 0; background:#FDFDFC;}
+  .issue .tag{display:flex; gap:10px; align-items:center; margin-bottom:8px; flex-wrap:wrap;}
+  .issue .t{font-weight:700; font-size:15px;}
+  .issue .loc{font-family:Consolas,'Courier New',monospace; font-size:12px; color:#4A5A6A; background:#F0F2F5; padding:2px 8px; border-radius:6px;}
+  .issue .evidence{background:#F6F7F9; border-radius:10px; padding:12px 16px; margin-top:10px; font-size:13px; color:#444;}
+  .issue .evidence .lbl{font-weight:600; color:var(--sec); font-size:12px; text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px;}
+  .issue ul{margin:6px 0 6px 20px;}
+  .issue li{margin:4px 0; font-size:13.5px;}
+  .grid{display:flex; flex-wrap:wrap; gap:12px;}
+  .mcell{flex:1 1 200px; min-width:0; border-radius:12px; padding:14px 16px; background:#FDFDFC; border:1px solid var(--border);}
+  .mcell .name{font-weight:700; font-size:14px; margin-bottom:4px;}
+  .mcell .desc{font-size:12.5px; color:var(--sec);}
+  .bar{height:10px; border-radius:6px; background:#ECEFF3; margin:10px 0; overflow:hidden;}
+  .bar i{display:block; height:100%; border-radius:6px; background:var(--accent);}
+  .shot{max-width:100%; border-radius:10px; border:1px solid var(--border); margin:8px 0;}
+  .shotrow{display:flex; flex-wrap:wrap; gap:14px;}
+  .shotrow figure{flex:1 1 300px; min-width:0;}
+  .shotrow img{width:100%; border-radius:10px; border:1px solid var(--border);}
+  .shotrow figcaption{font-size:12px; color:var(--sec); text-align:center; margin-top:6px;}
+  code{font-family:Consolas,'Courier New',monospace; background:#F0F2F5; padding:1px 6px; border-radius:4px; font-size:12.5px;}
+  .footer{margin-top:32px; padding-top:16px; border-top:1px solid var(--border); color:var(--sec); font-size:12px; text-align:center;}
+  .note{background:#FFF9E8; border:1px solid #F0E2B6; border-radius:10px; padding:12px 16px; font-size:13px; color:#6B5B00; margin:10px 0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>全功能逻辑审查报告</h1>
+  <div class="sub">考研刷题 App · Web 构建（D:\study_app\app\build\web · BUILD 68d2129f154f / m390）</div>
+  <div class="meta">
+    <span>审查日期 2026-09-01</span>
+    <span>11 功能模块</span>
+    <span>5 审查维度</span>
+    <span>3 层验证（代码/测试/浏览器实操）</span>
+    <span>只审查 · 不修改</span>
+  </div>
+</header>
+
+<div class="card">
+  <h3>执行摘要</h3>
+  <p>对考研刷题 App 的 <b>11 个功能模块</b> 进行了全功能逻辑审查，采用「功能闭环 / 状态流转 / 数据持久化 / 异常路径 / 跨端一致」5 维度 ×「代码 / 测试 / 浏览器实操」3 层验证。核心刷题、背诵、模拟考链路均能完整跑通、数据正确落库、历史可追溯。</p>
+  <p><b>发现 3 个待修复缺陷（P1×2 + P2×1）、1 个设计确认、1 个待确认点</b>。测试基线 <b>88 项全绿</b>。本轮仅审查未改动任何代码（git 工作区仅历史遗留变更，非本轮产生）。</p>
+  <div class="grid" style="margin-top:14px;">
+    <div class="mcell"><div class="name">缺陷 #1 <span class="pill p-p1">P1</span></div><div class="desc">dock tab 切换不刷新首页/统计数据（同源影响模拟考列表）</div></div>
+    <div class="mcell"><div class="name">缺陷 #2 <span class="pill p-p1">P1</span></div><div class="desc">知识点卡 FlippableCard 高度塌陷 → M4 知识点卡 / M5 知识背诵空白</div></div>
+    <div class="mcell"><div class="name">缺陷 #3 <span class="pill p-p2">P2</span></div><div class="desc">模拟考未答题计入今日统计口径（正确率被稀释）</div></div>
+  </div>
+</div>
+
+<h2>一、审查方法与范围</h2>
+<div class="card">
+  <table>
+    <tr><th style="width:90px;">模块</th><th>功能</th><th>审查维度</th><th>验证层</th><th>结论</th></tr>
+    <tr><td><b>M1</b></td><td>首页今日任务/概览/倒计时</td><td>D1/D3</td><td>C+B</td><td><span class="pill p-ok">通过</span>（dock 刷新见 #1）</td></tr>
+    <tr><td><b>M2</b></td><td>题库导航/章节知识概览</td><td>D1/D5</td><td>C+B</td><td><span class="pill p-ok">通过</span></td></tr>
+    <tr><td><b>M3</b></td><td>刷题（判分/四档评分/答题卡/跳题/错题归集/SRS 调度）</td><td>D1/D2/D3/D4</td><td>C+T+B</td><td><span class="pill p-ok">通过</span></td></tr>
+    <tr><td><b>M4</b></td><td>背诵（题目背诵/推流/跨会话归档）</td><td>D1/D2/D3</td><td>C+T+B</td><td><span class="pill p-warn">通过</span>（知识点卡见 #2）</td></tr>
+    <tr><td><b>M5</b></td><td>知识背诵（知识点卡 3D 翻转）</td><td>D1/D2</td><td>C+B</td><td><span class="pill p-p1">受阻</span>（FlippableCard 空白 #2）</td></tr>
+    <tr><td><b>M6</b></td><td>模拟考（考试/交卷/批改/逐题解析/历史）</td><td>D1/D2/D3/D4</td><td>C+T+B</td><td><span class="pill p-warn">通过</span>（统计口径见 #3，列表刷新见 #1）</td></tr>
+    <tr><td><b>M7</b></td><td>统计（做题量/正确率/近7日/题型分布）</td><td>D1/D3</td><td>C+B</td><td><span class="pill p-ok">通过</span>（dock 刷新见 #1）</td></tr>
+    <tr><td><b>M8</b></td><td>错题本（归集/排序/重刷/移出）</td><td>D1/D2/D3</td><td>C+T+B</td><td><span class="pill p-ok">通过</span></td></tr>
+    <tr><td><b>M9</b></td><td>主题定制（5 预设/主色/背景/圆角/夜间）</td><td>D1/D3</td><td>C+T+B</td><td><span class="pill p-ok">通过</span></td></tr>
+    <tr><td><b>M10</b></td><td>数据管理（备份/导入/自动存档/题库包）</td><td>D1/D3/D4</td><td>C+B</td><td><span class="pill p-ok">通过</span></td></tr>
+    <tr><td><b>M11</b></td><td>PWA（SW 注册/离线缓存/多端适配）</td><td>D3/D5</td><td>C+B</td><td><span class="pill p-ok">通过</span></td></tr>
+  </table>
+  <p class="muted">维度说明：D1 功能闭环 · D2 状态流转 · D3 数据持久化 · D4 异常路径 · D5 跨端一致。验证层：C=代码审查 · T=自动化测试 · B=浏览器实操。</p>
+</div>
+
+<h2>二、缺陷详情</h2>
+
+<div class="issue">
+  <div class="tag">
+    <span class="pill p-p1">P1 · 数据刷新</span>
+    <span class="t">缺陷 #1：dock tab 切换不触发数据刷新</span>
+  </div>
+  <ul>
+    <li><b>现象</b>：刷题 3 题后，dock 切回「今日」仍显示旧数据（4504 新题 / 0 错题）；手动 reload 后数据全对（4501 新题 / 2 错题 / 今日 3 题 / 33% 正确率）。统计页同理。</li>
+    <li><b>根因</b>：<code>home_page.dart</code> 的 <code>_refresh</code> 仅在 <code>initState</code> 与 <code>_push</code>（Navigator push 返回）时调用；dock 切换是 <code>root_page</code> 内部 tab 切换，<b>不重建 HomePage</b> → 不触发刷新。</li>
+    <li><b>同源影响</b>：<code>mock_exam_list_page.dart</code> 的 <code>_load</code> 仅在 <code>initState</code> 执行，从考试页返回列表后「最近 X 分」需 reload 才更新。</li>
+    <li><b>数据层</b>：无问题（刷新后完全正确，含今日统计/近7日/题型分布/错题本）。</li>
+  </ul>
+  <div class="evidence"><div class="lbl">代码证据</div>
+    <code>lib/ui/home_page.dart</code> L87 <code>_init</code> / L118 <code>_refresh</code> / L168 <code>_push</code>；<code>lib/ui/mock_exam_list_page.dart</code> L46 <code>_load</code>（仅 initState）。
+  </div>
+</div>
+
+<div class="issue">
+  <div class="tag">
+    <span class="pill p-p1">P1 · 渲染层</span>
+    <span class="t">缺陷 #2：FlippableCard 高度塌陷 → 知识点卡不可见</span>
+  </div>
+  <ul>
+    <li><b>现象</b>：背诵页「知识点卡」tab 视觉空白（顶部进度「知识点已掌握 0/10」正常、语义树有节点，但画面无卡片）。稳定复现 3 次。</li>
+    <li><b>根因</b>：<code>lib/ui/widgets/flippable_card.dart</code> 的 <code>widget.height</code> 参数<b>未用于布局</b>，内部仅 <code>Stack(fit: StackFit.expand)</code>；在 ListView 无界高度下 Stack 高度塌陷为 0 → 卡片不可见。</li>
+    <li><b>影响范围</b>：<code>FlippableCard</code> 仅被 <code>knowledge_memorize_page.dart</code> 使用（M4 知识点卡 tab + M5 知识背诵共享）。</li>
+  </ul>
+  <div class="evidence"><div class="lbl">代码证据</div>
+    <code>lib/ui/widgets/flippable_card.dart</code>（<code>height</code> 声明 L24，未参与布局）；<code>lib/ui/knowledge_memorize_page.dart</code> L264 使用。
+  </div>
+</div>
+
+<div class="issue">
+  <div class="tag">
+    <span class="pill p-p2">P2 · 统计口径</span>
+    <span class="t">缺陷 #3：模拟考未答题计入今日统计分母</span>
+  </div>
+  <ul>
+    <li><b>现象</b>：实际作答模拟考 3 题（2 对 1 错），交卷后首页「今日做题量」从 3 变 43、正确率从 33% 跌至 7%，「已答 43/901 题」。</li>
+    <li><b>根因</b>：<code>submitMockSession</code> 对<b>全部 40 题</b>写入 answer_logs，未答题（<code>Grade.skip</code>）也落库；<code>todayOverview</code> 把 skip 计入 <code>todayAnswered</code> 与正确率分母。</li>
+    <li><b>影响</b>：模拟考会显著稀释「今日做题量 / 今日正确率 / 章节已答数」，与刷题口径不一致（刷题只记已答题）。</li>
+  </ul>
+  <div class="evidence"><div class="lbl">代码证据</div>
+    <code>lib/data/quiz_repository_mock.dart</code> L68-92（逐题写 answer_logs 含 skip）、L280-327 <code>todayOverview</code>（分母含 skip）。
+  </div>
+</div>
+
+<div class="issue">
+  <div class="tag">
+    <span class="pill p-design">设计确认 · 非缺陷</span>
+    <span class="t">M4 背诵「背 1 次退出重进不保留」</span>
+  </div>
+  <p>实测：背会第 1 题后退出重进，已会 0/71 从第 1 题重来；连续背会 2 次（streak→2，达到 mastered）后退出重进，已会 1/71 且从第 2 题开始。</p>
+  <ul>
+    <li><b>判定</b>：<code>recordMemorize</code> 状态机 <code>streak≥2 → mastered</code> 才归档排除，单次背会为 learning 会重推——「不背单词式」推流设计，跨会话归档逻辑正确。</li>
+  </ul>
+  <div class="evidence"><div class="lbl">代码证据</div>
+    <code>lib/data/quiz_repository_memorize.dart</code> L12 <code>recordMemorize</code> / L53 <code>memorizeStates</code>；<code>lib/ui/memorize_page.dart</code> L42 <code>_pushBackInterval=5</code>。
+  </div>
+</div>
+
+<div class="issue">
+  <div class="tag">
+    <span class="pill p-warn">待确认点</span>
+    <span class="t">M3 刷题退出无总结页/完成页</span>
+  </div>
+  <p>实测：答题卡跳题正常（跳转到第 10 题 ✓），但 Back 退出刷题直接回章节概览，<b>未见完成/总结页</b>（如全部答完是否出现总结、完成页答题卡回顾功能未实测）。建议在修改会话中一并核对 <code>practice_page</code> 完成态分支。</p>
+</div>
+
+<h2>三、关键链路验证记录</h2>
+
+<h3>M3 刷题链路（全流程实操通过）</h3>
+<div class="card">
+  <p>首页（4504 题已导入）→ 题库 → 章节知识概览 → 修辞章 → 开始刷题 → 71 题队列（单选 28 / 多选 4 / 填空 31）。</p>
+  <table>
+    <tr><th>步骤</th><th>结果</th><th>验证点</th></tr>
+    <tr><td>第 1 题选错</td><td><span class="pill p-ok">✓</span></td><td>正确项高亮 + 解析 + 四档评分条（重来/困难/良好/简单）</td></tr>
+    <tr><td>第 2 题答对</td><td><span class="pill p-ok">✓</span></td><td>正确判定 + 进入下一题</td></tr>
+    <tr><td>第 3 题答错</td><td><span class="pill p-ok">✓</span></td><td>产生错题（后续错题本可见）</td></tr>
+    <tr><td>答题卡</td><td><span class="pill p-ok">✓</span></td><td>已答 3 = 对 1 错 2；题号红绿着色；按题型分组</td></tr>
+    <tr><td>答题卡跳题</td><td><span class="pill p-ok">✓</span></td><td>「跳转到第 10 题?」弹窗 → 成功跳转 10/71，保留未答</td></tr>
+    <tr><td>数据落库</td><td><span class="pill p-ok">✓</span></td><td>reload 后：今日 3 题 / 33% / 错题 2 / 新题 4501 / 已答 3 题；统计页近 7 日柱状图、题型分布完整</td></tr>
+    <tr><td>错题归集</td><td><span class="pill p-ok">✓</span></td><td>错题本 2 道按时间倒序 + 错题重刷入口</td></tr>
+  </table>
+</div>
+
+<h3>M4 背诵链路（全流程实操通过）</h3>
+<div class="card">
+  <p>首页「背题」→ 科目选择 → 古代汉语 → 章节知识概览 → 修辞章 → 背题模式 → MemorizeTabsPage（知识点卡 / 题目背诵 双 tab）。</p>
+  <table>
+    <tr><th>步骤</th><th>结果</th><th>验证点</th></tr>
+    <tr><td>题目背诵</td><td><span class="pill p-ok">✓</span></td><td>显示答案 →「背会了」→ 已会 1/71；「还不会」→ 提示稍后重推</td></tr>
+    <tr><td>跨会话归档</td><td><span class="pill p-ok">✓</span></td><td>streak→2 后重进已会 1/71 从第 2 题开始（mastered 生效）</td></tr>
+    <tr><td>知识点卡</td><td><span class="pill p-p1">✗</span></td><td>视觉空白（缺陷 #2，稳定复现 3 次）</td></tr>
+  </table>
+</div>
+
+<h3>M6 模拟考链路（全流程实操通过）</h3>
+<div class="card">
+  <p>模拟考列表 6 卷 → 古代汉语模拟卷一（40 题 / 限时 60 分钟）→ 作答 → 交卷 → 批改 → 逐题解析 → 历史。</p>
+  <table>
+    <tr><th>步骤</th><th>结果</th><th>验证点</th></tr>
+    <tr><td>考试页</td><td><span class="pill p-ok">✓</span></td><td>1/40、倒计时 59:58、上一题/下一题、已答统计、交卷按钮</td></tr>
+    <tr><td>作答记录</td><td><span class="pill p-ok">✓</span></td><td>逐题选择自动记录（3 题 2 对 1 错）</td></tr>
+    <tr><td>交卷批改</td><td><span class="pill p-ok">✓</span></td><td>弹窗「得分 5/100」（= 2.5 分 × 2 对）、正确 2 · 部分 0 · 错误 1 · 未答 37</td></tr>
+    <tr><td>逐题解析</td><td><span class="pill p-ok">✓</span></td><td>对/错/未答状态列表 + 「只看错题」筛选</td></tr>
+    <tr><td>单题解析</td><td><span class="pill p-ok">✓</span></td><td>我的答案 / 参考要点 / 解析完整</td></tr>
+    <tr><td>历史落库</td><td><span class="pill p-ok">✓</span></td><td>reload 后列表显示「最近 5 分」，history 入口可查（同源刷新缺陷 #1）</td></tr>
+    <tr><td>错题归集</td><td><span class="pill p-ok">✓</span></td><td>模拟考答错题自动进错题本（错题 3 道）</td></tr>
+  </table>
+</div>
+
+<h3>M8 错题本（全流程实操通过）</h3>
+<div class="card">
+  <table>
+    <tr><th>步骤</th><th>结果</th><th>验证点</th></tr>
+    <tr><td>错题归集</td><td><span class="pill p-ok">✓</span></td><td>3 道（刷题 2 + 模拟考 1）按时间倒序 + 分类标签</td></tr>
+    <tr><td>错题重刷</td><td><span class="pill p-ok">✓</span></td><td>「错题重刷(3)」→ 进入 1/3，作答判定正确</td></tr>
+    <tr><td>重刷反馈</td><td><span class="pill p-ok">✓</span></td><td>答对显示「回答正确 + 正确答案 + 解析」+ 记住效果四档 + 移出错题本</td></tr>
+    <tr><td>自动移出</td><td><span class="pill p-ok">✓</span></td><td>代码确认：<code>consecutiveCorrectCount</code> 以最近一次答错为界统计 wrong_rework 连对，达阈值自动移出</td></tr>
+  </table>
+</div>
+
+<h2>四、测试基线</h2>
+<div class="card">
+  <p><b>88 项自动化测试全绿</b>（本轮后台全量复跑确认，exit 0）。关键覆盖：</p>
+  <table>
+    <tr><th>测试集</th><th>覆盖</th><th>结果</th></tr>
+    <tr><td>grading_test</td><td>17 项判分逻辑</td><td><span class="pill p-ok">✓ 全绿</span></td></tr>
+    <tr><td>srs_service_test</td><td>10 项 SRS 调度</td><td><span class="pill p-ok">✓ 全绿</span></td></tr>
+    <tr><td>mock_composite_test</td><td>8 项组卷（68 题 / 150 分 / 无重复）</td><td><span class="pill p-ok">✓ 全绿</span></td></tr>
+    <tr><td>memorize_progress_test</td><td>6 项背诵进度</td><td><span class="pill p-ok">✓ 全绿</span></td></tr>
+    <tr><td>practice_widget_test</td><td>4 项刷题 UI</td><td><span class="pill p-ok">✓ 全绿</span></td></tr>
+    <tr><td>theme_regression_test 等</td><td>主题回归 / 响应式布局 / 其余</td><td><span class="pill p-ok">✓ 全绿</span></td></tr>
+  </table>
+  <div class="note">已知测试缺口（供修改会话参考）：M1/M2/M5/M7/M8 UI 层无 widget 测试；M4 无恢复会话测试；M6 交卷落库无 UI 测试；D5 跨端未覆盖。本次审查已用浏览器实操逐项补证。</div>
+</div>
+
+<h2>五、修改建议（交另一会话执行）</h2>
+<div class="card">
+  <table>
+    <tr><th style="width:80px;">优先级</th><th>建议</th><th>涉及文件</th></tr>
+    <tr><td><span class="pill p-p1">P1</span></td><td>dock tab 切换触发数据刷新（tab 切换时通知 HomePage/StatsPage 刷新，或切换时重建页面）</td><td>root_page.dart / home_page.dart / 统计页</td></tr>
+    <tr><td><span class="pill p-p1">P1</span></td><td>FlippableCard 用 widget.height 参与布局（约束 Stack 高度），修复知识点卡空白</td><td>widgets/flippable_card.dart</td></tr>
+    <tr><td><span class="pill p-p1">P1</span></td><td>mock_exam_list 从考试页返回后刷新（同 #1 方案）</td><td>mock_exam_list_page.dart</td></tr>
+    <tr><td><span class="pill p-p2">P2</span></td><td>模拟考统计口径：skip 不计入今日做题量/正确率分母（或模拟考单独统计），与刷题口径对齐</td><td>quiz_repository_mock.dart / todayOverview</td></tr>
+    <tr><td><span class="pill p-p2">P2</span></td><td>核对 M3 刷题完成态（是否应有总结页/完成页）</td><td>practice_page.dart</td></tr>
+  </table>
+</div>
+
+<h2>六、截图证据</h2>
+<div class="card">
+  <div class="shotrow">
+    <figure><img src="https://aka.doubaocdn.com/s/xMYSfOU7rv" alt="模拟考后首页统计"><figcaption>模拟考后首页：今日 43 题 / 7%（未答题计入，缺陷 #3）</figcaption></figure>
+    <figure><img src="https://aka.doubaocdn.com/s/AX6qkLXvy4" alt="交卷批改弹窗"><figcaption>M6 交卷批改：5/100、正确 2/错误 1/未答 37</figcaption></figure>
+    <figure><img src="https://aka.doubaocdn.com/s/dzODmVWEdq" alt="逐题解析"><figcaption>M6 逐题解析：对/错/未答状态 + 只看错题</figcaption></figure>
+    <figure><img src="https://aka.doubaocdn.com/s/UZV75qyz5e" alt="单题解析"><figcaption>M6 单题解析：我的答案/参考要点/解析</figcaption></figure>
+    <figure><img src="https://aka.doubaocdn.com/s/vlUpPOn2s7" alt="历史落库"><figcaption>M6 历史落库：古代汉语模拟卷一「最近 5 分」</figcaption></figure>
+    <figure><img src="https://aka.doubaocdn.com/s/9G4AcEoKRx" alt="错题本3道"><figcaption>M8 错题本 3 道（含模拟考错题）</figcaption></figure>
+    <figure><img src="https://aka.doubaocdn.com/s/fNylTYYGRz" alt="错题重刷"><figcaption>M8 错题重刷 1/3 进入</figcaption></figure>
+    <figure><img src="https://aka.doubaocdn.com/s/EQAQcQMEKN" alt="重刷答对"><figcaption>M8 重刷答对：正确判定 + 记住效果 + 移出</figcaption></figure>
+    <figure><img src="https://aka.doubaocdn.com/s/FWGqlxWGL3" alt="主题定制"><figcaption>M9 主题定制：5 预设 + 主色/背景/透明度/圆角</figcaption></figure>
+    <figure><img src="https://aka.doubaocdn.com/s/2a13aecb96a74f71a850cd39934eb885" alt="数据管理"><figcaption>M10 数据管理：备份/导入/自动存档（已存 5 份）/立即存档</figcaption></figure>
+  </div>
+</div>
+
+<div class="footer">
+  全功能逻辑审查报告 · 2026-09-01 · 只审查未修改 · 缺陷与建议交由独立会话执行修改<br>
+  审查基于浏览器实操 + 代码审查 + 自动化测试 3 层证据；测试基线 88 项全绿（BUILD 68d2129f154f / m390）
+</div>
+
+</div>
+</body>
+</html>

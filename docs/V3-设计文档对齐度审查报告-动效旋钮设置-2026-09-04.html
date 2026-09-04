@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>V3 设计文档对齐度审查报告 · 动效/旋钮/设置 · 2026-09-04</title>
+<style>
+  :root{
+    --bg:#F2F2F7; --card:#FFFFFF; --text:#1A1B1C; --text2:#6B7280;
+    --sep:#E4E3DD; --blue:#007AFF; --green:#34C759; --orange:#FF9500; --red:#FF3B30;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:"PingFang SC","Noto Sans SC",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;line-height:1.6;padding:32px 20px;}
+  .wrap{max-width:920px;margin:0 auto;}
+  h1{font-size:26px;font-weight:700;letter-spacing:.5px;}
+  .meta{color:var(--text2);font-size:13px;margin:8px 0 28px;}
+  .card{background:var(--card);border-radius:16px;border:0.5px solid rgba(0,0,0,.06);padding:24px 28px;margin-bottom:20px;}
+  h2{font-size:19px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .tag{display:inline-block;font-size:12px;padding:2px 10px;border-radius:999px;font-weight:600;white-space:nowrap;}
+  .ok{background:rgba(52,199,89,.14);color:#1D7A3E;}
+  .part{background:rgba(255,149,0,.16);color:#B25E00;}
+  .no{background:rgba(255,59,48,.12);color:#C0221A;}
+  .p0{background:rgba(255,59,48,.15);color:#C0221A;}
+  .p1{background:rgba(255,149,0,.16);color:#B25E00;}
+  .p2{background:rgba(0,122,255,.12);color:#005BB8;}
+  table{width:100%;border-collapse:collapse;font-size:14px;margin-top:8px;}
+  th{text-align:left;color:var(--text2);font-weight:500;font-size:12px;padding:8px 10px;border-bottom:1px solid var(--sep);}
+  td{padding:10px;border-bottom:1px solid rgba(0,0,0,.05);vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  .file{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--blue);background:rgba(0,122,255,.06);padding:1px 6px;border-radius:5px;}
+  .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin:8px 0 4px;}
+  .stat{background:var(--bg);border-radius:12px;padding:14px 16px;border:0.5px solid rgba(0,0,0,.05);}
+  .stat .num{font-size:26px;font-weight:700;}
+  .stat .lbl{font-size:12px;color:var(--text2);margin-top:2px;}
+  ul{margin:6px 0 0 20px;}
+  li{margin:5px 0;}
+  .note{font-size:13px;color:var(--text2);background:var(--bg);border-radius:10px;padding:10px 14px;margin-top:12px;}
+  .bar{height:10px;border-radius:999px;background:var(--sep);overflow:hidden;margin:6px 0 2px;}
+  .bar>i{display:block;height:100%;border-radius:999px;}
+  .b-blue{background:var(--blue);} .b-green{background:var(--green);} .b-orange{background:var(--orange);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>V3 设计文档对齐度审查报告</h1>
+  <div class="meta">专项：动效 / 旋钮（中央背题圆钮）/ 设置　·　审查日期：2026-09-04　·　审查基准：《UI-v3-iOS风格实施方案-v1.0.md》 + 《ui-v3-ios.html》　·　实现基线：feature/v3-ios-ui @ b083f44（阶段1）</div>
+
+  <div class="card">
+    <h2>① 总体结论</h2>
+    <div class="summary-grid">
+      <div class="stat"><div class="num">85%</div><div class="lbl">设计系统落地（令牌/主题/基础组件）</div></div>
+      <div class="stat"><div class="num">~30%</div><div class="lbl">动效接入度（常量系统已就绪，路由/组件未接入）</div></div>
+      <div class="stat"><div class="num">~85%</div><div class="lbl">旋钮对齐（含 1 个 P0 缺陷）</div></div>
+      <div class="stat"><div class="num">~10%</div><div class="lbl">设置对齐（页面/三段切换/开关均未实现）</div></div>
+    </div>
+    <p style="margin-top:14px;font-size:14px;">阶段1（设计系统）已收尾并通过 <span class="file">flutter analyze</span> 0 issues；但<span style="color:var(--orange);font-weight:600;">动效的"常量定义"与"实际接入"存在较大落差</span>，<span style="color:var(--red);font-weight:600;">设置模块整体未开始</span>（属阶段3）。旋钮实现质量较高，仅一处选中态逻辑缺陷。整体结论：<b>设计系统达标、动效/旋钮接近但需补接入与缺陷、设置未对齐。</b></p>
+  </div>
+
+  <div class="card">
+    <h2>② 动效审查 <span class="tag part">部分对齐</span></h2>
+    <p style="font-size:13px;color:var(--text2);">基准：方案 §3.8 + HTML §7 动效。常量系统（<span class="file">ios_animations.dart</span>）已 100% 就绪，但多数动效未接入对应路由/组件。</p>
+    <table>
+      <tr><th>动效项</th><th>文档要求</th><th>现状</th><th>状态</th></tr>
+      <tr><td>页面切换</td><td>右滑入+淡入 300ms（pageIn cubic-bezier(0,0,.2,1)）</td><td>常量 <span class="file">pageEnter=300ms</span> 已定义；但 <span class="file">ios_page_route.dart</span> 为 CupertinoPageRoute 子类，实际走系统转场（约400ms），<b>300ms 常量未接入路由</b>；且与 V2 <span class="file">theme_controller.dart</span> 的 <span class="file">_CoverSlideTransitionsBuilder</span>（400ms 覆盖式）并存两套转场</td><td><span class="tag part">未接入</span></td></tr>
+      <tr><td>Tab 切换内容淡入</td><td>150ms</td><td><span class="file">tabSwitch</span> 预设已定义；FloatingTabBar 仅图标缩放1.08+变色，<b>页面内容淡入需 root 页实现（阶段2未做）</b></td><td><span class="tag part">未接入</span></td></tr>
+      <tr><td>弹窗底部弹簧滑入</td><td>350ms cubic-bezier(.2,.9,.3,1.2)</td><td><span class="file">sheetSlideUp</span> + <span class="file">sheetSpring</span> + <span class="file">IOSSpring.sheet</span> 均就绪；但 <b>IOSAlert/IOSActionSheet 组件未创建</b></td><td><span class="tag part">组件未做</span></td></tr>
+      <tr><td>背题卡 3D 翻转</td><td>500ms</td><td><span class="file">cardFlip=500ms</span> 预设就绪；<b>背题卡组件/页面未实现</b></td><td><span class="tag part">组件未做</span></td></tr>
+      <tr><td>按钮按压 scale</td><td>0.96→1.0 150ms</td><td>操作栏 <span class="file">_BarFilledButton</span> scale 0.96+150ms ✅；中央圆钮用 0.95，<b>数值不统一</b>（0.95 vs 0.96）；<span class="file">ios_button.dart</span> 待复核</td><td><span class="tag ok">基本一致</span></td></tr>
+      <tr><td>进度条</td><td>300ms ease-out</td><td><span class="file">progress</span> 预设就绪；<b>IOSProgressBar/IOSRing 组件未实现</b></td><td><span class="tag part">组件未做</span></td></tr>
+      <tr><td>导航栏滚动渐变</td><td>跟随滚动</td><td><span class="file">navFade</span> 预设就绪；<b>LargeTitleScaffold 组件未实现</b></td><td><span class="tag part">组件未做</span></td></tr>
+      <tr><td>开关切换</td><td>200ms knob</td><td><span class="file">switchToggle=200ms</span> ✅；<span class="file">ios_theme.dart</span> switchTheme 已配 CupertinoSwitch 风格</td><td><span class="tag ok">对齐</span></td></tr>
+      <tr><td>Reduce Motion</td><td>尊重"减少动态效果"</td><td><span class="file">IOSAnimations.of</span> 检测 <span class="file">MediaQuery.disableAnimations</span> ✅；但与 V2 <span class="file">theme_controller</span> 的独立 reduceMotion 配置<b>双轨未打通</b>（设置页无开关联动）</td><td><span class="tag part">双轨</span></td></tr>
+      <tr><td>去水波纹</td><td>全局 NoSplash</td><td>V3 浅/深主题均 <span class="file">splashFactory: NoSplash.splashFactory</span> ✅</td><td><span class="tag ok">对齐</span></td></tr>
+    </table>
+    <div class="bar"><i class="b-orange" style="width:30%"></i></div>
+    <div class="note">结论：动效<b>常量系统（时长/曲线/弹簧/Reduce Motion）全部就绪且设计合理</b>，但接入度仅约 30%——页面转场未用 300ms 常量、弹窗/背题卡/进度/滚动导航的组件均未创建，属阶段2–4 范围；另需统一按钮 scale 数值、打通 Reduce Motion 双轨。</div>
+  </div>
+
+  <div class="card">
+    <h2>③ 旋钮审查（中央背题圆钮） <span class="tag part">接近对齐</span></h2>
+    <p style="font-size:13px;color:var(--text2);">基准：方案 §3.3 + HTML <span class="file">.center-dial</span>。实现文件 <span class="file">floating_tab_bar.dart</span>。</p>
+    <table>
+      <tr><th>项目</th><th>文档要求</th><th>现状</th><th>状态</th></tr>
+      <tr><td>尺寸/圆角</td><td>58×58，圆角 20</td><td><span class="file">centerDialSize=58</span> / <span class="file">IOSRadius.centerDial=20</span> ✅</td><td><span class="tag ok">对齐</span></td></tr>
+      <tr><td>向上凸起 + 不裁切</td><td>凸起 32px，容器不设 overflow:hidden</td><td><span class="file">top:-32</span>，Stack <span class="file">clipBehavior: Clip.none</span> ✅</td><td><span class="tag ok">对齐</span></td></tr>
+      <tr><td>描边</td><td>4px 背景色描边</td><td><span class="file">Border.all(colors.bg, width:4)</span> ✅ 与 HTML border:4px solid var(--bg) 一致</td><td><span class="tag ok">对齐</span></td></tr>
+      <tr><td>阴影</td><td>主色阴影</td><td><span class="file">IOSShadow.primary</span> ✅</td><td><span class="tag ok">对齐</span></td></tr>
+      <tr><td>选中态背景</td><td>切到背题 Tab 时圆钮背景变 primaryPressed（HTML .active .center-dial）</td><td>❌ <span class="file">_CenterDial</span> 的 <span class="file">selected</span> 参数<b>传入但未使用</b>，背景色仅由按压态 <span class="file">_pressed</span> 控制——切到背题页时圆钮仍是常亮蓝，未变按压蓝</td><td><span class="tag no">P0 缺陷</span></td></tr>
+      <tr><td>中央文字标签</td><td>HTML 中央 Tab 有"背题"label（margin-top 34px 让位）</td><td>Flutter 中央位置 <span class="file">Expanded(SizedBox.shrink())</span> 完全空置，<b>无"背题"文字</b>，与 HTML 视觉有差异</td><td><span class="tag p1">缺口</span></td></tr>
+      <tr><td>按压动效时长</td><td>200ms（HTML .2s）</td><td>用 fast=150ms，微差</td><td><span class="tag p2">微差</span></td></tr>
+      <tr><td>底栏形态</td><td>胶囊圆角999，高60，距底20px</td><td><span class="file">tabBarHeight=60</span> / pill / bottomOffset=20 + safeBottom ✅</td><td><span class="tag ok">对齐</span></td></tr>
+      <tr><td>宽度自适应</td><td>compact 宽−48 / medium 宽−64 上限680 居中</td><td><span class="file">clamp(0, 680)</span> ✅</td><td><span class="tag ok">对齐</span></td></tr>
+      <tr><td>expanded 隐藏</td><td>桌面隐藏改用侧边栏</td><td><span class="file">isExpanded → SizedBox.shrink()</span> 预留 ✅</td><td><span class="tag ok">对齐</span></td></tr>
+      <tr><td>5 Tab 顺序</td><td>今日/题库/[背题]/统计/我的</td><td>✅ 中央第3项正确</td><td><span class="tag ok">对齐</span></td></tr>
+      <tr><td>图标风格</td><td>HTML 用 SF Symbols 风格 SVG</td><td>Flutter 用 Material Icons（layers/folder/person…），非 CupertinoIcons，与"去 Material 化"目标有出入</td><td><span class="tag p2">风格</span></td></tr>
+    </table>
+    <div class="bar"><i class="b-blue" style="width:85%"></i></div>
+    <div class="note">结论：旋钮核心规格（尺寸/凸起/描边/阴影/胶囊栏/宽度自适应）全部对齐且工程实现干净；<b>1 个 P0 逻辑缺陷（selected 未使用）</b>需立即修复，另建议补中央"背题"文字标签、统一按压数值、评估 CupertinoIcons 迁移。</div>
+  </div>
+
+  <div class="card">
+    <h2>④ 设置审查 <span class="tag no">未对齐</span></h2>
+    <p style="font-size:13px;color:var(--text2);">基准：方案 §3.6（深色三段切换）+ §3.7（标记开关）+ 页面映射表「我的」页。设置页属阶段3，当前整体未开始。</p>
+    <table>
+      <tr><th>项目</th><th>文档要求</th><th>现状</th><th>状态</th></tr>
+      <tr><td>深色模式三段切换</td><td>跟随系统(auto) / 浅色(light) / 深色(dark)，auto 监听 platformBrightness</td><td><span class="file">main.dart:127</span> 用 <span class="file">config.darkMode ? ThemeMode.dark : ThemeMode.light</span>（<b>仅二态</b>）；<span class="file">theme_controller.dart</span> 只有 <span class="file">darkMode: bool</span>，<b>无 auto 三态、无 platformBrightness 监听</b></td><td><span class="tag no">P0 未实现</span></td></tr>
+      <tr><td>设置页（我的）</td><td>用户卡 + 学习/背题/外观/数据/关于 分组列表</td><td>未实现（阶段3）</td><td><span class="tag no">P0 未开始</span></td></tr>
+      <tr><td>深色模式开关</td><td>外观·开关（强制浅/深间切换）</td><td>未实现</td><td><span class="tag no">P0 未开始</span></td></tr>
+      <tr><td>审题🚩开关</td><td>仅练习、默认关闭、落库 review_flags</td><td>未实现（数据层/设置页均无）</td><td><span class="tag no">P0 未开始</span></td></tr>
+      <tr><td>存疑◆开关</td><td>仅模拟考、会话级不落库</td><td>未实现（数据层/答题卡均无）</td><td><span class="tag no">P0 未开始</span></td></tr>
+      <tr><td>Reduce Motion 设置联动</td><td>设置页开关联动全局动效</td><td>V3 走系统检测，V2 有独立 reduceMotion 配置，<b>未打通</b></td><td><span class="tag p1">缺口</span></td></tr>
+      <tr><td>switchTheme</td><td>CupertinoSwitch 风格</td><td><span class="file">ios_theme.dart</span> 浅/深均已配置 switchTheme ✅（但设置页未使用）</td><td><span class="tag ok">组件就绪</span></td></tr>
+    </table>
+    <div class="bar"><i class="b-red" style="width:10%"></i></div>
+    <div class="note">结论：设置模块<b>基本未开始</b>。当前 V3 接入的是"系统级深色跟随"（darkTheme），但缺三段切换 UI 与状态管理；设置页（我的）与其全部开关（深色/审题/存疑）均待阶段3落地。建议提前在主题层补齐 ThemeMode 三态（低成本、P0 优先）。</div>
+  </div>
+
+  <div class="card">
+    <h2>⑤ 优先级问题清单</h2>
+    <table>
+      <tr><th>级别</th><th>问题</th><th>位置</th><th>建议</th></tr>
+      <tr><td><span class="tag p0">P0</span></td><td>中央圆钮 selected 参数未使用，切背题 Tab 不变按压色</td><td><span class="file">floating_tab_bar.dart</span> _CenterDial</td><td>bgColor 加入 selected 判断：selected||pressed → primaryPressed</td></tr>
+      <tr><td><span class="tag p0">P0</span></td><td>深色三段切换（auto/light/dark）未实现，仅二态</td><td><span class="file">main.dart</span> / <span class="file">theme_controller.dart</span></td><td>AppThemeConfig 增加 themeMode 枚举；main.dart 用 ThemeMode 映射</td></tr>
+      <tr><td><span class="tag p0">P0</span></td><td>设置页（我的）及深色/审题🚩/存疑◆开关未实现</td><td>阶段3</td><td>按页面映射表落地，数据层补 review_flags</td></tr>
+      <tr><td><span class="tag p1">P1</span></td><td>页面切换动效未用 300ms 常量；V2/V3 两套转场并存</td><td><span class="file">ios_page_route.dart</span> / <span class="file">theme_controller.dart</span></td><td>统一路由转场，用 ios_page_route 承载；清理 V2 转场</td></tr>
+      <tr><td><span class="tag p1">P1</span></td><td>弹窗/背题卡/进度/滚动导航组件（IOSAlert、IOSActionSheet、IOSProgressBar、LargeTitleScaffold）未创建</td><td>阶段2–3</td><td>按组件清单补建，接入已就绪的动效常量</td></tr>
+      <tr><td><span class="tag p1">P1</span></td><td>中央"背题"文字标签缺失（HTML 有，Flutter 空置）</td><td><span class="file">floating_tab_bar.dart</span></td><td>补文字标签并让位（margin-top 34px 语义）</td></tr>
+      <tr><td><span class="tag p1">P1</span></td><td>Reduce Motion 双轨（V3 系统检测 vs V2 配置）未打通</td><td><span class="file">theme_controller.dart</span> / <span class="file">ios_animations.dart</span></td><td>设置页开关写入 MediaQuery 或统一走配置</td></tr>
+      <tr><td><span class="tag p2">P2</span></td><td>按压 scale 不统一（0.95/0.96）；圆钮按压时长 150 vs 200ms</td><td>各组件</td><td>统一常量</td></tr>
+      <tr><td><span class="tag p2">P2</span></td><td>图标用 Material Icons 而非 CupertinoIcons，去 Material 化不彻底</td><td><span class="file">floating_tab_bar.dart</span> 等</td><td>评估迁移 CupertinoIcons</td></tr>
+      <tr><td><span class="tag p2">P2</span></td><td>文档内部不一致：方案 §2.1 深色 card/fill 标注与 §3.6 相反（实现取 §3.6 card=#2C2C2E/fill=#1C1C1E，符合 iOS 惯例）</td><td>实施方案文档</td><td>修订 §2.1 表，与 §3.6 及实现统一</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>⑥ 阶段进度与下一步建议</h2>
+    <table>
+      <tr><th>阶段</th><th>内容</th><th>状态</th></tr>
+      <tr><td>阶段1 设计系统落地</td><td>令牌/主题/动效常量/基础组件</td><td><span class="tag ok">已完成并 commit（b083f44）</span></td></tr>
+      <tr><td>阶段2 核心四页重做</td><td>首页/答题/背题/统计</td><td><span class="tag no">未开始</span></td></tr>
+      <tr><td>阶段3 次级页+组件完善</td><td>题库/模拟考/结果/错题本/<b>我的（设置）</b>/弹窗/分段/进度</td><td><span class="tag no">未开始</span></td></tr>
+      <tr><td>阶段4 动效+多端适配</td><td>转场/翻转/弹簧/断点三档/侧边栏</td><td><span class="tag no">未开始</span></td></tr>
+      <tr><td>阶段5 性能+全量验收</td><td>60fps/真机/回归</td><td><span class="tag no">未开始</span></td></tr>
+    </table>
+    <div class="note"><b>建议顺序</b>：① 立即修复旋钮 P0（1处）；② 主题层补 ThemeMode 三态（P0，成本低）；③ 启动阶段2 核心四页（动效常量已在，接入即可）；④ 阶段3 落地设置页与开关；⑤ 阶段4 统一转场与多端。</div>
+  </div>
+
+  <div class="card" style="background:rgba(0,122,255,.05);">
+    <p style="font-size:13px;color:var(--text2);"><b>审查方法说明</b>：本文档基于对 <span class="file">ios_tokens.dart / ios_animations.dart / ios_theme.dart / ios_page_route.dart / floating_tab_bar.dart / floating_action_bar.dart / liquid_glass.dart / main.dart / theme_controller.dart</span> 的逐文件源码审读，逐条对照《UI-v3-iOS风格实施方案-v1.0.md》与《ui-v3-ios.html》的对应规格（§2 令牌、§3.3 底部悬浮、§3.6 深色、§3.7 标记、§3.8 动效、验收清单 §6）得出。本次仅审查，未改动任何代码。实现基线：<span class="file">feature/v3-ios-ui @ b083f44</span>，<span class="file">flutter analyze</span> 0 issues。</p>
+  </div>
+</div>
+</body>
+</html>

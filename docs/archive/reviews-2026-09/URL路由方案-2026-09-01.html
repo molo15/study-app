@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>URL 路由方案 · 考研刷题 Web（go_router 嵌套路由）</title>
+<style>
+  :root {
+    --accent: #4f7cd4;
+    --accent-2: #7aa2ee;
+    --ink: #1e2a3c;
+    --ink-2: #56647c;
+    --ink-3: #8b98ae;
+    --bg: #f4f6fb;
+    --card: #ffffff;
+    --border: #e4e8f2;
+    --ok: #2f9e6e;
+    --warn: #c98a2d;
+    --bad: #d64545;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: linear-gradient(160deg, #eef2fa 0%, #f7f9fd 60%, #eef4fc 100%);
+    color: var(--ink);
+    line-height: 1.7;
+    padding: 32px 20px;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  .hero {
+    background: linear-gradient(135deg, rgba(79,124,212,.12), rgba(122,162,238,.08));
+    border: 1px solid rgba(79,124,212,.18);
+    border-radius: 18px;
+    padding: 28px 30px;
+    margin-bottom: 24px;
+  }
+  .hero h1 { font-size: 24px; color: var(--ink); margin-bottom: 6px; }
+  .hero .sub { color: var(--ink-2); font-size: 14px; }
+  .badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .badge {
+    font-size: 12px; padding: 4px 12px; border-radius: 20px;
+    background: rgba(79,124,212,.1); color: var(--accent); border: 1px solid rgba(79,124,212,.2);
+  }
+  h2 {
+    font-size: 18px; margin: 30px 0 12px; padding-left: 12px;
+    border-left: 4px solid var(--accent); color: var(--ink);
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px 22px; margin-bottom: 14px;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 10px 0; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); }
+  th { background: #f7f9fd; color: var(--ink-2); font-weight: 600; white-space: nowrap; }
+  code {
+    font-family: "SF Mono", Consolas, monospace; font-size: 12.5px;
+    background: rgba(79,124,212,.08); color: var(--accent);
+    padding: 1px 6px; border-radius: 5px;
+  }
+  .ok { color: var(--ok); font-weight: 600; }
+  .warn { color: var(--warn); font-weight: 600; }
+  .bad { color: var(--bad); font-weight: 600; }
+  .note {
+    background: rgba(201,138,45,.08); border-left: 3px solid var(--warn);
+    padding: 10px 14px; border-radius: 8px; font-size: 13.5px; margin: 10px 0;
+  }
+  .flow { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 13px; }
+  .flow .step {
+    background: rgba(79,124,212,.08); border: 1px solid rgba(79,124,212,.18);
+    padding: 6px 12px; border-radius: 8px; font-size: 12.5px;
+  }
+  .flow .arrow { color: var(--ink-3); }
+  ul { padding-left: 20px; }
+  li { margin: 5px 0; font-size: 14px; }
+  .kbd {
+    font-family: Consolas, monospace; background: #eef1f7; border: 1px solid #d9deea;
+    border-radius: 5px; padding: 1px 7px; font-size: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="hero">
+  <h1>URL 路由方案 · 考研刷题 Web</h1>
+  <div class="sub">go_router 18 嵌套路由接入 · 二级页深链 / 刷新保持 / 前进后退 · iOS/桌面优先</div>
+  <div class="badges">
+    <span class="badge">commit 9fc8dd1</span>
+    <span class="badge">analyze 0 issue</span>
+    <span class="badge">88 测试全绿</span>
+    <span class="badge">浏览器实测通过</span>
+  </div>
+</div>
+
+<h2>一、目标与收益</h2>
+<div class="card">
+  <p>重构前：Navigator 1.0 不写浏览器历史，URL 恒为首页（<code>/?v=...</code>），分享/收藏只能开首页，刷新必回根页，前进键无效。</p>
+  <p>重构后（本轮落地）：</p>
+  <ul>
+    <li><span class="ok">✓ 分享/书签直达内页</span>——二级页（科目/章节/错题本/模拟考/题库管理）有独立 URL</li>
+    <li><span class="ok">✓ 刷新保持页面位置</span>——刷新深链 URL 后停留原页</li>
+    <li><span class="ok">✓ 浏览器前进/后退有效</span>——历史逐级对应 URL 与页面</li>
+    <li><span class="ok">✓ iOS 主屏 PWA 深链</span>——hash 策略下零服务器配置，主屏图标直开可带路径</li>
+    <li><span class="ok">✓ 移动打包复用</span>——路由表与平台解耦，Android/iOS 包同构</li>
+  </ul>
+</div>
+
+<h2>二、路由表（hash 策略）</h2>
+<div class="card">
+  <table>
+    <tr><th>URL</th><th>页面</th><th>参数</th><th>分享直达</th></tr>
+    <tr><td><code>/</code></td><td>RootPage（5 tab + dock/侧边栏）</td><td>—</td><td>—</td></tr>
+    <tr><td><code>#/bank/:bankId</code></td><td>科目题库页 BankPage</td><td>bankId</td><td>✓</td></tr>
+    <tr><td><code>#/bank/:bankId/chapters</code></td><td>章节知识概览列表</td><td>bankId</td><td>✓</td></tr>
+    <tr><td><code>#/bank/:bankId/chapter/:chapterId</code></td><td>单章知识概览</td><td>bankId + 章名（中文 URL 编码）</td><td>✓</td></tr>
+    <tr><td><code>#/mock</code></td><td>模拟考列表</td><td>可选 <code>?bank=</code></td><td>✓</td></tr>
+    <tr><td><code>#/wrongbook</code></td><td>错题本</td><td>可选 <code>?bank=</code></td><td>✓</td></tr>
+    <tr><td><code>#/me/questions/:bankId</code></td><td>题库包管理（题目管理）</td><td>bankId（bankName 自动反查）</td><td>✓</td></tr>
+  </table>
+  <div class="note"><b>会话页不占 URL</b>：刷题/背题/考试/回顾为进行中状态页，保持 Navigator 推栈（刷新回根，与原有行为一致；对象参数经构造传递，避免 URL 序列化复杂度）。进度由 <code>practice_progress</code> 自动存档，重进章节可续。</div>
+</div>
+
+<h2>三、技术方案</h2>
+<div class="card">
+  <ul>
+    <li><b>go_router 18 + 嵌套路由</b>：RootPage 为根 route，二级页为子 route（嵌套保留 RootPage 在栈底，返回不重建父页面）。</li>
+    <li><b>导航用 <code>context.go()</code> 而非 <code>context.push()</code></b>：go_router 的 <code>push</code> 是命令式导航，<b>默认不更新 URL</b>（官方设计）；<code>go</code> 才同步 URL。嵌套 + go 组合实现「URL 同步 + 父页面保留」。</li>
+    <li><b>hash 策略</b>：Flutter Web 默认，静态托管零配置（无需 SPA fallback）；深链 <code>#/bank/...</code> 不触发服务器 404。sw.js 兼容（导航网络优先 + 离线回退 index.html，hash 不参与请求）。</li>
+    <li><b>bankId 实际格式</b>：<code>bank-gudai-hanyu</code> 等（带 <code>bank-</code> 前缀）；章名经 URL 编码（<code>%E4%BF%AE%E8%BE%9E</code>），go_router 已自动解码 path 参数。</li>
+    <li><b>改动面</b>：main.dart（MaterialApp → MaterialApp.router）+ 新增 router.dart + 6 个页面文件导航点改造；数据层 / SRS / 存档 / 主题 / PWA 封装 0 改动。</li>
+  </ul>
+</div>
+
+<h2>四、浏览器实测记录（127.0.0.1:8731）</h2>
+<div class="card">
+  <div class="flow">
+    <span class="step">首页 <code>/</code></span><span class="arrow">→</span>
+    <span class="step">科目 <code>#/bank/bank-gudai-hanyu</code></span><span class="arrow">→</span>
+    <span class="step">章节列表 <code>#/.../chapters</code></span><span class="arrow">→</span>
+    <span class="step">修辞 <code>#/.../chapter/%E4%BF%AE%E8%BE%9E</code></span><span class="arrow">→</span>
+    <span class="step">刷题（不进 URL）</span><span class="arrow">→</span>
+    <span class="step">返回</span><span class="arrow">→</span>
+    <span class="step">首页</span>
+  </div>
+  <table>
+    <tr><th>验证项</th><th>方法</th><th>结果</th></tr>
+    <tr><td>URL 逐级同步</td><td>点击科目/章节/模拟考入口</td><td><span class="ok">✓</span> URL 逐级更新（hash）</td></tr>
+    <tr><td>深链直达</td><td>直接导航 <code>#/bank/.../chapter/修辞</code></td><td><span class="ok">✓</span> 直达修辞章</td></tr>
+    <tr><td>刷新保持</td><td>reload 深链 URL</td><td><span class="ok">✓</span> URL 与页面保持</td></tr>
+    <tr><td>前进/后退</td><td><code>history.back()/forward()</code></td><td><span class="ok">✓</span> 逐级对应 URL + 页面</td></tr>
+    <tr><td>会话页不进 URL</td><td>刷题页观察 URL</td><td><span class="ok">✓</span> 保持上级 URL，返回正常</td></tr>
+    <tr><td>错题本深链</td><td><code>#/wrongbook</code></td><td><span class="ok">✓</span> 3 道错题 + 重刷按钮</td></tr>
+    <tr><td>题库管理深链</td><td><code>#/me/questions/... </code></td><td><span class="ok">✓</span> bankName 反查成功（"考研·古代汉语·题目管理"）</td></tr>
+  </table>
+</div>
+
+<h2>五、边界与已知 tradeoff</h2>
+<div class="card">
+  <ul>
+    <li><span class="warn">浏览器后退在会话页（刷题/考试）</span>：直接回上级 URL，<b>不弹「继续上次进度？」确认框</b>（URL 变化触发 go_router 强制重匹配，PopScope 仅拦截应用内返回）。进度已自动存档，重进可续，仅少一次确认。应用内 AppBar 返回仍走 PopScope 弹窗。</li>
+    <li><span class="warn">深链打开不存在的章节</span>：章节页显示空态（题库未导入或链接失效），不崩溃。</li>
+    <li>历史条目含 <code>?v=</code> 测试参数时后退会跨版本跳转（本地测试特征，生产无此参数）。</li>
+    <li>若将来切换 path 策略（<code>usePathUrlStrategy</code>），需配服务器 fallback（nginx <code>try_files $uri /index.html</code>）；当前 hash 策略无需。</li>
+  </ul>
+</div>
+
+<h2>六、部署注意事项</h2>
+<div class="card">
+  <ul>
+    <li><b>静态托管零配置</b>：hash 策略下任意静态服务器（nginx / GitHub Pages / 对象存储）直接可用。</li>
+    <li><b>sw.js 兼容</b>：导航网络优先 + 离线回退 index.html，hash 路由无冲突；构建后需重跑 <code>python tools/post_build_sw.py</code> 更新 BUILD_ID。</li>
+    <li><b>iOS 主屏 PWA</b>：主屏图标打开即根页，可在 Safari 地址栏粘贴分享的 <code>#/bank/...</code> 深链直达。</li>
+  </ul>
+</div>
+
+</div>
+</body>
+</html>

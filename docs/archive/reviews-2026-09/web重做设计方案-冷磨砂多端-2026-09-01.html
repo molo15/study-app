@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web 应用重做设计方案 - 依据 ui-v2-cold-frost 原型 - 2026-09-01</title>
+<style>
+  :root{--text:#1A1B1C;--sec:#6B7280;--bg:#F4F3EE;--card:#FFFFFF;--border:#E4E3DD;--accent:#4F7CD4;--ok:#3fa88a;--warn:#e0a13c;--err:#d4646a;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Roboto','PingFang SC','Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.65;padding:32px 16px;}
+  .wrap{max-width:1080px;margin:0 auto;}
+  header{background:linear-gradient(135deg,#7aa2ee 0%,#4f7cd4 100%);border-radius:16px;padding:28px 32px;color:#fff;margin-bottom:24px;}
+  header h1{font-size:24px;font-weight:700;margin-bottom:8px;}
+  header .sub{font-size:14px;opacity:.92;}
+  .meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;}
+  .meta span{background:rgba(255,255,255,.25);padding:4px 12px;border-radius:999px;font-size:12px;}
+  h2{font-size:19px;font-weight:700;margin:30px 0 14px;padding-left:12px;border-left:4px solid var(--accent);}
+  h3{font-size:16px;font-weight:600;margin:18px 0 10px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 24px;margin-bottom:16px;}
+  p{margin:8px 0;font-size:14px;}
+  .muted{color:var(--sec);font-size:13px;}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px;}
+  th{background:#EEF1F7;text-align:left;padding:9px 12px;font-weight:600;border-bottom:1px solid var(--border);}
+  td{padding:9px 12px;border-bottom:1px solid #EFEFEA;vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  .pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;}
+  .p-ok{background:#E8F8E4;color:var(--ok);}
+  .p-gap{background:#FDECEA;color:var(--err);}
+  .p-do{background:#E8F1FB;color:#3A7BD5;}
+  .p-keep{background:#EFEBF8;color:#7A5FC0;}
+  .step{border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin:14px 0;background:#FDFDFC;}
+  .step .head{display:flex;gap:10px;align-items:center;margin-bottom:6px;flex-wrap:wrap;}
+  .step .t{font-weight:700;font-size:15px;}
+  .step ul{margin:6px 0 6px 20px;}
+  .step li{margin:4px 0;font-size:13.5px;}
+  .step code{font-family:Consolas,monospace;background:#F0F2F5;padding:1px 6px;border-radius:4px;font-size:12.5px;}
+  .note{background:#FFF9E8;border:1px solid #F0E2B6;border-radius:10px;padding:12px 16px;font-size:13px;color:#6B5B00;margin:10px 0;}
+  .grid{display:flex;flex-wrap:wrap;gap:12px;}
+  .gcell{flex:1 1 220px;min-width:0;border-radius:12px;padding:14px 16px;background:#FDFDFC;border:1px solid var(--border);}
+  .gcell .n{font-weight:700;font-size:14px;margin-bottom:4px;}
+  .gcell .d{font-size:12.5px;color:var(--sec);}
+  .footer{margin-top:32px;padding-top:16px;border-top:1px solid var(--border);color:var(--sec);font-size:12px;text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Web 应用重做设计方案</h1>
+  <div class="sub">依据原型 ui-v2-cold-frost.html · 冷磨砂 · 多端自适应（手机/平板/桌面）</div>
+  <div class="meta"><span>目标</span><span>过程</span><span>结果</span><span>封装</span><span>审核</span><span>验收</span></div>
+</header>
+
+<div class="card">
+  <h3>一、现状诊断（差距分析）</h3>
+  <p>基于对原型 <code>ui-v2-cold-frost.html</code>（1500 行，冷磨砂 v2 多端设计参考）的完整读取，以及当前 App 代码现状（主题系统 / 导航 / 响应式 / 组件库）的核对，差距如下：</p>
+  <table>
+    <tr><th>维度</th><th>原型 v2（目标）</th><th>当前 App</th><th>结论</th></tr>
+    <tr><td>设计语言</td><td>三档玻璃（glass/glass-sm/glass-3）+ 光斑沉浸背景 + 白高光 + 彩色柔影</td><td>冷磨砂已实现：AppCard 玻璃基元 + FrostBackground 全局背景 + 弹窗玻璃化</td><td><span class="pill p-keep">已对齐·微调</span></td></tr>
+    <tr><td>主题预设</td><td>冷磨砂默认 + 备选</td><td>5 预设（冷磨砂/墨绿/纸米/经典蓝/夜间）</td><td><span class="pill p-keep">已超原型</span></td></tr>
+    <tr><td>手机导航</td><td>底部 5 Tab + 中央背题圆钮</td><td>GlassTabBar 5 Tab + 中央圆钮浮层（已修 dock 遮挡）+ 上滑隐藏</td><td><span class="pill p-keep">已对齐</span></td></tr>
+    <tr><td>平板/桌面导航</td><td>侧边栏（66px 图标 / 232px 全宽）</td><td>所有端均为底部 dock，<b>无侧边栏</b></td><td><span class="pill p-gap">主差距</span></td></tr>
+    <tr><td>答题卡形态</td><td>手机整页 / 平板右下浮层 / 桌面右侧常驻</td><td>单形态，未多端适配</td><td><span class="pill p-gap">主差距</span></td></tr>
+    <tr><td>宽屏布局</td><td>home/stats/mock 双栏、bank/mem/chaps 双列网格</td><td>内容限宽（560/760/920）单列为主</td><td><span class="pill p-gap">主差距</span></td></tr>
+    <tr><td>页面覆盖</td><td>5 主页面 + 8 二级页</td><td>全部页面已有，功能完整</td><td><span class="pill p-keep">功能全</span></td></tr>
+  </table>
+  <p class="muted">结论：主题与手机端已基本对齐；重做核心在「多端形态」——侧边栏导航、答题卡三形态、宽屏多栏布局。功能与数据零改动。</p>
+</div>
+
+<h2>二、目标</h2>
+<div class="card">
+  <div class="grid">
+    <div class="gcell"><div class="n">① 令牌对齐</div><div class="d">三档玻璃 / 圆角 26/18/13 / 彩色柔影 / 白高光 / 动效节奏（300-500ms 级联）</div></div>
+    <div class="gcell"><div class="n">② 四端导航</div><div class="d">手机=底部 5 Tab + 中央圆钮；平板/桌面=侧边栏（图标 / 全宽）</div></div>
+    <div class="gcell"><div class="n">③ 答题卡三形态</div><div class="d">手机=整页 push · 平板=右下浮层 · 桌面=右侧常驻面板</div></div>
+    <div class="gcell"><div class="n">④ 宽屏多栏</div><div class="d">home/stats/mock 双栏、bank/mem/chaps/me 双列网格、答题卡桌面 6 列</div></div>
+    <div class="gcell"><div class="n">⑤ 零回退</div><div class="d">刷题/背诵/模拟考链路不破坏，数据/存档/主题预设保留，测试基线不降</div></div>
+  </div>
+</div>
+
+<h2>三、过程（分 6 阶段）</h2>
+
+<div class="step">
+  <div class="head"><span class="pill p-do">P0 · 设计令牌落地</span><span class="t">统一三档玻璃基元</span></div>
+  <ul>
+    <li>扩展 <code>widgets/app_card.dart</code>：AppCard 增加 <code>level</code>（primary/secondary/tertiary），对应 glass / glass-sm / glass-3 三档透明度与 blur（24/16/12px）</li>
+    <li>圆角 / 阴影 / 高光令牌统一为常量，与原型 26/18/13 对齐</li>
+    <li><b>改动</b>：1 个基元文件 + 引用处低风险替换</li>
+  </ul>
+</div>
+
+<div class="step">
+  <div class="head"><span class="pill p-do">P1 · 导航重构（核心）</span><span class="t">侧边栏 + dock 共存</span></div>
+  <ul>
+    <li>新增 <code>widgets/app_sidebar.dart</code>：三态侧边栏（66px 图标 / 可展开 200px / 全宽 232px），导航项 今日/题库/背题/统计/我的，含考试倒计时脚注</li>
+    <li><code>root_page.dart</code> 按 <code>responsive.dart</code> 断点切换：compact→底部 GlassTabBar；medium/expanded→侧边栏 + 隐藏 dock</li>
+    <li>侧边栏展开动画 + 选中态玻璃高亮（对齐原型 .s-item.on）</li>
+    <li><b>改动</b>：新增 1 组件 + root_page / responsive 调整</li>
+  </ul>
+</div>
+
+<div class="step">
+  <div class="head"><span class="pill p-do">P2 · 答题卡三形态</span><span class="t">整页 / 浮层 / 常驻</span></div>
+  <ul>
+    <li>抽象答题卡视图 <code>practice_answer_sheet.dart</code>：手机=Navigator 整页；平板=右下角浮层（width 300 / max-height 74% / 圆角）；桌面=右侧常驻面板（width 280 / 全高 / 滑入）</li>
+    <li>对齐原型 legend（当前/已答/答错/未答/存疑/审题标记）+ 题号网格（桌面 6 列）+ 题号跳转</li>
+    <li><b>改动</b>：practice_answer_sheet + 调用处（练习/模拟考共享）</li>
+  </ul>
+</div>
+
+<div class="step">
+  <div class="head"><span class="pill p-do">P3 · 宽屏多栏布局</span><span class="t">双栏 / 多列网格</span></div>
+  <ul>
+    <li>home / stats / mock：<code>isWideScreen</code> 时切换双栏 grid（对齐原型 .d-desktop 双栏）</li>
+    <li>bank 列表 / 背题列表 / 章节列表 / 我的设置项：双列网格</li>
+    <li>答题内容限宽居中（760px）保持可读性（原型 .d-desktop 已如此）</li>
+    <li><b>改动</b>：home/stats/mock_exam_list/bank/memorize/chapter 布局分支</li>
+  </ul>
+</div>
+
+<div class="step">
+  <div class="head"><span class="pill p-do">P4 · 页面细节对齐</span><span class="t">视觉与交互微调</span></div>
+  <ul>
+    <li>首页「今日学习流」hero + 环形进度 + 今日队列卡；背题总览科目列表 + 掌握度环；章节概览知识点折叠</li>
+    <li>错题本筛选 chips（全部/各科）+ 错 N 次标签；模拟考历史列表 + 结果页成绩环 + 各科得分条 + 逐题复盘</li>
+    <li>审题标记（练习）/ 存疑标记（模拟考）、答题卡题号跳转、进度 seg 条、级联浮现动画（StaggeredItem）</li>
+    <li><b>改动</b>：仅对已有页面做布局/视觉微调，不动数据层</li>
+  </ul>
+</div>
+
+<div class="step">
+  <div class="head"><span class="pill p-do">P5 · 验证与回归</span><span class="t">三层验证</span></div>
+  <ul>
+    <li>代码层：`flutter analyze` 0 warning</li>
+    <li>测试层：全量 `flutter test`（当前 88 项基线）全绿 + 新增侧边栏/答题卡形态/宽屏 widget 测试</li>
+    <li>实操层：浏览器 4 端宽度逐一跑（手机 392 / iPad 768 / 平板 920 / 桌面 1180），对照原型逐项比对</li>
+  </ul>
+</div>
+
+<h2>四、结果（交付物）</h2>
+<div class="card">
+  <p><b>产物</b>：重构后的 web 构建 <code>build/web</code>（BUILD_ID 更新）+ 源码改动。</p>
+  <table>
+    <tr><th>类别</th><th>明细</th></tr>
+    <tr><td>新增文件</td><td><code>widgets/app_sidebar.dart</code>（侧边栏）、<code>widgets/glass_sheet.dart</code>（答题卡三形态容器，可选）</td></tr>
+    <tr><td>修改文件</td><td>app_card（三档玻璃）、root_page（断点切换导航）、responsive（布局档位扩展）、practice_answer_sheet、home/stats/mock_exam_list/bank/memorize/chapter/settings 布局分支</td></tr>
+    <tr><td>不动</td><td>数据层（quiz_repository*）、SRS/背诵状态机、存档/备份、主题预设逻辑、PWA/SW/离线缓存、题库数据</td></tr>
+    <tr><td>多端效果</td><td>手机=底部 Tab；平板/桌面=侧边栏；答题卡三形态；宽屏多栏；数据/功能零回退</td></tr>
+  </table>
+</div>
+
+<h2>五、封装</h2>
+<div class="card">
+  <table>
+    <tr><th>维度</th><th>方案</th></tr>
+    <tr><td>Web（PWA）</td><td><b>保持不动</b>：manifest / 自定义 sw.js / 离线缓存 / sqlite3.wasm / canvaskit 本地化 全部沿用。重做只改 UI 层，不触碰封装脚本（post_build_sw.py 仍自动写入新 BUILD_ID）</td></tr>
+    <tr><td>多端（浏览器）</td><td>本次重做的「多端」= 同一 web 产物在不同窗口宽度下自适应（手机/平板/桌面浏览器），无需额外封装</td></tr>
+    <tr><td>Android</td><td>android/ 目录保留，Flutter 代码重构后同步生效（UI 层共用），不在本次构建验证范围</td></tr>
+    <tr><td>桌面安装包</td><td><b>不在本次范围</b>（release/ 当前为空）。如需 Windows exe，需另立 Electron/Tauri 或 Flutter Windows 打包流程，建议作为后续独立任务</td></tr>
+  </table>
+</div>
+
+<h2>六、审核（自查清单）</h2>
+<div class="card">
+  <table>
+    <tr><th>审核项</th><th>方法</th></tr>
+    <tr><td>设计一致性</td><td>4 端宽度截图逐页对照原型；三档玻璃/圆角/阴影/高光逐一比对</td></tr>
+    <tr><td>导航正确性</td><td>手机 dock 中央圆钮 / 平板侧边栏展开 / 桌面全宽侧栏，切 tab 数据刷新（缺陷 #1 修复保留）</td></tr>
+    <tr><td>答题卡三形态</td><td>三端各唤起一次答题卡，验证 整页/浮层/常驻 交互与跳转</td></tr>
+    <tr><td>功能零回退</td><td>回归刷题/背诵/模拟考全链路（复用 M3/M4/M6 审查流程）</td></tr>
+    <tr><td>性能</td><td>首帧 / 切 tab / 切形态 无卡顿；宽屏下无布局溢出（Flutter overflow 检查）</td></tr>
+  </table>
+</div>
+
+<h2>七、验收（标准）</h2>
+<div class="card">
+  <table>
+    <tr><th>#</th><th>验收标准</th><th>通过条件</th></tr>
+    <tr><td>1</td><td>设计令牌与原型一致</td><td>三档玻璃 / 圆角 / 光斑背景 / 冷磨砂主色 肉眼一致</td></tr>
+    <tr><td>2</td><td>四端导航形态正确</td><td>手机 dock / 平板图标侧栏（可展开）/ 桌面全宽侧栏</td></tr>
+    <tr><td>3</td><td>答题卡三形态</td><td>整页 / 浮层 / 常驻 均可用、题号跳转正常</td></tr>
+    <tr><td>4</td><td>宽屏多栏布局</td><td>≥1200 双栏 / 双列网格无溢出、无遮挡</td></tr>
+    <tr><td>5</td><td>功能零回退</td><td>刷题/背诵/模拟考/错题/统计全链路跑通，数据正确</td></tr>
+    <tr><td>6</td><td>测试与静态检查</td><td>flutter analyze 0 warning · 全量测试 ≥ 当前 88 项全绿</td></tr>
+    <tr><td>7</td><td>封装完好</td><td>PWA SW active、离线可开、本地数据不丢</td></tr>
+  </table>
+</div>
+
+<div class="footer">Web 应用重做设计方案 · 2026-09-01 · 基准：docs/prototype/ui-v2-cold-frost.html</div>
+
+</div>
+</body>
+</html>

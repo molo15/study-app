@@ -1,0 +1,1721 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>考研刷题 App · V3 iOS 风格 UI 设计参考</title>
+<style>
+/* ============================================================
+   考研刷题 App — V3 iOS 风格 UI 设计参考
+   依据《iOS 风格 UI 重设计规格文档 v1.0》构建
+   多端形态：iPhone 竖屏 / iPad mini 竖屏 / iPad 竖屏 / 平板横屏 / 桌面
+   设计令牌全部来自规格文档 §2，禁止在本文件中出现规格外令牌
+   ============================================================ */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+
+/* ---------- 设计令牌 Design Tokens（规格 §2） ---------- */
+:root{
+  /* 基础色 */
+  --bg:#F2F2F7;            /* 分组背景 */
+  --card:#FFFFFF;          /* 卡片/列表背景 */
+  --fill:#F2F2F7;          /* 次级填充（分段控件/按压态） */
+  --fill-2:#E9E9EA;        /* 深一档灰（进度轨道） */
+  /* 文字色 */
+  --text:#000000;
+  --text2:#8E8E93;
+  --text3:#AEAEB2;
+  --placeholder:#C7C7CC;
+  --onprimary:#FFFFFF;
+  /* 主色与功能色 */
+  --blue:#007AFF; --blue-pressed:#0066D6; --blue-bg:rgba(0,122,255,0.10);
+  --green:#34C759; --green-bg:rgba(52,199,89,0.12);
+  --orange:#FF9500; --orange-bg:rgba(255,149,0,0.14);
+  --red:#FF3B30; --red-bg:rgba(255,59,48,0.12);
+  /* 分隔线与边框 */
+  --separator:#C6C6C8;     /* 0.5px 细分隔线 */
+  --card-border:rgba(0,0,0,0.06);
+  /* 液态玻璃（浅色） */
+  --glass:rgba(255,255,255,0.62);
+  --glass-thin:rgba(255,255,255,0.55);
+  --glass-border:rgba(255,255,255,0.4);
+  --glass-highlight:rgba(255,255,255,0.35);
+  /* 字号 */
+  --fs-large:34px; --fs-h1:28px; --fs-h2:22px; --fs-h3:20px;
+  --fs-body:17px; --fs-callout:15px; --fs-footnote:13px; --fs-caption:12px;
+  /* 圆角（连续圆角体系） */
+  --r-lg:18px; --r-md:16px; --r-sm:12px; --r-xs:10px; --r-tag:8px;
+  /* 间距 */
+  --page-pad:16px; --space-2:8px; --space-3:12px; --space-4:16px; --space-6:24px;
+  /* 阴影（克制） */
+  --shadow-glass:0 8px 32px rgba(0,0,0,0.10);
+  --shadow-tab:0 8px 32px rgba(0,0,0,0.12);
+  --shadow-alert:0 16px 48px rgba(0,0,0,0.15);
+  --shadow-blue:0 8px 24px rgba(0,122,255,0.30);
+  /* 深色令牌（在 .dark 下覆盖，规格 §8.5） */
+  --dark-bg:#000000; --dark-card:#2C2C2E; --dark-fill:#1C1C1E; --dark-sep:#38383A;
+  --dark-glass:rgba(28,28,30,0.62);
+}
+
+html,body{height:100%;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","PingFang SC","Helvetica Neue",Helvetica,Arial,sans-serif;
+  background:#101014;color:#EAEAEA;
+  overflow-x:hidden;
+}
+.mono{font-family:"SF Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+
+/* ============================================================
+   顶部控制台（形态切换器 + 页面切换器 + 主题 + 缩放）
+   ============================================================ */
+.console{
+  position:sticky;top:0;z-index:1000;
+  background:rgba(20,20,26,0.9);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);
+  border-bottom:1px solid rgba(255,255,255,0.08);
+  padding:10px 18px;color:#fff;
+}
+.console-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.console-row + .console-row{margin-top:8px;}
+.console-label{font-size:11px;letter-spacing:.08em;color:#8E8E93;text-transform:uppercase;margin-right:2px;flex:none;}
+.seg-console{display:flex;background:rgba(255,255,255,0.08);border-radius:8px;padding:2px;gap:2px;flex-wrap:wrap;}
+.btn-console{
+  border:none;background:transparent;color:#B9B9C2;font-size:13px;line-height:1;
+  padding:7px 12px;border-radius:6px;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s;
+}
+.btn-console:hover{background:rgba(255,255,255,0.08);color:#fff;}
+.btn-console.active{background:#007AFF;color:#fff;font-weight:600;}
+.page-strip{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;flex:1;}
+.page-strip::-webkit-scrollbar{display:none;}
+.page-strip .btn-console{flex:none;}
+.console-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.hint-badge{font-size:11px;color:#8E8E93;background:rgba(255,255,255,0.06);border-radius:20px;padding:5px 10px;white-space:nowrap;}
+
+/* ============================================================
+   舞台与设备外框
+   ============================================================ */
+.stage{
+  display:flex;justify-content:center;align-items:flex-start;
+  padding:36px 24px 120px;min-height:calc(100vh - 96px);
+}
+.device-wrap{transform-origin:top center;transition:transform .3s;}
+.device-frame{
+  position:relative;background:#000;overflow:hidden;
+  box-shadow:0 30px 80px rgba(0,0,0,0.55), 0 4px 20px rgba(0,0,0,0.4);
+  transition:width .45s cubic-bezier(.25,.1,.25,1),height .45s cubic-bezier(.25,.1,.25,1),border-radius .45s;
+}
+/* 手机/平板外框高光描边 */
+.device-frame::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+/* ============================================================
+   App 容器（container 容器查询支撑多端响应）
+   ============================================================ */
+.app{
+  container-type:inline-size;
+  width:100%;height:100%;position:relative;display:flex;flex-direction:column;
+  background:var(--bg);color:var(--text);overflow:hidden;
+  transition:background .3s,color .3s;
+}
+.app.dark{
+  --bg:var(--dark-bg);--card:var(--dark-card);--fill:var(--dark-fill);--fill-2:#3A3A3C;
+  --text:#FFFFFF;--text2:#98989E;--text3:#6E6E73;--placeholder:#48484A;
+  --separator:var(--dark-sep);--card-border:rgba(255,255,255,0.08);
+  --glass:rgba(28,28,30,0.62);--glass-thin:rgba(28,28,30,0.55);
+  --glass-border:rgba(255,255,255,0.2);--glass-highlight:rgba(255,255,255,0.12);
+  --blue:#0A84FF;--blue-pressed:#409CFF;--blue-bg:rgba(10,132,255,0.16);
+  --shadow-tab:0 8px 32px rgba(0,0,0,0.5);
+}
+.app-inner{display:flex;flex:1;min-height:0;}
+
+/* ---------- 桌面侧边栏（expanded 仅显示，规格 §8.2） ---------- */
+.sidebar{
+  display:none;width:232px;flex:none;flex-direction:column;
+  background:var(--glass-thin);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);
+  border-right:0.5px solid var(--card-border);z-index:30;
+  transition:width .3s cubic-bezier(.25,.1,.25,1);
+}
+.sidebar.collapsed{width:66px;}
+.sb-head{height:56px;flex:none;display:flex;align-items:center;padding:0 16px;gap:10px;}
+.sb-brand{width:30px;height:30px;border-radius:8px;background:var(--blue);display:flex;align-items:center;justify-content:center;flex:none;color:#fff;}
+.sb-title{font-size:15px;font-weight:600;color:var(--text);white-space:nowrap;}
+.sidebar.collapsed .sb-title{display:none;}
+.sb-nav{flex:1;padding:12px;display:flex;flex-direction:column;gap:4px;overflow-y:auto;}
+.sb-item{
+  display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:10px;
+  color:var(--text2);cursor:pointer;font-size:15px;white-space:nowrap;position:relative;
+}
+.sb-item:hover{background:rgba(0,122,255,0.08);color:var(--blue);}
+.sb-item.active{background:var(--blue-bg);color:var(--blue);font-weight:600;}
+.sb-item .ic{width:24px;flex:none;display:flex;justify-content:center;}
+.sidebar.collapsed .sb-item{justify-content:center;padding:0;}
+.sidebar.collapsed .sb-item .sb-text{display:none;}
+.sb-item .sb-text{flex:1;}
+.sb-foot{padding:12px;border-top:0.5px solid var(--card-border);}
+.sb-collapse{
+  width:100%;height:40px;border:none;border-radius:10px;background:transparent;color:var(--text2);
+  cursor:pointer;display:flex;align-items:center;gap:12px;font-size:13px;padding:0 12px;white-space:nowrap;
+}
+.sb-collapse:hover{background:var(--fill);}
+.sidebar.collapsed .sb-collapse{justify-content:center;padding:0;}
+.sidebar.collapsed .sb-collapse .sb-text{display:none;}
+@container (min-width:1200px){
+  .sidebar{display:flex;}
+}
+
+/* ---------- 主列 ---------- */
+.main-col{flex:1;display:flex;flex-direction:column;min-width:0;position:relative;background:var(--bg);}
+.status-bar{
+  flex:none;height:var(--sb-h,44px);display:flex;align-items:center;justify-content:space-between;
+  padding:0 var(--page-pad);color:var(--text);position:relative;z-index:40;
+  background:transparent;font-size:15px;font-weight:600;
+}
+.sb-time{display:flex;align-items:center;gap:6px;}
+.sb-status-icons{display:flex;align-items:center;gap:6px;}
+.sb-island{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  background:#000;border-radius:20px;z-index:2;
+}
+.sb-island.hidden{display:none;}
+
+.pages{flex:1;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;}
+.pages::-webkit-scrollbar{width:0;height:0;}
+.page{display:none;padding:0 var(--page-pad) 120px;}
+.page.active{display:block;}
+.page-inner{max-width:var(--content-max,100%);margin:0 auto;}
+
+/* ---------- 底部悬浮 Tab Bar（compact/medium 显示） ---------- */
+.tabbar{
+  position:absolute;left:50%;transform:translateX(-50%);bottom:20px;
+  width:calc(100% - 64px);max-width:680px;height:60px;border-radius:999px;z-index:50;
+  display:flex;align-items:center;justify-content:space-around;
+  background:var(--glass);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);
+  border:0.5px solid var(--glass-border);box-shadow:var(--shadow-tab);
+  /* 不裁切子元素：中央背题圆钮凸起需完整可见 */
+}
+@container (max-width:600px){
+  .tabbar{width:calc(100% - 48px);} /* compact：左右各 24px，收窄更显悬浮 */
+}
+.tabbar::before{
+  content:"";position:absolute;inset:0 0 auto 0;height:40%;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(to bottom,var(--glass-highlight),rgba(255,255,255,0));
+}
+.tab-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  color:var(--text2);cursor:pointer;position:relative;z-index:1;height:100%;
+  -webkit-user-select:none;user-select:none;transition:color .15s;
+}
+.tab-item .ic{width:24px;height:24px;display:flex;align-items:center;justify-content:center;}
+.tab-item .lbl{font-size:11px;font-weight:400;letter-spacing:.02em;}
+.tab-item.active{color:var(--blue);}
+.tab-item.active .lbl{font-weight:500;}
+/* 背题中央圆钮（已确认软件事实） */
+.tab-item.center{position:relative;z-index:2;}
+.center-dial{
+  position:absolute;top:-32px;left:50%;transform:translateX(-50%);
+  width:58px;height:58px;border-radius:20px;
+  background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;
+  box-shadow:0 8px 24px rgba(0,122,255,0.35);
+  border:4px solid var(--bg);
+  z-index:60;
+  transition:transform .2s,background .2s;
+}
+.tab-item.center.active .center-dial{background:var(--blue-pressed);}
+.tab-item.center .lbl{margin-top:34px;}
+@container (min-width:1200px){
+  .tabbar{display:none;}
+}
+
+/* ============================================================
+   通用组件
+   ============================================================ */
+/* 大标题导航区（规格 §5.1） */
+.large-header{display:flex;align-items:flex-end;justify-content:space-between;padding:24px 2px 16px;gap:12px;}
+.large-title{font-size:var(--fs-large);font-weight:700;line-height:1.2;color:var(--text);letter-spacing:.01em;}
+.large-sub{font-size:var(--fs-callout);color:var(--text2);margin-top:4px;line-height:1.4;}
+.header-actions{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+
+/* 卡片（纯白·无阴影·规格 §5.2） */
+.card{background:var(--card);border-radius:16px;padding:16px;border:0.5px solid var(--card-border);}
+.card-title{font-size:var(--fs-body);font-weight:600;color:var(--text);}
+.card-sub{font-size:var(--fs-footnote);color:var(--text2);}
+.card-row{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+
+/* 分组列表（inset grouped，规格 §5.4） */
+.group-label{font-size:var(--fs-footnote);color:var(--text2);text-transform:uppercase;letter-spacing:.03em;margin:24px 16px 8px;}
+.group{background:var(--card);border-radius:12px;overflow:hidden;border:0.5px solid var(--card-border);}
+.gitem{
+  display:flex;align-items:center;gap:12px;padding:12px 16px;min-height:44px;cursor:pointer;
+  transition:background .1s;position:relative;
+}
+.gitem + .gitem{border-top:0.5px solid var(--separator);}
+.gitem:active,.gitem.pressed{background:var(--fill);}
+.gitem .g-main{flex:1;min-width:0;}
+.gitem .g-title{font-size:var(--fs-body);color:var(--text);line-height:1.35;}
+.gitem .g-sub{font-size:var(--fs-footnote);color:var(--text2);margin-top:2px;line-height:1.35;}
+.gitem .g-right{display:flex;align-items:center;gap:6px;color:var(--text2);font-size:var(--fs-callout);flex:none;}
+.gitem .chev{color:var(--placeholder);display:flex;flex:none;}
+.gicon{
+  width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  flex:none;color:#fff;
+}
+.footnote-text{font-size:var(--fs-footnote);color:var(--text2);line-height:1.4;}
+
+/* 按钮（规格 §5.3） */
+.btn{display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;transition:transform .12s,background .12s;font-family:inherit;}
+.btn-primary{
+  height:50px;border-radius:12px;background:var(--blue);color:#fff;font-size:var(--fs-body);font-weight:600;
+  width:100%;box-shadow:none;
+}
+.btn-primary:active{background:var(--blue-pressed);transform:scale(.985);}
+.btn-primary:disabled{background:var(--placeholder);color:#fff;cursor:default;}
+.btn-text{background:transparent;color:var(--blue);font-size:var(--fs-body);height:44px;padding:0 16px;border-radius:10px;}
+.btn-text:active{background:var(--blue-bg);}
+.btn-danger-text{background:transparent;color:var(--red);font-size:var(--fs-body);height:44px;padding:0 16px;border-radius:10px;}
+.btn-success-text{background:transparent;color:var(--green);font-size:var(--fs-body);height:44px;padding:0 16px;border-radius:10px;}
+.btn-block{width:100%;height:50px;border-radius:12px;font-size:var(--fs-body);font-weight:600;}
+.btn-ghost{background:var(--fill);color:var(--text);}
+.btn-icon{
+  width:40px;height:40px;border-radius:10px;background:transparent;color:var(--blue);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;
+}
+.btn-icon:active{background:var(--fill);}
+
+/* 标签 Chip（规格 §5.10） */
+.tag{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:8px;font-size:var(--fs-footnote);background:var(--blue-bg);color:var(--blue);white-space:nowrap;}
+.tag.green{background:var(--green-bg);color:var(--green);}
+.tag.orange{background:var(--orange-bg);color:var(--orange);}
+.tag.red{background:var(--red-bg);color:var(--red);}
+.tag.gray{background:var(--fill);color:var(--text2);}
+
+/* 分段控件（规格 §5.8） */
+.segmented{display:flex;background:var(--fill);border-radius:8px;padding:2px;gap:2px;}
+.segment{flex:1;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:var(--fs-footnote);color:var(--text2);cursor:pointer;transition:background .15s,color .15s;white-space:nowrap;padding:0 6px;}
+.segment.active{background:var(--card);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,0.07);font-weight:600;}
+
+/* 进度条（规格 §5.9） */
+.progress{height:4px;border-radius:2px;background:var(--fill-2);overflow:hidden;}
+.progress .fill{height:100%;border-radius:2px;background:var(--blue);transition:width .3s;}
+
+/* 开关（规格 §5.7） */
+.switch{width:51px;height:31px;border-radius:16px;background:var(--fill-2);position:relative;cursor:pointer;transition:background .2s;flex:none;}
+.switch.on{background:var(--green);}
+.switch .knob{position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.2);transition:left .2s;}
+.switch.on .knob{left:22px;}
+
+/* 输入框（规格 §5.6） */
+.input{
+  height:48px;border-radius:12px;background:var(--card);border:0.5px solid var(--separator);
+  display:flex;align-items:center;gap:8px;padding:0 16px;color:var(--text);
+}
+.input input{flex:1;border:none;outline:none;background:transparent;font-size:var(--fs-body);color:var(--text);font-family:inherit;}
+.input input::placeholder{color:var(--placeholder);}
+.input.focus{border-color:var(--blue);}
+
+/* 数值统计 */
+.stat-col{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.stat-num{font-size:28px;font-weight:700;color:var(--text);line-height:1.2;letter-spacing:-.01em;}
+.stat-label{font-size:var(--fs-caption);color:var(--text2);}
+
+/* ============================================================
+   页面级样式
+   ============================================================ */
+/* ---- 首页 ---- */
+.hero-grid{display:grid;grid-template-columns:1fr;gap:16px;}
+.today-stats{display:flex;justify-content:space-between;margin:14px 0 12px;gap:8px;}
+.today-progress{margin:4px 0 14px;}
+.today-actions{display:flex;gap:8px;}
+
+/* ---- 题库 ---- */
+.subject-card{display:flex;align-items:center;gap:14px;padding:16px;cursor:pointer;border:0.5px solid var(--card-border);}
+.subject-card:active{background:var(--fill);}
+.sc-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none;color:#fff;}
+.sc-main{flex:1;min-width:0;}
+.sc-name{font-size:var(--fs-body);font-weight:600;color:var(--text);}
+.sc-meta{font-size:var(--fs-footnote);color:var(--text2);margin-top:3px;}
+.sc-progress{margin-top:8px;}
+
+/* ---- 章节概览 ---- */
+.chapter-progress{display:flex;align-items:center;gap:12px;margin-top:6px;}
+.chapter-progress .progress{flex:1;}
+.chapter-pct{font-size:var(--fs-footnote);color:var(--text2);width:38px;text-align:right;font-family:inherit;}
+
+/* ---- 背题总览 ---- */
+.memo-top{display:flex;gap:16px;margin-top:16px;}
+.memo-ring{flex:none;display:flex;align-items:center;justify-content:center;}
+.srs-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;}
+.srs-cell{background:var(--fill);border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;}
+.srs-cell .dot{width:10px;height:10px;border-radius:50%;flex:none;}
+
+/* ---- 背题卡 ---- */
+.flip-stage{perspective:1200px;margin-top:16px;}
+.flip-card{
+  position:relative;width:100%;height:340px;transform-style:preserve-3d;cursor:pointer;transition:transform .5s cubic-bezier(.25,.1,.25,1);
+}
+.flip-card.flipped{transform:rotateY(180deg);}
+.flip-face{
+  position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  background:var(--card);border-radius:20px;border:0.5px solid var(--card-border);
+  display:flex;flex-direction:column;padding:24px;
+}
+.flip-face.back{transform:rotateY(180deg);}
+.flip-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.flip-body{flex:1;display:flex;flex-direction:column;justify-content:center;text-align:center;gap:12px;overflow-y:auto;}
+.flip-q{font-size:var(--fs-h2);font-weight:600;line-height:1.5;color:var(--text);}
+.flip-a{font-size:var(--fs-body);line-height:1.6;color:var(--text);text-align:left;padding:0 8px;}
+.flip-hint{font-size:var(--fs-footnote);color:var(--text3);margin-top:auto;text-align:center;padding-top:16px;}
+
+/* ---- 答题 ---- */
+.quest-nav{position:sticky;top:0;z-index:45;display:flex;align-items:center;gap:8px;padding:10px 0;margin:0 calc(-1*var(--page-pad));padding-left:var(--page-pad);padding-right:var(--page-pad);}
+.quest-nav.glassed{background:var(--glass-thin);backdrop-filter:blur(18px) saturate(180%);-webkit-backdrop-filter:blur(18px) saturate(180%);border-bottom:0.5px solid var(--card-border);}
+.qn-center{flex:1;text-align:center;min-width:0;}
+.qn-subject{font-size:var(--fs-body);font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.qn-progress{font-size:var(--fs-caption);color:var(--text2);margin-top:2px;}
+.question-card{padding:20px 16px;}
+.q-meta{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.q-text{font-size:var(--fs-body);line-height:1.6;color:var(--text);}
+.options{margin-top:16px;display:flex;flex-direction:column;gap:10px;}
+.option{
+  display:flex;align-items:center;gap:12px;padding:14px;border-radius:12px;cursor:pointer;
+  background:var(--card);border:0.5px solid var(--card-border);transition:border-color .15s,background .15s;
+}
+.option:active{background:var(--fill);}
+.opt-mark{
+  width:26px;height:26px;border-radius:50%;background:var(--fill);color:var(--text2);flex:none;
+  display:flex;align-items:center;justify-content:center;font-size:var(--fs-callout);font-weight:600;
+}
+.option .opt-text{flex:1;font-size:var(--fs-body);line-height:1.5;color:var(--text);}
+.option.selected{border-color:var(--blue);background:var(--blue-bg);}
+.option.selected .opt-mark{background:var(--blue);color:#fff;}
+.option.correct{border-color:var(--green);background:var(--green-bg);}
+.option.correct .opt-mark{background:var(--green);color:#fff;}
+.option.wrong{border-color:var(--red);background:var(--red-bg);}
+.option.wrong .opt-mark{background:var(--red);color:#fff;}
+.opt-state{margin-left:auto;display:flex;align-items:center;color:var(--green);flex:none;}
+.solution{margin-top:16px;background:var(--card);border-radius:12px;border:0.5px solid var(--card-border);overflow:hidden;}
+.sol-head{display:flex;align-items:center;gap:8px;padding:14px 16px;cursor:pointer;}
+.sol-head .chev{color:var(--placeholder);margin-left:auto;transition:transform .25s;display:flex;}
+.solution.open .sol-head .chev{transform:rotate(90deg);}
+.sol-body{display:none;padding:0 16px 16px;font-size:var(--fs-callout);line-height:1.65;color:var(--text);}
+.solution.open .sol-body{display:block;}
+
+/* 底部悬浮操作栏（刷题/背题，规格 §4.2） */
+.actionbar{
+  position:absolute;left:50%;transform:translateX(-50%);bottom:20px;
+  width:calc(100% - 64px);max-width:680px;height:52px;border-radius:999px;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;padding:0 8px 0 16px;
+  background:var(--glass-thin);backdrop-filter:blur(18px) saturate(180%);-webkit-backdrop-filter:blur(18px) saturate(180%);
+  border:0.5px solid var(--glass-border);box-shadow:var(--shadow-glass);
+  overflow:hidden;
+}
+@container (max-width:600px){
+  .actionbar{width:calc(100% - 48px);}
+}
+.actionbar::before{content:"";position:absolute;inset:0 0 auto 0;height:40%;pointer-events:none;border-radius:inherit;background:linear-gradient(to bottom,var(--glass-highlight),rgba(255,255,255,0));}
+.ab-left,.ab-center,.ab-right{position:relative;z-index:1;display:flex;align-items:center;}
+.ab-center{font-size:var(--fs-callout);color:var(--text2);font-family:var(--mono);letter-spacing:.03em;}
+.ab-next{
+  height:36px;padding:0 20px;border-radius:10px;background:var(--blue);color:#fff;font-size:var(--fs-callout);font-weight:600;border:none;cursor:pointer;margin:8px;margin-left:0;
+}
+.ab-next:active{background:var(--blue-pressed);}
+.ab-prev{background:transparent;color:var(--text2);font-size:var(--fs-callout);border:none;cursor:pointer;height:36px;padding:0 12px;border-radius:10px;}
+.ab-prev:disabled{color:var(--placeholder);cursor:default;}
+.ab-prev:not(:disabled):active{background:var(--fill);}
+
+/* ---- 答题卡（悬浮弹窗） ---- */
+.sheet-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.4);z-index:60;display:none;align-items:flex-end;justify-content:center;}
+.sheet-overlay.show{display:flex;animation:fadeIn .25s;}
+.sheet-panel{
+  width:100%;max-width:480px;background:var(--glass);backdrop-filter:blur(32px) saturate(180%);-webkit-backdrop-filter:blur(32px) saturate(180%);
+  border:0.5px solid var(--glass-border);border-radius:20px 20px 0 0;box-shadow:var(--shadow-alert);
+  padding:20px 20px calc(28px + 8px);max-height:82%;overflow-y:auto;position:relative;
+  animation:sheetUp .35s cubic-bezier(.2,.9,.3,1.2);
+}
+.sheet-title{font-size:var(--fs-h3);font-weight:600;text-align:center;color:var(--text);margin-bottom:4px;}
+.sheet-sub{font-size:var(--fs-footnote);color:var(--text2);text-align:center;margin-bottom:16px;}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0 16px;justify-content:center;}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:var(--fs-caption);color:var(--text2);}
+.legend-item .sq{width:12px;height:12px;border-radius:3px;flex:none;}
+.grid-answer{display:grid;grid-template-columns:repeat(10,1fr);gap:8px;margin:8px 0 18px;}
+.cell{
+  aspect-ratio:1;border-radius:6px;display:flex;align-items:center;justify-content:center;
+  font-size:var(--fs-footnote);font-weight:500;background:var(--card);border:0.5px solid var(--card-border);color:var(--text);cursor:pointer;position:relative;
+}
+.cell.done{background:var(--blue);border-color:var(--blue);color:#fff;}
+.cell.doubt{background:var(--card);border-color:var(--orange);color:var(--orange);font-weight:700;}
+.cell.flag::after{content:"🚩";font-size:10px;position:absolute;top:-4px;right:-3px;}
+.cell.current{outline:2px solid var(--blue);outline-offset:1px;}
+
+/* ---- 模拟考 ---- */
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;gap:12px;}
+.setting-row + .setting-row{border-top:0.5px solid var(--separator);}
+.setting-label{font-size:var(--fs-body);color:var(--text);}
+.setting-label .sub{font-size:var(--fs-caption);color:var(--text2);display:block;margin-top:2px;}
+.chips{display:flex;gap:6px;flex-wrap:wrap;}
+.chip{padding:5px 14px;border-radius:20px;background:var(--fill);color:var(--text2);font-size:var(--fs-footnote);cursor:pointer;border:none;}
+.chip.active{background:var(--blue);color:#fff;font-weight:500;}
+.timer-mono{font-size:32px;font-weight:700;color:var(--text);letter-spacing:.04em;}
+
+/* ---- 结果页 ---- */
+.result-hero{display:flex;flex-direction:column;align-items:center;padding:28px 16px 20px;gap:6px;}
+.result-score{font-size:56px;font-weight:700;color:var(--text);letter-spacing:-.02em;line-height:1;}
+.result-label{font-size:var(--fs-footnote);color:var(--text2);}
+.result-stats{display:flex;justify-content:space-between;margin:18px 0 4px;}
+
+/* ---- 统计页 ---- */
+.heatmap{display:flex;gap:5px;overflow-x:auto;padding-bottom:4px;}
+.hm-col{display:flex;flex-direction:column;gap:4px;flex:none;}
+.hm-cell{width:13px;height:13px;border-radius:3px;background:var(--fill-2);}
+.hm-cell.l1{background:rgba(52,199,89,0.3);}
+.hm-cell.l2{background:rgba(52,199,89,0.55);}
+.hm-cell.l3{background:rgba(52,199,89,0.8);}
+.hm-cell.l4{background:var(--green);}
+.hm-label{font-size:10px;color:var(--text3);}
+.rings{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:14px;margin-top:8px;}
+.ring-item{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.ring-item .rname{font-size:var(--fs-caption);color:var(--text2);text-align:center;line-height:1.3;}
+
+/* ---- 错题本 ---- */
+.wrong-state{display:flex;align-items:center;gap:8px;}
+.wrong-ans{font-size:var(--fs-footnote);}
+.wrong-ans .mine{color:var(--red);}
+.wrong-ans .right{color:var(--green);}
+
+/* ---- 我的 ---- */
+.profile-head{display:flex;align-items:center;gap:16px;padding:20px 4px 8px;}
+.avatar{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#007AFF,#34C759);display:flex;align-items:center;justify-content:center;color:#fff;flex:none;font-size:26px;font-weight:700;}
+.profile-name{font-size:22px;font-weight:700;color:var(--text);}
+.profile-sub{font-size:var(--fs-footnote);color:var(--text2);margin-top:4px;}
+.badge-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+
+/* ============================================================
+   动效
+   ============================================================ */
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+@keyframes sheetUp{from{transform:translateY(40px);opacity:.6;}to{transform:translateY(0);opacity:1;}}
+.page-enter{animation:pageIn .3s cubic-bezier(.0,.0,.2,1);}
+@keyframes pageIn{from{opacity:0;transform:translateX(18px);}to{opacity:1;transform:none;}}
+
+/* ============================================================
+   响应式断点（container 查询，规格 §8）
+   ============================================================ */
+@container (min-width:600px){
+  :root{ }
+  .app{
+    --page-pad:24px;
+    --content-max:760px;
+  }
+  .hero-grid{grid-template-columns:1fr 1fr;}
+  .hero-grid .full{grid-column:1/-1;}
+}
+@container (min-width:1200px){
+  .app{
+    --page-pad:32px;
+    --content-max:920px;
+  }
+  .hero-grid{grid-template-columns:1fr 1fr 1fr;}
+  .srs-grid{grid-template-columns:repeat(4,1fr);}
+  .page{padding-bottom:56px;}
+}
+
+/* ---------- 图标尺寸体系（data-ic 注入后控制 SVG 大小） ---------- */
+[data-ic]{width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;flex:none;}
+[data-ic] svg{width:100%;height:100%;}
+button.btn-icon[data-ic]{width:40px;height:40px;display:flex;}
+.btn-icon svg{width:22px;height:22px;}
+.center-dial[data-ic]{width:58px;height:58px;display:flex;border-radius:20px;background:var(--blue);color:#fff;}
+.center-dial[data-ic] svg{width:26px;height:26px;}
+.chev[data-ic]{width:14px;height:14px;display:flex;color:var(--placeholder);}
+.opt-state[data-ic]{width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;}
+</style>
+</head>
+<body>
+<!-- ================= 顶部控制台 ================= -->
+<div class="console">
+  <div class="console-row">
+    <span class="console-label">形态</span>
+    <div class="seg-console" id="formSwitch">
+      <button class="btn-console active" data-form="phone">📱 iPhone 竖屏</button>
+      <button class="btn-console" data-form="ipadmini">📐 iPad mini 竖屏</button>
+      <button class="btn-console" data-form="ipad">💻 iPad 竖屏</button>
+      <button class="btn-console" data-form="tablet">🖥 平板横屏</button>
+      <button class="btn-console" data-form="desktop">🖳 桌面</button>
+    </div>
+    <div class="console-right">
+      <span class="hint-badge" id="formInfo">iPhone 竖屏 · 390×844 · compact</span>
+      <div class="seg-console" id="themeSwitch">
+        <button class="btn-console active" data-theme="auto">跟随系统</button>
+        <button class="btn-console" data-theme="light">浅色</button>
+        <button class="btn-console" data-theme="dark">深色</button>
+      </div>
+      <div class="seg-console" id="zoomSwitch">
+        <button class="btn-console" data-zoom="0.6">60%</button>
+        <button class="btn-console active" data-zoom="1">100%</button>
+        <button class="btn-console" data-zoom="1.2">120%</button>
+      </div>
+    </div>
+  </div>
+  <div class="console-row">
+    <span class="console-label">页面</span>
+    <div class="page-strip" id="pageSwitch">
+      <button class="btn-console active" data-page="home">首页</button>
+      <button class="btn-console" data-page="bank">题库</button>
+      <button class="btn-console" data-page="chapter">章节概览</button>
+      <button class="btn-console" data-page="memo">背题总览</button>
+      <button class="btn-console" data-page="card">背题卡</button>
+      <button class="btn-console" data-page="practice">答题</button>
+      <button class="btn-console" data-page="sheet">答题卡</button>
+      <button class="btn-console" data-page="mock">模拟考</button>
+      <button class="btn-console" data-page="result">结果</button>
+      <button class="btn-console" data-page="stats">统计</button>
+      <button class="btn-console" data-page="wrong">错题本</button>
+      <button class="btn-console" data-page="me">我的</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 舞台与设备外框 ================= -->
+<div class="stage">
+  <div class="device-wrap" id="deviceWrap">
+    <div class="device-frame" id="device">
+      <div class="app" id="app">
+
+        <!-- App 内壳 -->
+        <div class="app-inner">
+          <!-- 桌面侧边栏（expanded 显示） -->
+          <aside class="sidebar" id="sidebar">
+            <div class="sb-head">
+              <div class="sb-brand"><span data-ic="book.fill" style="width:18px;height:18px;display:flex"></span></div>
+              <div class="sb-title">考研刷题</div>
+            </div>
+            <nav class="sb-nav">
+              <div class="sb-item active" data-nav="home"><span class="ic" data-ic="house"></span><span class="sb-text">今日</span></div>
+              <div class="sb-item" data-nav="bank"><span class="ic" data-ic="book"></span><span class="sb-text">题库</span></div>
+              <div class="sb-item" data-nav="memo"><span class="ic" data-ic="stack"></span><span class="sb-text">背题</span></div>
+              <div class="sb-item" data-nav="stats"><span class="ic" data-ic="chart"></span><span class="sb-text">统计</span></div>
+              <div class="sb-item" data-nav="me"><span class="ic" data-ic="person"></span><span class="sb-text">我的</span></div>
+            </nav>
+            <div class="sb-foot">
+              <button class="sb-collapse" id="btnSidebarToggle">
+                <span class="ic" data-ic="sidebar"></span><span class="sb-text">收起侧边栏</span>
+              </button>
+            </div>
+          </aside>
+
+          <!-- 主列 -->
+          <div class="main-col">
+            <!-- iOS 状态栏 -->
+            <div class="status-bar" id="statusBar">
+              <div class="sb-time"><span id="sbClock">9:41</span></div>
+              <div class="sb-island" id="sbIsland"></div>
+              <div class="sb-status-icons">
+                <span class="ic" data-ic="signal"></span>
+                <span class="ic" data-ic="wifi"></span>
+                <span class="ic" data-ic="battery"></span>
+              </div>
+            </div>
+
+            <!-- 页面区 -->
+            <div class="pages" id="pages">
+
+              <!-- ========== 首页 ========== -->
+              <section class="page active" id="page-home" data-nav="home">
+                <div class="page-inner">
+                  <header class="large-header">
+                    <div>
+                      <h1 class="large-title">考研刷题</h1>
+                      <p class="large-sub">距离考试还有 <b style="color:var(--blue)">186</b> 天 · 上午好，考研人</p>
+                    </div>
+                    <div class="header-actions">
+                      <button class="btn-icon" data-ic="gear"></button>
+                    </div>
+                  </header>
+
+                  <div class="hero-grid">
+                    <div class="card full">
+                      <div class="card-row">
+                        <span class="card-title">今日任务</span>
+                        <span class="tag gray">2026.09.03</span>
+                      </div>
+                      <div class="today-stats">
+                        <div class="stat-col"><span class="stat-num">24</span><span class="stat-label">待复习</span></div>
+                        <div class="stat-col"><span class="stat-num" style="color:var(--green)">18</span><span class="stat-label">已完成</span></div>
+                        <div class="stat-col"><span class="stat-num">45</span><span class="stat-label">学习分钟</span></div>
+                        <div class="stat-col"><span class="stat-num" style="color:var(--blue)">75%</span><span class="stat-label">完成度</span></div>
+                      </div>
+                      <div class="today-progress"><div class="progress"><div class="fill" style="width:75%"></div></div></div>
+                      <button class="btn btn-primary" data-goto="practice">开始学习</button>
+                    </div>
+                    <div class="card">
+                      <div class="card-row"><span class="card-title">模拟考</span><span class="card-sub">本周日</span></div>
+                      <p class="footnote-text" style="margin-top:10px">2026 教育学 · 全真模拟 100 题 · 120 分钟</p>
+                      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
+                        <span class="tag orange">待参加</span>
+                        <button class="btn-text" style="font-size:15px" data-goto="mock">去参加</button>
+                      </div>
+                    </div>
+                    <div class="card">
+                      <div class="card-row"><span class="card-title">连续学习</span><span class="card-sub">保持节奏</span></div>
+                      <div class="today-stats" style="margin-top:12px">
+                        <div class="stat-col"><span class="stat-num">7</span><span class="stat-label">天连续</span></div>
+                        <div class="stat-col"><span class="stat-num" style="color:var(--green)">486</span><span class="stat-label">累计题量</span></div>
+                      </div>
+                      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+                        <span class="tag green">🔥 坚持中</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="group-label">题库 · 五科</div>
+                  <div class="group">
+                    <div class="gitem" data-goto="chapter">
+                      <span class="gicon" style="background:#007AFF"><span data-ic="book" style="width:18px;height:18px;display:flex"></span></span>
+                      <div class="g-main"><div class="g-title">教育学</div><div class="g-sub">章节 12 · 1280 题</div></div>
+                      <div class="g-right"><span style="color:var(--green)">72%</span><span class="chev" data-ic="chev.right"></span></div>
+                    </div>
+                    <div class="gitem" data-goto="chapter">
+                      <span class="gicon" style="background:#FF9500"><span data-ic="brain" style="width:18px;height:18px;display:flex"></span></span>
+                      <div class="g-main"><div class="g-title">心理学</div><div class="g-sub">章节 9 · 980 题</div></div>
+                      <div class="g-right"><span style="color:var(--green)">68%</span><span class="chev" data-ic="chev.right"></span></div>
+                    </div>
+                    <div class="gitem" data-goto="chapter">
+                      <span class="gicon" style="background:#34C759"><span data-ic="pen" style="width:18px;height:18px;display:flex"></span></span>
+                      <div class="g-main"><div class="g-title">古代汉语</div><div class="g-sub">章节 8 · 860 题</div></div>
+                      <div class="g-right"><span style="color:var(--green)">61%</span><span class="chev" data-ic="chev.right"></span></div>
+                    </div>
+                    <div class="gitem" data-goto="chapter">
+                      <span class="gicon" style="background:#AF52DE"><span data-ic="book" style="width:18px;height:18px;display:flex"></span></span>
+                      <div class="g-main"><div class="g-title">文学理论</div><div class="g-sub">章节 7 · 720 题</div></div>
+                      <div class="g-right"><span style="color:var(--green)">54%</span><span class="chev" data-ic="chev.right"></span></div>
+                    </div>
+                    <div class="gitem" data-goto="chapter">
+                      <span class="gicon" style="background:#FF3B30"><span data-ic="flag" style="width:18px;height:18px;display:flex"></span></span>
+                      <div class="g-main"><div class="g-title">政治</div><div class="g-sub">章节 6 · 664 题</div></div>
+                      <div class="g-right"><span style="color:var(--orange)">38%</span><span class="chev" data-ic="chev.right"></span></div>
+                    </div>
+                  </div>
+                  <p class="footnote-text" style="margin-top:12px;text-align:center">五科题库累计 4504 题 · 数据自动存档</p>
+                </div>
+              </section>
+
+              <!-- ========== 题库 ========== -->
+              <section class="page" id="page-bank" data-nav="bank">
+                <div class="page-inner">
+                  <header class="large-header">
+                    <div>
+                      <h1 class="large-title">题库</h1>
+                      <p class="large-sub">按科目章节系统刷题</p>
+                    </div>
+                    <div class="header-actions">
+                      <button class="btn-icon" data-ic="slider"></button>
+                    </div>
+                  </header>
+
+                  <div class="input" id="searchBox"><span class="ic" data-ic="search" style="width:20px;height:20px;display:flex;color:var(--text2)"></span><input placeholder="搜索题目 / 章节 / 考点"></div>
+
+                  <div class="group-label">全部科目</div>
+                  <div style="display:flex;flex-direction:column;gap:12px">
+                    <div class="card subject-card" data-goto="chapter">
+                      <span class="sc-icon" style="background:#007AFF"><span data-ic="book" style="width:24px;height:24px;display:flex"></span></span>
+                      <div class="sc-main">
+                        <div class="sc-name">教育学</div>
+                        <div class="sc-meta">1280 题 · 已做 862 · 正确率 78%</div>
+                        <div class="sc-progress"><div class="progress"><div class="fill" style="width:67%"></div></div></div>
+                      </div>
+                      <span class="chev" data-ic="chev.right" style="color:var(--placeholder)"></span>
+                    </div>
+                    <div class="card subject-card" data-goto="chapter">
+                      <span class="sc-icon" style="background:#FF9500"><span data-ic="brain" style="width:24px;height:24px;display:flex"></span></span>
+                      <div class="sc-main">
+                        <div class="sc-name">心理学</div>
+                        <div class="sc-meta">980 题 · 已做 510 · 正确率 74%</div>
+                        <div class="sc-progress"><div class="progress"><div class="fill" style="width:52%"></div></div></div>
+                      </div>
+                      <span class="chev" data-ic="chev.right" style="color:var(--placeholder)"></span>
+                    </div>
+                    <div class="card subject-card" data-goto="chapter">
+                      <span class="sc-icon" style="background:#34C759"><span data-ic="pen" style="width:24px;height:24px;display:flex"></span></span>
+                      <div class="sc-main">
+                        <div class="sc-name">古代汉语</div>
+                        <div class="sc-meta">860 题 · 已做 380 · 正确率 71%</div>
+                        <div class="sc-progress"><div class="progress"><div class="fill" style="width:44%"></div></div></div>
+                      </div>
+                      <span class="chev" data-ic="chev.right" style="color:var(--placeholder)"></span>
+                    </div>
+                    <div class="card subject-card" data-goto="chapter">
+                      <span class="sc-icon" style="background:#AF52DE"><span data-ic="book" style="width:24px;height:24px;display:flex"></span></span>
+                      <div class="sc-main">
+                        <div class="sc-name">文学理论</div>
+                        <div class="sc-meta">720 题 · 已做 296 · 正确率 76%</div>
+                        <div class="sc-progress"><div class="progress"><div class="fill" style="width:41%"></div></div></div>
+                      </div>
+                      <span class="chev" data-ic="chev.right" style="color:var(--placeholder)"></span>
+                    </div>
+                    <div class="card subject-card" data-goto="chapter">
+                      <span class="sc-icon" style="background:#FF3B30"><span data-ic="flag" style="width:24px;height:24px;display:flex"></span></span>
+                      <div class="sc-main">
+                        <div class="sc-name">政治</div>
+                        <div class="sc-meta">664 题 · 已做 178 · 正确率 69%</div>
+                        <div class="sc-progress"><div class="progress"><div class="fill" style="width:27%"></div></div></div>
+                      </div>
+                      <span class="chev" data-ic="chev.right" style="color:var(--placeholder)"></span>
+                    </div>
+                  </div>
+
+                  <div class="group-label">快捷入口</div>
+                  <div class="group">
+                    <div class="gitem" data-goto="wrong">
+                      <span class="gicon" style="background:var(--red)"><span data-ic="x" style="width:16px;height:16px;display:flex"></span></span>
+                      <div class="g-main"><div class="g-title">错题本</div><div class="g-sub">86 道待回顾 · 本周新增 12</div></div>
+                      <div class="g-right"><span style="color:var(--red)">86</span><span class="chev" data-ic="chev.right"></span></div>
+                    </div>
+                    <div class="gitem" data-goto="mock">
+                      <span class="gicon" style="background:var(--blue)"><span data-ic="clock" style="width:16px;height:16px;display:flex"></span></span>
+                      <div class="g-main"><div class="g-title">模拟考</div><div class="g-sub">全真模考 · 自动判分</div></div>
+                      <div class="g-right"><span class="chev" data-ic="chev.right"></span></div>
+                    </div>
+                    <div class="gitem" data-goto="memo">
+                      <span class="gicon" style="background:var(--green)"><span data-ic="stack" style="width:16px;height:16px;display:flex"></span></span>
+                      <div class="g-main"><div class="g-title">背题</div><div class="g-sub">知识卡片 · 记忆曲线 SRS</div></div>
+                      <div class="g-right"><span class="chev" data-ic="chev.right"></span></div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- ========== 章节概览 ========== -->
+              <section class="page" id="page-chapter">
+                <div class="page-inner">
+                  <header class="large-header">
+                    <div style="display:flex;align-items:center;gap:10px">
+                      <button class="btn-icon" data-goto="bank" data-ic="chev.left"></button>
+                      <div>
+                        <h1 class="large-title" style="font-size:28px">教育学</h1>
+                        <p class="large-sub">章节概览 · 12 章 1280 题</p>
+                      </div>
+                    </div>
+                  </header>
+
+                  <div class="card">
+                    <div class="card-row">
+                      <span class="card-title">总体进度</span>
+                      <span class="tag blue" style="background:var(--blue-bg);color:var(--blue)">67%</span>
+                    </div>
+                    <div class="today-stats" style="margin:14px 0 10px">
+                      <div class="stat-col"><span class="stat-num">862</span><span class="stat-label">已做题</span></div>
+                      <div class="stat-col"><span class="stat-num" style="color:var(--green)">78%</span><span class="stat-label">正确率</span></div>
+                      <div class="stat-col"><span class="stat-num" style="color:var(--blue)">3h12m</span><span class="stat-label">本周学习</span></div>
+                    </div>
+                    <div class="progress"><div class="fill" style="width:67%"></div></div>
+                  </div>
+
+                  <div class="group-label">章节列表</div>
+                  <div class="group">
+                    <div class="gitem" data-goto="practice">
+                      <div class="g-main"><div class="g-title">第一章 · 教育原理</div><div class="g-sub">175 题 · 已做 120</div>
+                        <div class="chapter-progress"><div class="progress"><div class="fill" style="width:69%"></div></div><span class="chapter-pct">69%</span></div>
+                      </div>
+                      <span class="chev" data-ic="chev.right"></span>
+                    </div>
+                    <div class="gitem" data-goto="practice">
+                      <div class="g-main"><div class="g-title">第二章 · 课程论</div><div class="g-sub">158 题 · 已做 128</div>
+                        <div class="chapter-progress"><div class="progress"><div class="fill" style="width:81%"></div></div><span class="chapter-pct">81%</span></div>
+                      </div>
+                      <span class="chev" data-ic="chev.right"></span>
+                    </div>
+                    <div class="gitem" data-goto="practice">
+                      <div class="g-main"><div class="g-title">第三章 · 教学论</div><div class="g-sub">146 题 · 已做 96</div>
+                        <div class="chapter-progress"><div class="progress"><div class="fill" style="width:66%"></div></div><span class="chapter-pct">66%</span></div>
+                      </div>
+                      <span class="chev" data-ic="chev.right"></span>
+                    </div>
+                    <div class="gitem" data-goto="practice">
+                      <div class="g-main"><div class="g-title">第四章 · 德育论</div><div class="g-sub">132 题 · 已做 74</div>
+                        <div class="chapter-progress"><div class="progress"><div class="fill" style="width:56%"></div></div><span class="chapter-pct">56%</span></div>
+                      </div>
+                      <span class="chev" data-ic="chev.right"></span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- ========== 背题总览 ========== -->
+              <section class="page" id="page-memo" data-nav="memo">
+                <div class="page-inner">
+                  <header class="large-header">
+                    <div>
+                      <h1 class="large-title">背题</h1>
+                      <p class="large-sub">记忆曲线调度 · 今日剩余 24 张</p>
+                    </div>
+                  </header>
+
+                  <div class="segmented" id="memoSeg">
+                    <div class="segment active">教育学</div>
+                    <div class="segment">心理学</div>
+                    <div class="segment">古代汉语</div>
+                  </div>
+
+                  <div class="card" style="margin-top:16px;display:flex;gap:20px;align-items:center">
+                    <div class="memo-ring"><div class="ring" data-pct="60" data-size="72" data-color="#007AFF"><span>60%</span></div></div>
+                    <div style="flex:1">
+                      <div class="card-title">今日复习队列</div>
+                      <p class="footnote-text" style="margin-top:8px">已完成 <b style="color:var(--green)">24</b> / 40 张卡片，继续保持节奏。</p>
+                      <div class="today-progress" style="margin:12px 0 0"><div class="progress"><div class="fill" style="width:60%"></div></div></div>
+                    </div>
+                  </div>
+
+                  <div class="srs-grid" style="margin-top:16px">
+                    <div class="srs-cell"><span class="dot" style="background:var(--blue)"></span><div><div style="font-size:20px;font-weight:700;color:var(--text)">12</div><div class="footnote-text">新词</div></div></div>
+                    <div class="srs-cell"><span class="dot" style="background:var(--orange)"></span><div><div style="font-size:20px;font-weight:700;color:var(--text)">24</div><div class="footnote-text">学习中</div></div></div>
+                    <div class="srs-cell"><span class="dot" style="background:var(--purple,#AF52DE)"></span><div><div style="font-size:20px;font-weight:700;color:var(--text)">36</div><div class="footnote-text">复习中</div></div></div>
+                    <div class="srs-cell"><span class="dot" style="background:var(--green)"></span><div><div style="font-size:20px;font-weight:700;color:var(--text)">180</div><div class="footnote-text">已掌握</div></div></div>
+                  </div>
+
+                  <div class="group-label">即将复习</div>
+                  <div class="group">
+                    <div class="gitem">
+                      <div class="g-main"><div class="g-title">教育的社会功能</div><div class="g-sub">教育学 · 简答</div></div>
+                      <div class="g-right"><span class="tag orange">复习中</span><span class="chev" data-ic="chev.right"></span></div>
+                    </div>
+                    <div class="gitem">
+                      <div class="g-main"><div class="g-title">教学过程的本质</div><div class="g-sub">教育学 · 名词解释</div></div>
+                      <div class="g-right"><span class="tag green">已掌握</span><span class="chev" data-ic="chev.right"></span></div>
+                    </div>
+                    <div class="gitem">
+                      <div class="g-main"><div class="g-title">课程编制的基本取向</div><div class="g-sub">教育学 · 论述</div></div>
+                      <div class="g-right"><span class="tag">新词</span><span class="chev" data-ic="chev.right"></span></div>
+                    </div>
+                  </div>
+
+                  <button class="btn btn-primary" style="margin-top:20px" data-goto="card">开始今日背题</button>
+                </div>
+              </section>
+
+              <!-- ========== 背题卡 ========== -->
+              <section class="page" id="page-card">
+                <div class="page-inner">
+                  <div class="quest-nav" id="cardNav">
+                    <button class="btn-icon" data-goto="memo" data-ic="chev.left"></button>
+                    <div class="qn-center">
+                      <div class="segmented" style="max-width:260px;margin:0 auto" id="cardModeSeg">
+                        <div class="segment active">知识卡片</div>
+                        <div class="segment">题目</div>
+                      </div>
+                    </div>
+                    <button class="btn-icon" data-ic="info"></button>
+                  </div>
+
+                  <div class="flip-stage">
+                    <div class="flip-card" id="flipCard">
+                      <div class="flip-face front">
+                        <div class="flip-head">
+                          <span class="tag orange">复习中</span>
+                          <span class="tag gray">第 24 / 64 张</span>
+                        </div>
+                        <div class="flip-body">
+                          <div class="flip-q">简述教育对个体发展的促进作用。</div>
+                        </div>
+                        <div class="flip-hint">轻点卡片查看答案</div>
+                      </div>
+                      <div class="flip-face back">
+                        <div class="flip-head">
+                          <span class="tag green">已掌握</span>
+                          <span class="tag gray">答案 · 第 24 / 64 张</span>
+                        </div>
+                        <div class="flip-body">
+                          <p class="flip-a" style="font-weight:600">教育对个体发展的促进作用主要体现在：</p>
+                          <p class="flip-a">① 教育是人的发展的重要条件，制约着人的发展方向与水平；② 教育可以促进个体个性化与社会化的统一；③ 教育可挖掘人的潜能，提升个体综合素质；④ 学校教育具有计划性、系统性，是影响人发展的主导因素。</p>
+                        </div>
+                        <div class="flip-hint">轻点卡片翻回</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="footnote-text" style="text-align:center;margin-top:16px">剩余 24 张 · 预计 8 分钟</div>
+                </div>
+              </section>
+
+              <!-- ========== 答题（练习） ========== -->
+              <section class="page" id="page-practice">
+                <div class="page-inner">
+                  <div class="quest-nav glassed" id="practiceNav">
+                    <button class="btn-icon" data-goto="chapter" data-ic="chev.left"></button>
+                    <div class="qn-center">
+                      <div class="qn-subject">教育学 · 第一章</div>
+                      <div class="qn-progress mono">12 / 50</div>
+                    </div>
+                    <button class="btn-icon" id="btnOpenSheet" data-ic="grid"></button>
+                  </div>
+
+                  <div class="card question-card">
+                    <div class="q-meta">
+                      <span class="tag gray">第 12 题</span>
+                      <span class="tag">单选题</span>
+                      <span class="tag orange" style="margin-left:auto"><span data-ic="diamond" style="width:12px;height:12px;display:flex"></span>存疑</span>
+                    </div>
+                    <p class="q-text">我国古代最早专门论述教育问题的著作是（　）。</p>
+                    <div class="options">
+                      <div class="option"><span class="opt-mark">A</span><span class="opt-text">《大学》</span></div>
+                      <div class="option selected"><span class="opt-mark">B</span><span class="opt-text">《学记》</span><span class="opt-state" data-ic="check"></span></div>
+                      <div class="option"><span class="opt-mark">C</span><span class="opt-text">《论语》</span></div>
+                      <div class="option"><span class="opt-mark">D</span><span class="opt-text">《中庸》</span></div>
+                    </div>
+                  </div>
+
+                  <div class="solution" id="solution">
+                    <div class="sol-head" id="solHead">
+                      <span data-ic="doc.text" style="width:18px;height:18px;display:flex;color:var(--blue)"></span>
+                      <span style="font-size:17px;font-weight:600;color:var(--text)">解析</span>
+                      <span class="tag green">正确 B</span>
+                      <span class="chev" data-ic="chev.right"></span>
+                    </div>
+                    <div class="sol-body">
+                      <p style="margin-bottom:10px">《学记》是《礼记》中的一篇，相传为战国时期乐正克所作，是世界上最早系统论述教育教学问题的著作，比古罗马昆体良的《论演说家的教育》早约 300 年。</p>
+                      <div style="display:flex;gap:6px;flex-wrap:wrap">
+                        <span class="tag">考点 · 中国教育史</span>
+                        <span class="tag gray">教育学原理</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- ========== 答题卡（页面态） ========== -->
+              <section class="page" id="page-sheet">
+                <div class="page-inner" style="display:flex;justify-content:center;align-items:flex-start;padding-top:20px">
+                  <div class="sheet-panel" style="position:static;animation:none;max-width:440px;border-radius:20px;box-shadow:none;padding:24px">
+                    <div class="sheet-title">答题卡</div>
+                    <div class="sheet-sub">教育学 · 第一章 · 单选题 50 题</div>
+                    <div class="legend">
+                      <span class="legend-item"><span class="sq" style="background:var(--blue)"></span>已答 32</span>
+                      <span class="legend-item"><span class="sq" style="background:var(--card);border:1px solid var(--card-border)"></span>未答 16</span>
+                      <span class="legend-item"><span style="color:var(--orange);font-weight:700;font-size:12px">◆</span>存疑 2</span>
+                      <span class="legend-item"><span style="font-size:12px">🚩</span>审题 1</span>
+                    </div>
+                    <div class="grid-answer" id="gridAnswer"></div>
+                    <div style="display:flex;gap:10px">
+                      <button class="btn btn-ghost btn-block" data-goto="practice">继续答题</button>
+                      <button class="btn btn-primary btn-block" data-goto="result">交卷</button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- ========== 模拟考 ========== -->
+              <section class="page" id="page-mock" data-nav="mock">
+                <div class="page-inner">
+                  <!-- 考试设置 -->
+                  <div id="mockSetupView">
+                    <header class="large-header">
+                      <div>
+                        <h1 class="large-title">模拟考</h1>
+                        <p class="large-sub">全真模考 · 自动判分 · 成绩归档</p>
+                      </div>
+                      <span class="tag">每周模拟</span>
+                    </header>
+
+                    <div class="card">
+                      <div class="card-title" style="margin-bottom:4px">考试设置</div>
+                      <div class="setting-row">
+                        <div class="setting-label">科目<span class="sub">本次模考的科目</span></div>
+                        <div class="chips" data-group="subject">
+                          <button class="chip active">教育学</button><button class="chip">心理学</button><button class="chip">综合</button>
+                        </div>
+                      </div>
+                      <div class="setting-row">
+                        <div class="setting-label">题量<span class="sub">题目数量</span></div>
+                        <div class="chips" data-group="count">
+                          <button class="chip">20</button><button class="chip">50</button><button class="chip active">100</button><button class="chip">全部</button>
+                        </div>
+                      </div>
+                      <div class="setting-row">
+                        <div class="setting-label">时间限制<span class="sub">考试时长</span></div>
+                        <div class="chips" data-group="time">
+                          <button class="chip">无限制</button><button class="chip">30分钟</button><button class="chip active">120分钟</button>
+                        </div>
+                      </div>
+                      <div class="setting-row">
+                        <div class="setting-label">难度<span class="sub">题目难度范围</span></div>
+                        <div class="chips" data-group="diff">
+                          <button class="chip active">全部</button><button class="chip">易</button><button class="chip">中</button><button class="chip">难</button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button class="btn btn-primary" style="margin-top:20px" id="btnStartExam">开始考试</button>
+
+                    <div class="group-label">历史记录</div>
+                    <div class="group">
+                      <div class="gitem" data-goto="result">
+                        <div class="g-main"><div class="g-title">2026-08-30 · 教育学</div><div class="g-sub">100 题 · 用时 112min</div></div>
+                        <div class="g-right"><span style="color:var(--text);font-weight:600">86 分</span><span class="tag green">82%</span><span class="chev" data-ic="chev.right"></span></div>
+                      </div>
+                      <div class="gitem" data-goto="result">
+                        <div class="g-main"><div class="g-title">2026-08-23 · 心理学</div><div class="g-sub">50 题 · 用时 46min</div></div>
+                        <div class="g-right"><span style="color:var(--text);font-weight:600">74 分</span><span class="tag orange">68%</span><span class="chev" data-ic="chev.right"></span></div>
+                      </div>
+                      <div class="gitem" data-goto="result">
+                        <div class="g-main"><div class="g-title">2026-08-16 · 综合</div><div class="g-sub">100 题 · 用时 98min</div></div>
+                        <div class="g-right"><span style="color:var(--text);font-weight:600">91 分</span><span class="tag green">86%</span><span class="chev" data-ic="chev.right"></span></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 考试中 -->
+                  <div id="mockExamView" style="display:none">
+                    <div class="quest-nav glassed">
+                      <button class="btn-icon" data-ic="chev.left"></button>
+                      <div class="qn-center">
+                        <div class="qn-subject" style="color:var(--red)"><span data-ic="clock" style="width:14px;height:14px;display:flex;margin-right:4px"></span><span class="mono" style="font-size:20px;font-weight:700">82:14</span></div>
+                        <div class="qn-progress mono">第 18 题 · 共 100 题</div>
+                      </div>
+                      <button class="btn-icon" id="btnOpenSheet2" data-ic="grid"></button>
+                    </div>
+                    <div class="progress" style="margin:10px 0 0"><div class="fill" style="width:18%"></div></div>
+
+                    <div class="card question-card" style="margin-top:14px">
+                      <div class="q-meta">
+                        <span class="tag gray">第 18 题</span>
+                        <span class="tag">单选题</span>
+                        <span class="tag gray" style="margin-left:auto">◆ 存疑</span>
+                      </div>
+                      <p class="q-text">依据赫尔巴特的教学理论，教学过程的中心环节是（　）。</p>
+                      <div class="options">
+                        <div class="option"><span class="opt-mark">A</span><span class="opt-text">明了</span></div>
+                        <div class="option selected"><span class="opt-mark">B</span><span class="opt-text">联想</span><span class="opt-state" data-ic="check"></span></div>
+                        <div class="option"><span class="opt-mark">C</span><span class="opt-text">系统</span></div>
+                        <div class="option"><span class="opt-mark">D</span><span class="opt-text">方法</span></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- ========== 结果 ========== -->
+              <section class="page" id="page-result">
+                <div class="page-inner">
+                  <header class="large-header">
+                    <div style="display:flex;align-items:center;gap:10px">
+                      <button class="btn-icon" data-goto="mock" data-ic="chev.left"></button>
+                      <h1 class="large-title" style="font-size:28px">考试结果</h1>
+                    </div>
+                  </header>
+
+                  <div class="card result-hero">
+                    <div class="result-score">86</div>
+                    <div class="result-label">分 · 教育学 100 题 · 100 分满分</div>
+                    <div class="result-stats" style="width:100%">
+                      <div class="stat-col"><span class="stat-num" style="font-size:22px">112<span style="font-size:14px;color:var(--text2)">min</span></span><span class="stat-label">用时</span></div>
+                      <div class="stat-col"><span class="stat-num" style="font-size:22px;color:var(--green)">82%</span><span class="stat-label">正确率</span></div>
+                      <div class="stat-col"><span class="stat-num" style="font-size:22px;color:var(--blue)">前 18%</span><span class="stat-label">超越考生</span></div>
+                    </div>
+                    <div style="width:100%;height:10px"></div>
+                    <div class="progress" style="width:100%"><div class="fill" style="width:82%"></div></div>
+                  </div>
+
+                  <div class="group-label">题型正确率</div>
+                  <div class="group">
+                    <div class="gitem">
+                      <div class="g-main"><div class="g-title">单选题</div><div class="g-sub">55 / 60 题</div></div>
+                      <div class="g-right"><span style="color:var(--green)">92%</span></div>
+                    </div>
+                    <div class="gitem">
+                      <div class="g-main"><div class="g-title">多选题</div><div class="g-sub">16 / 25 题</div></div>
+                      <div class="g-right"><span style="color:var(--orange)">64%</span></div>
+                    </div>
+                    <div class="gitem">
+                      <div class="g-main"><div class="g-title">简答题</div><div class="g-sub">11 / 15 题</div></div>
+                      <div class="g-right"><span style="color:var(--green)">73%</span></div>
+                    </div>
+                  </div>
+
+                  <div class="group-label">错题回顾</div>
+                  <div class="group">
+                    <div class="gitem" data-goto="wrong">
+                      <div class="g-main"><div class="g-title">教学过程的本质</div><div class="g-sub">多选 · 错选 C</div></div>
+                      <div class="g-right"><span class="tag red">待复习</span><span class="chev" data-ic="chev.right"></span></div>
+                    </div>
+                    <div class="gitem" data-goto="wrong">
+                      <div class="g-main"><div class="g-title">教育目的的价值取向</div><div class="g-sub">单选 · 错选 A</div></div>
+                      <div class="g-right"><span class="tag red">待复习</span><span class="chev" data-ic="chev.right"></span></div>
+                    </div>
+                  </div>
+
+                  <button class="btn btn-primary" style="margin-top:20px" data-goto="wrong">进入错题本巩固</button>
+                </div>
+              </section>
+
+              <!-- ========== 统计 ========== -->
+              <section class="page" id="page-stats" data-nav="stats">
+                <div class="page-inner">
+                  <header class="large-header">
+                    <div>
+                      <h1 class="large-title">统计</h1>
+                      <p class="large-sub">学习数据一目了然</p>
+                    </div>
+                  </header>
+
+                  <div class="segmented" id="statsSeg">
+                    <div class="segment active">今日</div>
+                    <div class="segment">本周</div>
+                    <div class="segment">本月</div>
+                    <div class="segment">全部</div>
+                  </div>
+
+                  <div class="card" style="margin-top:16px">
+                    <div class="today-stats">
+                      <div class="stat-col"><span class="stat-num">45<span style="font-size:15px;color:var(--text2)">min</span></span><span class="stat-label">学习时长</span></div>
+                      <div class="stat-col"><span class="stat-num">36</span><span class="stat-label">做题数</span></div>
+                      <div class="stat-col"><span class="stat-num" style="color:var(--green)">78%</span><span class="stat-label">正确率</span></div>
+                      <div class="stat-col"><span class="stat-num" style="color:var(--blue)">7</span><span class="stat-label">连续天数</span></div>
+                    </div>
+                  </div>
+
+                  <div class="card" style="margin-top:16px">
+                    <div class="card-row"><span class="card-title">学习日历</span><span class="card-sub">近 12 周</span></div>
+                    <div class="heatmap" id="heatmap" style="margin-top:14px"></div>
+                  </div>
+
+                  <div class="card" style="margin-top:16px">
+                    <div class="card-row"><span class="card-title">科目进度</span><span class="card-sub">五科</span></div>
+                    <div class="rings" id="rings" style="margin-top:16px"></div>
+                  </div>
+
+                  <div class="card" style="margin-top:16px">
+                    <div class="card-row"><span class="card-title">正确率趋势</span><span class="card-sub">近 30 天 · 5 日均线</span></div>
+                    <svg viewBox="0 0 300 120" style="width:100%;margin-top:14px" preserveAspectRatio="none">
+                      <defs>
+                        <linearGradient id="lineFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0" stop-color="#007AFF" stop-opacity="0.25"/>
+                          <stop offset="1" stop-color="#007AFF" stop-opacity="0"/>
+                        </linearGradient>
+                      </defs>
+                      <line x1="0" y1="100" x2="300" y2="100" stroke="#E9E9EA" stroke-width="1"/>
+                      <line x1="0" y1="70" x2="300" y2="70" stroke="#E9E9EA" stroke-width="0.5" stroke-dasharray="3 4"/>
+                      <line x1="0" y1="40" x2="300" y2="40" stroke="#E9E9EA" stroke-width="0.5" stroke-dasharray="3 4"/>
+                      <path d="M0,78 L22,74 L44,70 L66,72 L88,66 L110,62 L132,64 L154,58 L176,60 L198,52 L220,54 L242,48 L264,50 L286,42 L300,44 L300,100 L0,100 Z" fill="url(#lineFill)"/>
+                      <path d="M0,78 L22,74 L44,70 L66,72 L88,66 L110,62 L132,64 L154,58 L176,60 L198,52 L220,54 L242,48 L264,50 L286,42 L300,44" fill="none" stroke="#007AFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      <circle cx="286" cy="42" r="3.5" fill="#007AFF"/>
+                      <circle cx="286" cy="42" r="7" fill="#007AFF" opacity="0.2"/>
+                    </svg>
+                  </div>
+                </div>
+              </section>
+
+              <!-- ========== 错题本 ========== -->
+              <section class="page" id="page-wrong">
+                <div class="page-inner">
+                  <header class="large-header">
+                    <div>
+                      <h1 class="large-title">错题本</h1>
+                      <p class="large-sub">重做错题 · 巩固薄弱考点</p>
+                    </div>
+                    <div class="header-actions"><button class="btn-icon" data-ic="plus"></button></div>
+                  </header>
+
+                  <div class="segmented" id="wrongSeg">
+                    <div class="segment active">全部</div>
+                    <div class="segment">待复习</div>
+                    <div class="segment">已掌握</div>
+                  </div>
+
+                  <div class="card" style="margin-top:16px">
+                    <div class="today-stats">
+                      <div class="stat-col"><span class="stat-num" style="color:var(--red)">86</span><span class="stat-label">总错题</span></div>
+                      <div class="stat-col"><span class="stat-num" style="color:var(--orange)">12</span><span class="stat-label">本周新增</span></div>
+                      <div class="stat-col"><span class="stat-num" style="color:var(--green)">72%</span><span class="stat-label">已掌握率</span></div>
+                    </div>
+                  </div>
+
+                  <div class="group-label">错题列表</div>
+                  <div class="group">
+                    <div class="gitem">
+                      <div class="g-main">
+                        <div class="g-title">教育的社会制约性</div>
+                        <div class="g-sub">教育学 · 单选 · 已错 2 次</div>
+                        <div class="wrong-ans" style="margin-top:6px">
+                          <span class="wrong-ans mine">✗ 你选 B</span>　<span class="wrong-ans right">✓ 正确 A</span>
+                        </div>
+                      </div>
+                      <div class="g-right"><button class="btn btn-text" style="font-size:13px;height:32px;padding:0 10px">重做</button></div>
+                    </div>
+                    <div class="gitem">
+                      <div class="g-main">
+                        <div class="g-title">《学记》中的教学原则</div>
+                        <div class="g-sub">教育学 · 多选 · 已错 1 次</div>
+                        <div class="wrong-ans" style="margin-top:6px">
+                          <span class="wrong-ans mine">✗ 漏选 C</span>　<span class="wrong-ans right">✓ 正确 ACD</span>
+                        </div>
+                      </div>
+                      <div class="g-right"><button class="btn btn-text" style="font-size:13px;height:32px;padding:0 10px">重做</button></div>
+                    </div>
+                    <div class="gitem">
+                      <div class="g-main">
+                        <div class="g-title">知觉的基本特性</div>
+                        <div class="g-sub">心理学 · 单选 · 已掌握</div>
+                        <div class="wrong-ans" style="margin-top:6px">
+                          <span class="wrong-ans right" style="color:var(--green)">✓ 最近一次答对</span>
+                        </div>
+                      </div>
+                      <div class="g-right"><span class="tag green">已掌握</span></div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- ========== 我的 ========== -->
+              <section class="page" id="page-me" data-nav="me">
+                <div class="page-inner">
+                  <header class="large-header">
+                    <div>
+                      <h1 class="large-title">我的</h1>
+                      <p class="large-sub">学习设置与资料</p>
+                    </div>
+                  </header>
+
+                  <div class="profile-head">
+                    <div class="avatar">考</div>
+                    <div>
+                      <div class="profile-name">考研人</div>
+                      <div class="profile-sub">目标：陕西师范大学 · 学科语文</div>
+                      <div class="badge-row">
+                        <span class="tag green">🔥 连续 7 天</span>
+                        <span class="tag gray">4504 题池</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="group-label">学习</div>
+                  <div class="group">
+                    <div class="gitem">
+                      <span class="gicon" style="background:var(--blue)"><span data-ic="target" style="width:16px;height:16px;display:flex"></span></span>
+                      <div class="g-main"><div class="g-title">目标院校</div><div class="g-sub">学科教学（语文）</div></div>
+                      <span class="chev" data-ic="chev.right"></span>
+                    </div>
+                    <div class="gitem">
+                      <span class="gicon" style="background:var(--green)"><span data-ic="flag" style="width:16px;height:16px;display:flex"></span></span>
+                      <div class="g-main"><div class="g-title">每日目标</div><div class="g-sub">60 题/天 · 已连续 7 天</div></div>
+                      <span class="chev" data-ic="chev.right"></span>
+                    </div>
+                  </div>
+
+                  <div class="group-label">背题</div>
+                  <div class="group">
+                    <div class="gitem">
+                      <span class="gicon" style="background:var(--orange)"><span data-ic="stack" style="width:16px;height:16px;display:flex"></span></span>
+                      <div class="g-main"><div class="g-title">背题模式</div><div class="g-sub">知识卡片 / 题目 双模式</div></div>
+                      <span class="chev" data-ic="chev.right"></span>
+                    </div>
+                    <div class="gitem">
+                      <span class="gicon" style="background:var(--purple,#AF52DE)"><span data-ic="flag" style="width:16px;height:16px;display:flex"></span></span>
+                      <div class="g-main"><div class="g-title">审题标记 🚩</div><div class="g-sub">练习重点题 · 落库 review_flags</div></div>
+                      <div class="switch" id="switchFlag"></div>
+                    </div>
+                    <div class="gitem">
+                      <span class="gicon" style="background:var(--blue)"><span data-ic="diamond" style="width:16px;height:16px;display:flex"></span></span>
+                      <div class="g-main"><div class="g-title">存疑标记 ◆</div><div class="g-sub">会话级 · 不落库</div></div>
+                      <div class="switch on" id="switchDoubt"></div>
+                    </div>
+                  </div>
+
+                  <div class="group-label">外观</div>
+                  <div class="group">
+                    <div class="gitem">
+                      <span class="gicon" style="background:var(--blue)"><span data-ic="moon" style="width:16px;height:16px;display:flex"></span></span>
+                      <div class="g-main"><div class="g-title">深色模式</div><div class="g-sub">跟随系统 / 手动</div></div>
+                      <div class="switch" id="switchTheme"></div>
+                    </div>
+                  </div>
+
+                  <div class="group-label">数据</div>
+                  <div class="group">
+                    <div class="gitem">
+                      <span class="gicon" style="background:var(--green)"><span data-ic="doc.export" style="width:16px;height:16px;display:flex"></span></span>
+                      <div class="g-main"><div class="g-title">导出与存档</div><div class="g-sub">自动存档 · 备份</div></div>
+                      <span class="chev" data-ic="chev.right"></span>
+                    </div>
+                    <div class="gitem">
+                      <span class="gicon" style="background:var(--orange)"><span data-ic="chart" style="width:16px;height:16px;display:flex"></span></span>
+                      <div class="g-main"><div class="g-title">数据统计</div><div class="g-sub">行为分析</div></div>
+                      <span class="chev" data-ic="chev.right"></span>
+                    </div>
+                  </div>
+
+                  <div class="group-label">关于</div>
+                  <div class="group">
+                    <div class="gitem"><div class="g-main"><div class="g-title">使用帮助</div></div><span class="chev" data-ic="chev.right"></span></div>
+                    <div class="gitem"><div class="g-main"><div class="g-title">意见反馈</div></div><span class="chev" data-ic="chev.right"></span></div>
+                    <div class="gitem"><div class="g-main"><div class="g-title">关于</div><div class="g-sub">v3.0 · iOS</div></div><span class="chev" data-ic="chev.right"></span></div>
+                  </div>
+                </div>
+              </section>
+
+            </div><!-- /pages -->
+
+        <!-- 底部悬浮 Tab Bar -->
+        <nav class="tabbar" id="tabbar">
+          <div class="tab-item active" data-nav="home"><span class="ic" data-ic="house"></span><span class="lbl">今日</span></div>
+          <div class="tab-item" data-nav="bank"><span class="ic" data-ic="book"></span><span class="lbl">题库</span></div>
+          <div class="tab-item center" data-nav="memo"><span class="center-dial" data-ic="stack"></span><span class="lbl">背题</span></div>
+          <div class="tab-item" data-nav="stats"><span class="ic" data-ic="chart"></span><span class="lbl">统计</span></div>
+          <div class="tab-item" data-nav="me"><span class="ic" data-ic="person"></span><span class="lbl">我的</span></div>
+        </nav>
+
+        <!-- 底部悬浮操作栏：答题 -->
+        <div class="actionbar" id="actionbarPractice" style="display:none">
+          <div class="ab-left"><button class="ab-prev" disabled>上一题</button></div>
+          <div class="ab-center mono">12 / 50</div>
+          <div class="ab-right"><button class="ab-next" data-goto="result">下一题</button></div>
+        </div>
+
+        <!-- 底部悬浮操作栏：背题 -->
+        <div class="actionbar" id="actionbarMemo" style="display:none">
+          <div class="ab-left"><button class="btn-danger-text" style="height:36px;font-size:15px">忘记</button></div>
+          <div class="ab-center" style="display:flex;align-items:center;gap:8px"><div class="ring" data-pct="72" data-size="30" data-color="#007AFF" data-hide-text="1"></div><span class="mono" style="font-size:14px">24</span></div>
+          <div class="ab-right"><button class="btn-success-text" style="height:36px;font-size:15px;font-weight:600">记住</button></div>
+        </div>
+
+        <!-- 底部悬浮操作栏：模拟考中 -->
+        <div class="actionbar" id="actionbarExam" style="display:none">
+          <div class="ab-left"><button class="ab-prev">上一题</button></div>
+          <div class="ab-center mono">18 / 100</div>
+          <div class="ab-right"><button class="ab-next" id="btnSubmitExam" style="background:var(--green)">交卷</button></div>
+        </div>
+
+        <!-- 答题卡悬浮弹窗 -->
+        <div class="sheet-overlay" id="sheetOverlay">
+          <div class="sheet-panel">
+            <div class="sheet-title">答题卡</div>
+            <div class="sheet-sub">教育学 · 第一章 · 单选题 50 题</div>
+            <div class="legend">
+              <span class="legend-item"><span class="sq" style="background:var(--blue)"></span>已答 32</span>
+              <span class="legend-item"><span class="sq" style="background:var(--card);border:1px solid var(--card-border)"></span>未答 16</span>
+              <span class="legend-item"><span style="color:var(--orange);font-weight:700;font-size:12px">◆</span>存疑 2</span>
+              <span class="legend-item"><span style="font-size:12px">🚩</span>审题 1</span>
+            </div>
+            <div class="grid-answer" id="gridModal"></div>
+            <div style="display:flex;gap:10px">
+              <button class="btn btn-ghost btn-block" id="btnSheetClose">继续答题</button>
+              <button class="btn btn-primary btn-block" id="btnSheetSubmit">交卷</button>
+            </div>
+          </div>
+        </div>
+
+          </div><!-- /main-col -->
+        </div><!-- /app-inner -->
+
+      </div><!-- /app -->
+    </div><!-- /device -->
+  </div><!-- /device-wrap -->
+</div><!-- /stage -->
+<script>
+/* ============================================================
+   V3 设计参考 · 交互脚本
+   ============================================================ */
+'use strict';
+
+/* ---------- 图标库（SF Symbols 风格 · stroke=currentColor） ---------- */
+const ICONS = {
+  'house':        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.2 12 4.6l8 6.6"/><path d="M6 9.9V20h12V9.9"/></svg>',
+  'house.fill':   '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3.4 4 10.2v10.3h4.7v-6.2h6.6v6.2h4.7V10.2z"/></svg>',
+  'book':         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 4.3A1.8 1.8 0 0 1 7.3 2.5H19v16.5H7.3A1.8 1.8 0 0 0 5.5 20.8z"/><path d="M5.5 18.9a1.8 1.8 0 0 1 1.8-1.8H19"/></svg>',
+  'book.fill':    '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.8 2.5h11.7v16.5H7.3a2 2 0 0 0-1.8 1.8V4.3A1.8 1.8 0 0 1 6.8 2.5z"/></svg>',
+  'stack':        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="3.5" width="15" height="7" rx="2"/><rect x="4.5" y="13.5" width="15" height="7" rx="2"/></svg>',
+  'chart':        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V11"/><path d="M10 20V5"/><path d="M15 20v-6"/><path d="M20 20H3"/></svg>',
+  'person':       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg>',
+  'chev.right':   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9.5 6.5 5 5.5-5 5.5"/></svg>',
+  'chev.left':    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 6.5-5 5.5 5 5.5"/></svg>',
+  'gear':         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>',
+  'search':       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20.5 20.5-5-5"/></svg>',
+  'signal':       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4.5 19v-2M9.5 19V9M14.5 19V4.5M19.5 19v-8"/></svg>',
+  'wifi':         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5a12 12 0 0 1 16 0"/><path d="M7 12.5a8 8 0 0 1 10 0"/><path d="M10 15.5a4 4 0 0 1 4 0"/><circle cx="12" cy="18.3" r="0.8" fill="currentColor" stroke="none"/></svg>',
+  'battery':      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="2.5" y="8" width="17" height="8" rx="2"/><path d="M21.5 11v2"/><path fill="currentColor" stroke="none" d="M4.5 9.8h7v6.4h-7z"/></svg>',
+  'clock':        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+  'flag':         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21V4"/><path d="M6 4.5h10.5L15 7.8l1.5 3.3H6"/></svg>',
+  'bulb':         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18.5h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 1 3.4 10.9c-.8.6-1.4 1.3-1.4 2.6h-4c0-1.3-.6-2-1.4-2.6A6 6 0 0 1 12 3z"/></svg>',
+  'pen':          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 20 5.5 16 16.6 4.9a2.1 2.1 0 0 1 3 3L8.5 19z"/><path d="m14.5 7 2.5 2.5"/></svg>',
+  'target':       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg>',
+  'diamond':      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="m12 4.5 7.5 7.5L12 19.5 4.5 12z"/></svg>',
+  'check':        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5.5 12.5 4 4L18.5 8"/></svg>',
+  'x':            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>',
+  'plus':         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5.5v13M5.5 12h13"/></svg>',
+  'doc.text':     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2.5h7.5L19 7v14.5H7z"/><path d="M14.5 2.5V7H19"/><path d="M10 12h5.5M10 15.5h5.5"/></svg>',
+  'doc.export':   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14.5V3.5"/><path d="M7.5 8 12 3.5 16.5 8"/><path d="M4.5 14.5V19a1.5 1.5 0 0 0 1.5 1.5h12A1.5 1.5 0 0 0 19.5 19v-4.5"/></svg>',
+  'moon':         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13.6A8 8 0 1 1 10.4 4a6.5 6.5 0 0 0 9.6 9.6z"/></svg>',
+  'grid':         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg>',
+  'info':         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5"/><circle cx="12" cy="8" r="1" fill="currentColor" stroke="none"/></svg>',
+  'slider':       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>',
+  'sidebar':      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4" width="17" height="16" rx="2.5"/><path d="M10 4v16"/></svg>',
+};
+function injectIcons(root){
+  (root||document).querySelectorAll('[data-ic]').forEach(el=>{
+    if(el.dataset.done) return;
+    const s=ICONS[el.getAttribute('data-ic')];
+    if(s){ el.innerHTML=s; el.dataset.done='1'; }
+  });
+}
+
+/* ---------- 多端形态定义（规格 §8 断点） ---------- */
+const FORMS = {
+  phone:    { w:390,  h:844,  r:47,  sbH:47, island:true,  name:'iPhone 竖屏',   bp:'compact'  },
+  ipadmini: { w:744,  h:1133, r:30,  sbH:24, island:false, name:'iPad mini 竖屏',bp:'medium'   },
+  ipad:     { w:768,  h:1024, r:30,  sbH:24, island:false, name:'iPad 竖屏',     bp:'medium'   },
+  tablet:   { w:1024, h:768,  r:24,  sbH:24, island:false, name:'平板横屏',       bp:'medium'   },
+  desktop:  { w:1280, h:800,  r:10,  sbH:0,  island:false, name:'桌面',           bp:'expanded' },
+};
+
+let zoom = 1;
+function applyScale(){
+  const dev=document.getElementById('device');
+  const w=parseFloat(dev.style.width)||390, h=parseFloat(dev.style.height)||844;
+  const vw=window.innerWidth-80, vh=window.innerHeight-210;
+  const fit=Math.min(1, vw/Math.max(w,1), vh/Math.max(h,1));
+  document.getElementById('deviceWrap').style.transform=`scale(${(fit*zoom).toFixed(3)})`;
+}
+window.addEventListener('resize', applyScale);
+
+function setForm(key){
+  const f=FORMS[key];
+  const dev=document.getElementById('device');
+  dev.style.width=f.w+'px'; dev.style.height=f.h+'px';
+  dev.style.borderRadius=f.r+'px';
+  document.documentElement.style.setProperty('--sb-h', f.sbH+'px');
+  const sb=document.getElementById('statusBar');
+  sb.style.display = (f.sbH===0)?'none':'flex';
+  document.getElementById('sbIsland').classList.toggle('hidden', !f.island);
+  document.getElementById('sbClock').textContent = (key==='phone')?'9:41':'10:09';
+  document.getElementById('sidebar').classList.remove('collapsed');
+  document.querySelectorAll('#formSwitch .btn-console').forEach(b=>b.classList.toggle('active', b.dataset.form===key));
+  document.getElementById('formInfo').textContent = `${f.name} · ${f.w}×${f.h} · ${f.bp}`;
+  applyScale();
+}
+document.querySelectorAll('#formSwitch .btn-console').forEach(b=>{
+  b.addEventListener('click',()=>setForm(b.dataset.form));
+});
+document.querySelectorAll('#zoomSwitch .btn-console').forEach(b=>{
+  b.addEventListener('click',()=>{
+    zoom=parseFloat(b.dataset.zoom);
+    document.querySelectorAll('#zoomSwitch .btn-console').forEach(x=>x.classList.toggle('active',x===b));
+    applyScale();
+  });
+});
+
+/* ---------- 深色模式：跟随系统 / 浅色 / 深色（三段切换，规格 §8.5） ---------- */
+let themeMode='auto'; /* auto=跟随系统 | light=强制浅色 | dark=强制深色 */
+const darkMq=window.matchMedia('(prefers-color-scheme: dark)');
+function effectiveDark(){
+  return themeMode==='dark' || (themeMode==='auto' && darkMq.matches);
+}
+function applyTheme(){
+  const dark=effectiveDark();
+  document.getElementById('app').classList.toggle('dark', dark);
+  document.getElementById('switchTheme').classList.toggle('on', dark);
+  document.querySelectorAll('#themeSwitch .btn-console').forEach(b=>b.classList.toggle('active', b.dataset.theme===themeMode));
+}
+document.querySelectorAll('#themeSwitch .btn-console').forEach(b=>{
+  b.addEventListener('click',()=>{ themeMode=b.dataset.theme; applyTheme(); });
+});
+const onSysThemeChange=()=>{ if(themeMode==='auto') applyTheme(); };
+if(darkMq.addEventListener) darkMq.addEventListener('change', onSysThemeChange);
+else if(darkMq.addListener) darkMq.addListener(onSysThemeChange);
+/* 设置页开关：点击时在「强制浅色 / 强制深色」之间切换 */
+document.getElementById('switchTheme').addEventListener('click', ()=>{
+  themeMode = effectiveDark() ? 'light' : 'dark';
+  applyTheme();
+});
+applyTheme();
+
+/* ---------- 页面切换与悬浮栏联动 ---------- */
+let mockExamActive = false;
+function goPage(key){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const pg=document.getElementById('page-'+key);
+  if(!pg) return;
+  pg.classList.add('active');
+  pg.classList.remove('page-enter'); void pg.offsetWidth; pg.classList.add('page-enter');
+  document.querySelectorAll('#pageSwitch .btn-console').forEach(b=>b.classList.toggle('active', b.dataset.page===key));
+  const nav=pg.dataset.nav;
+  document.querySelectorAll('.tab-item').forEach(t=>t.classList.toggle('active', nav && t.dataset.nav===nav));
+  document.querySelectorAll('.sb-item').forEach(s=>s.classList.toggle('active', nav && s.dataset.nav===nav));
+  updateBars(key);
+  document.getElementById('pages').scrollTop=0;
+}
+function updateBars(key){
+  const tabbar=document.getElementById('tabbar');
+  const aP=document.getElementById('actionbarPractice');
+  const aM=document.getElementById('actionbarMemo');
+  const aE=document.getElementById('actionbarExam');
+  tabbar.style.display=''; aP.style.display='none'; aM.style.display='none'; aE.style.display='none';
+  if(key==='practice'){ tabbar.style.display='none'; aP.style.display=''; }
+  else if(key==='card'){ tabbar.style.display='none'; aM.style.display=''; }
+  else if(key==='mock' && mockExamActive){ tabbar.style.display='none'; aE.style.display=''; }
+}
+document.querySelectorAll('#pageSwitch .btn-console').forEach(b=>{
+  b.addEventListener('click',()=>goPage(b.dataset.page));
+});
+document.querySelectorAll('[data-goto]').forEach(el=>{
+  el.addEventListener('click',(e)=>{ e.stopPropagation(); goPage(el.dataset.goto); });
+});
+const NAV_MAP={home:'home',bank:'bank',memo:'memo',stats:'stats',me:'me'};
+document.querySelectorAll('.tab-item, .sb-item').forEach(el=>{
+  el.addEventListener('click',()=>{ const k=NAV_MAP[el.dataset.nav]; if(k) goPage(k); });
+});
+
+/* ---------- 悬浮面板：答题卡 ---------- */
+function openSheet(){ document.getElementById('sheetOverlay').classList.add('show'); }
+function closeSheet(){ document.getElementById('sheetOverlay').classList.remove('show'); }
+document.getElementById('btnOpenSheet').addEventListener('click', openSheet);
+document.getElementById('btnOpenSheet2').addEventListener('click', openSheet);
+document.getElementById('btnSheetClose').addEventListener('click', closeSheet);
+document.getElementById('btnSheetSubmit').addEventListener('click', ()=>{ closeSheet(); goPage('result'); });
+document.getElementById('sheetOverlay').addEventListener('click', (e)=>{ if(e.target===document.getElementById('sheetOverlay')) closeSheet(); });
+
+/* ---------- 背题卡 3D 翻转 ---------- */
+document.getElementById('flipCard').addEventListener('click', ()=>{
+  document.getElementById('flipCard').classList.toggle('flipped');
+});
+
+/* ---------- 答题选项选择（无涟漪 · 浅灰高亮 + 主色选中） ---------- */
+document.querySelectorAll('.options').forEach(wrap=>{
+  wrap.querySelectorAll('.option').forEach(o=>{
+    o.addEventListener('click',()=>{
+      wrap.querySelectorAll('.option').forEach(x=>{
+        x.classList.remove('selected');
+        const s=x.querySelector('.opt-state'); if(s) s.remove();
+      });
+      o.classList.add('selected');
+      const s=document.createElement('span');
+      s.className='opt-state'; s.setAttribute('data-ic','check');
+      o.appendChild(s);
+      injectIcons(o);
+    });
+  });
+});
+
+/* ---------- 解析折叠 ---------- */
+document.getElementById('solHead').addEventListener('click', ()=>{
+  document.getElementById('solution').classList.toggle('open');
+});
+
+/* ---------- 分段控件 / Chip ---------- */
+document.querySelectorAll('.segmented').forEach(seg=>{
+  seg.querySelectorAll('.segment').forEach(s=>{
+    s.addEventListener('click',()=>{
+      seg.querySelectorAll('.segment').forEach(x=>x.classList.remove('active'));
+      s.classList.add('active');
+    });
+  });
+});
+document.querySelectorAll('.chips').forEach(g=>{
+  g.querySelectorAll('.chip').forEach(c=>{
+    c.addEventListener('click',()=>{
+      g.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));
+      c.classList.add('active');
+    });
+  });
+});
+
+/* ---------- 开关（深色模式已绑定，其余通用） ---------- */
+document.querySelectorAll('.switch:not(#switchTheme)').forEach(sw=>{
+  sw.addEventListener('click',()=>sw.classList.toggle('on'));
+});
+
+/* ---------- 桌面侧边栏折叠 ---------- */
+document.getElementById('btnSidebarToggle').addEventListener('click', ()=>{
+  document.getElementById('sidebar').classList.toggle('collapsed');
+});
+
+/* ---------- 模拟考：设置 ↔ 考试中 ---------- */
+document.getElementById('btnStartExam').addEventListener('click', ()=>{
+  mockExamActive=true;
+  document.getElementById('mockSetupView').style.display='none';
+  document.getElementById('mockExamView').style.display='block';
+  updateBars('mock');
+});
+document.getElementById('btnSubmitExam').addEventListener('click', ()=>{
+  mockExamActive=false;
+  document.getElementById('mockExamView').style.display='none';
+  document.getElementById('mockSetupView').style.display='block';
+  goPage('result');
+});
+
+/* ---------- 环形进度图生成 ---------- */
+function renderRings(root){
+  root.querySelectorAll('.ring').forEach(el=>{
+    if(el.dataset.ringDone) return;
+    const pct=Math.max(0,Math.min(100,+el.dataset.pct||0));
+    const size=+el.dataset.size||64;
+    const color=el.dataset.color||'#007AFF';
+    const hide=el.dataset.hideText==='1';
+    const r=size/2-4, c=2*Math.PI*r, off=c*(1-pct/100);
+    const sw=Math.max(3, Math.round(size*0.1));
+    el.innerHTML=
+      `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`+
+      `<circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--fill-2)" stroke-width="${sw}"/>`+
+      `<circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 ${size/2} ${size/2})"/>`+
+      (hide?'':`<text x="50%" y="50%" dy=".36em" text-anchor="middle" font-size="${Math.round(size*0.21)}" font-weight="700" fill="var(--text)" font-family="inherit">${pct}%</text>`)+
+      `</svg>`;
+    el.dataset.ringDone='1';
+  });
+}
+
+/* ---------- 统计页：热力图 + 五科环形 ---------- */
+function buildHeatmap(){
+  const el=document.getElementById('heatmap'); if(!el) return;
+  const weeks=12, days=7, base=[3,4,2,5,1,4,3,2,5,4,3,2];
+  let html='';
+  for(let w=0;w<weeks;w++){
+    html+='<div class="hm-col">';
+    for(let d=0;d<days;d++){
+      const v=(base[w]+d)%6;
+      const cls=v<=1?'':v===2?'l1':v===3?'l2':v===4?'l3':'l4';
+      html+=`<div class="hm-cell ${cls}"></div>`;
+    }
+    html+='</div>';
+  }
+  html+=`<div class="hm-col" style="justify-content:space-between"><div class="hm-label">二</div><div class="hm-label">三</div><div class="hm-label">四</div><div class="hm-label">五</div><div class="hm-label">六</div><div class="hm-label">日</div><div class="hm-label">一</div></div>`;
+  el.innerHTML=html;
+}
+function buildRings(){
+  const el=document.getElementById('rings'); if(!el) return;
+  const data=[
+    {n:'教育学',p:67,c:'#007AFF'},
+    {n:'心理学',p:52,c:'#FF9500'},
+    {n:'古代汉语',p:44,c:'#34C759'},
+    {n:'文学理论',p:41,c:'#AF52DE'},
+    {n:'政治',p:27,c:'#FF3B30'},
+  ];
+  el.innerHTML=data.map(d=>`<div class="ring-item"><div class="ring" data-pct="${d.p}" data-size="56" data-color="${d.c}"></div><span class="rname">${d.n}</span></div>`).join('');
+  renderRings(el);
+}
+
+/* ---------- 答题卡网格生成 ---------- */
+function buildGrid(el, count, opts){
+  let html='';
+  for(let i=1;i<=count;i++){
+    let cls='';
+    if(opts.flag.includes(i)) cls+=' flag';
+    else if(opts.doubt.includes(i)) cls+=' doubt';
+    else if(opts.done.includes(i)) cls+=' done';
+    if(opts.current===i) cls+=' current';
+    html+=`<div class="cell${cls}">${i}</div>`;
+  }
+  el.innerHTML=html;
+}
+
+/* ---------- 初始化 ---------- */
+(function init(){
+  injectIcons();
+  setForm('phone');
+  goPage('home');
+  buildHeatmap();
+  buildRings();
+  const done=[]; for(let i=1;i<=32;i++) done.push(i);
+  const gridOpts={done, current:12, doubt:[8,12], flag:[21]};
+  buildGrid(document.getElementById('gridAnswer'),50,gridOpts);
+  buildGrid(document.getElementById('gridModal'),50,gridOpts);
+  renderRings(document);
+  applyScale();
+})();
+</script>
+</body>
+</html>
