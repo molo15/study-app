@@ -51,6 +51,9 @@ Future<void> main() async {
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
         systemNavigationBarColor: Colors.transparent,
+        // iOS 通过 statusBarBrightness 控制图标颜色：light 背景→深色图标
+        statusBarBrightness: Brightness.light,
+        // Android 通过 statusBarIconBrightness 控制图标颜色
         statusBarIconBrightness: Brightness.dark,
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
@@ -117,6 +120,8 @@ class QuizApp extends ConsumerWidget {
         SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           systemNavigationBarColor: Colors.transparent,
+          // iOS：深色背景→light 图标，浅色背景→dark 图标（statusBarBrightness 语义与 iconBrightness 相反）
+          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
           statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
           systemNavigationBarIconBrightness:
               isDark ? Brightness.light : Brightness.dark,

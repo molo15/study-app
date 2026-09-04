@@ -28,6 +28,7 @@ import '../../widgets/circular_ring.dart';
 import '../../widgets/ios_button.dart';
 import '../../widgets/ios_card.dart';
 import '../../widgets/ios_list_group.dart';
+import '../../widgets/ios_action_sheet.dart';
 import '../../practice_page.dart';
 
 class HomeV3Page extends ConsumerStatefulWidget {
@@ -524,7 +525,7 @@ class HomeV3PageState extends ConsumerState<HomeV3Page> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '考试日期 ${goal.examDate ?? '未设置'} · 今日已做 $_todayAnswered 题',
+                  '${(goal.school?.trim().isNotEmpty == true ? '${goal.school!.trim()} · ' : '')}考试日期 ${goal.examDate ?? '未设置'} · 今日已做 $_todayAnswered 题',
                   style: IOSTypography.footnote(color: colors.text2),
                 ),
               ],
@@ -538,35 +539,18 @@ class HomeV3PageState extends ConsumerState<HomeV3Page> {
 
   /// 背题入口：弹出题库选择，选科后跳章节列表
   Future<void> _showBankPickerForMem() async {
-    final colors = IOSColors.of(context);
-    final picked = await showModalBottomSheet<String>(
+    final picked = await showIOSActionSheet<String>(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(IOSSpacing.s16),
-              child: Text(
-                '选择科目开始背题',
-                style: IOSTypography.title3(color: colors.text),
-              ),
-            ),
-            for (final bank in _banks)
-              ListTile(
-                leading: Icon(
-                  Icons.menu_book_outlined,
-                  color: _subjectColor(bank.bankId),
-                ),
-                title: Text(bank.name),
-                subtitle: Text('${bank.active} 题'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.pop(ctx, bank.bankId),
-              ),
-            const SizedBox(height: IOSSpacing.s8),
-          ],
-        ),
-      ),
+      title: '选择科目开始背题',
+      items: [
+        for (final bank in _banks)
+          IOSActionItem(
+            value: bank.bankId,
+            title: bank.name,
+            subtitle: '${bank.active} 题',
+            icon: Icons.menu_book_outlined,
+          ),
+      ],
     );
     if (picked != null && mounted) {
       context.go('/bank/$picked');

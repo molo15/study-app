@@ -25,6 +25,7 @@ import 'responsive.dart';
 import 'theme/ios_tokens.dart';
 import 'widgets/ios_button.dart';
 import 'widgets/ios_card.dart';
+import 'widgets/ios_action_sheet.dart';
 import 'widgets/staggered_item.dart';
 
 class BankPage extends ConsumerStatefulWidget {
@@ -113,32 +114,20 @@ class _BankPageState extends ConsumerState<BankPage> {
 
   /// 整本随机刷：弹层选 50/100/150 → 随机取题按题型顺序排列（用户要求）
   Future<void> _pickRandomCount() async {
-    final count = await showModalBottomSheet<int>(
+    final count = await showIOSActionSheet<int>(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                '选择随机刷题量',
-                style: Theme.of(ctx).textTheme.titleMedium,
-              ),
-            ),
-            for (final n in [50, 100, 150])
-              ListTile(
-                leading: const Icon(Icons.shuffle),
-                title: Text('$n 题'),
-                subtitle: Text(
-                  n <= _totalCount ? '整本随机 · 按题型顺序' : '题库共 $_totalCount 题，取全部',
-                ),
-                onTap: () => Navigator.pop(ctx, n),
-              ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
+      title: '选择随机刷题量',
+      items: [
+        for (final n in [50, 100, 150])
+          IOSActionItem(
+            value: n,
+            title: '$n 题',
+            subtitle: n <= _totalCount
+                ? '整本随机 · 按题型顺序'
+                : '题库共 $_totalCount 题，取全部',
+            icon: Icons.shuffle,
+          ),
+      ],
     );
     if (count == null || !mounted) return;
     Navigator.of(context).push(

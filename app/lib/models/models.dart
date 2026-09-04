@@ -712,12 +712,14 @@ class DailyData {
 class StudyGoal {
   const StudyGoal({
     this.examDate, // yyyy-MM-dd；null=未设
+    this.school, // 目标院校；null/空=未设
     this.dailyNew = 0,
     this.dailyReview = 0,
     this.enabled = false,
   });
 
   final String? examDate;
+  final String? school;
   final int dailyNew;
   final int dailyReview;
   final bool enabled;
@@ -740,6 +742,7 @@ class StudyGoal {
 
   Map<String, dynamic> toJson() => {
         'examDate': examDate,
+        'school': school,
         'dailyNew': dailyNew,
         'dailyReview': dailyReview,
         'enabled': enabled,
@@ -747,6 +750,7 @@ class StudyGoal {
 
   static StudyGoal fromJson(Map<String, dynamic> json) => StudyGoal(
         examDate: json['examDate'] as String?,
+        school: json['school'] as String?,
         dailyNew: json['dailyNew'] as int? ?? 0,
         dailyReview: json['dailyReview'] as int? ?? 0,
         enabled: json['enabled'] as bool? ?? false,

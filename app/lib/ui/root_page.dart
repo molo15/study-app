@@ -1,11 +1,12 @@
-﻿/// 应用根（UI v3 · iOS 风格）：今日 / 题库 / [背题] / 统计 / 我的。
+/// 应用根（UI v3 · iOS 风格）：今日 / 题库 / [背题] / 统计 / 我的。
 ///
 /// V3 导航：
-/// - compact / medium（手机 / 平板）：底部胶囊悬浮 TabBar（含中央背题圆钮）
+/// - compact / medium（手机 / 平板）：底部胶囊悬浮 TabBar（统一一行 5 Tab）
 /// - expanded（桌面 ≥1200）：左侧 AppSidebar（66px 图标 / 可展开 / 232px 全宽）
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/quiz_repository.dart';
@@ -35,6 +36,7 @@ class _RootPageState extends ConsumerState<RootPage> {
 
   // tab 切换时触发对应页面刷新（IndexedStack 常驻页面不重建，缺陷 #1）
   final GlobalKey<HomeV3PageState> _homeKey = GlobalKey();
+  final GlobalKey<BankHomePageState> _bankKey = GlobalKey();
   final GlobalKey<StatsV3PageState> _statsKey = GlobalKey();
 
   @override
@@ -57,15 +59,28 @@ class _RootPageState extends ConsumerState<RootPage> {
       debugPrint('自动存档启动失败: $e');
     }
   }
-
-  /// 监听页面滚动：手指上滑（内容下滚）隐藏底栏，下滑（内容上滚）显示
+  /// 监听页面滚动：手指上滑（浏览下文）隐藏底栏，下滑（回上文）/回到顶部显示。
+  ///
+  /// 用 UserScrollNotification.direction 判断手势方向，比 scrollDelta 稳：
+  /// 不受 iOS BouncingScrollPhysics 惯性回弹的反向 delta 干扰。
   bool _onScroll(ScrollNotification notification) {
-    if (notification is ScrollUpdateNotification) {
-      final delta = notification.scrollDelta ?? 0;
-      if (delta > 1.0 && _navVisible) {
-        setState(() => _navVisible = false);
-      } else if (delta < -1.0 && !_navVisible) {
-        setState(() => _navVisible = true);
+    final metrics = notification.metrics;
+    if (metrics.minScrollExtent == metrics.maxScrollExtent) {
+      if (!_navVisible) setState(() => _navVisible = true);
+      return false;
+    }
+    if (metrics.pixels <= metrics.minScrollExtent + 2) {
+      if (!_navVisible) setState(() => _navVisible = true);
+      return false;
+    }
+    if (notification is UserScrollNotification) {
+      switch (notification.direction) {
+        case ScrollDirection.reverse:
+          if (_navVisible) setState(() => _navVisible = false);
+        case ScrollDirection.forward:
+          if (!_navVisible) setState(() => _navVisible = true);
+        case ScrollDirection.idle:
+          break;
       }
     }
     return false;
@@ -73,8 +88,12 @@ class _RootPageState extends ConsumerState<RootPage> {
 
   /// tab 选择（dock 与侧边栏共用）：切页 + 刷新今日/统计
   void _select(int i) {
-    setState(() => _index = i);
+    setState(() {
+      _index = i;
+      _navVisible = true; // 切换到新页时底栏复位显示
+    });
     if (i == 0) _homeKey.currentState?.refresh();
+    if (i == 1) _bankKey.currentState?.refresh();
     if (i == 3) _statsKey.currentState?.refresh();
   }
 
@@ -92,8 +111,8 @@ class _RootPageState extends ConsumerState<RootPage> {
         index: _index,
         children: [
           HomeV3Page(key: _homeKey),      // 今日信息流（V3）
-          const BankHomePage(),  // 题库
-          const MemorizeV3Page(), // 背题（中央圆钮入口，V3）
+          BankHomePage(key: _bankKey),   // 题库
+          const MemorizeV3Page(), // 背题（V3）
           StatsV3Page(key: _statsKey),     // 统计（V3）
           const SettingsV3Page(), // 我的（V3 设置中心）
         ],

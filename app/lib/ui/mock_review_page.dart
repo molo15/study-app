@@ -16,6 +16,7 @@ import 'theme/ios_tokens.dart';
 import 'widgets/ios_animated_item.dart';
 import 'widgets/ios_button.dart';
 import 'widgets/ios_card.dart';
+import 'widgets/ios_action_sheet.dart';
 
 /// 题库 id → 学科名（综合卷跨科标签用）
 String mockBankLabel(String bankId) {
@@ -273,13 +274,8 @@ class _MockReviewPageState extends State<MockReviewPage> {
       Grade.wrong => ('错误', IOSSystemColors.red),
       Grade.skip => ('未作答', colors.text3),
     };
-    showModalBottomSheet(
+    showIOSModalSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: colors.card,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(IOSRadius.lg)),
-      ),
       builder: (ctx) => DraggableScrollableSheet(
         initialChildSize: 0.7,
         maxChildSize: 0.92,

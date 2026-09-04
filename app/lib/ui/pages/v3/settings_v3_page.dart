@@ -17,6 +17,7 @@ import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
 
 import '../../../data/quiz_repository.dart';
 import '../../../models/models.dart';
@@ -25,7 +26,11 @@ import '../../app_toast.dart';
 import '../../responsive.dart';
 import '../../theme/ios_tokens.dart';
 import '../../theme_controller.dart';
+import '../../widgets/ios_button.dart';
 import '../../widgets/ios_list_group.dart';
+import '../../theme/ios_page_route.dart';
+import 'bank_manage_v3_page.dart';
+import '../../widgets/ios_action_sheet.dart';
 
 class SettingsV3Page extends ConsumerStatefulWidget {
   const SettingsV3Page({super.key});
@@ -92,10 +97,13 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
   }
 
   String get _goalSub {
+    final school = _goal.school?.trim();
+    final hasSchool = school != null && school.isNotEmpty;
     final days = _goal.daysUntilExam(DateTime.now());
-    if (days == null) return '未设置考试日期';
-    if (days < 0) return '考试已结束 · ${-days} 天前';
-    return '距考试 $days 天';
+    final datePart = days == null
+        ? '未设置考试日期'
+        : (days < 0 ? '考试已结束 · ${-days} 天前' : '距考试 $days 天');
+    return hasSchool ? '$school · $datePart' : datePart;
   }
 
   Future<void> _saveTheme(AppThemeConfig config) async {
@@ -106,53 +114,30 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
     final config = await ref.read(themeControllerProvider.future);
     if (!mounted) return;
     final current = config.themePreference;
-    final options = [
-      (ThemePreference.system, '跟随系统', '自动匹配系统深色模式'),
-      (ThemePreference.light, '浅色', '始终使用浅色外观'),
-      (ThemePreference.dark, '深色', '始终使用深色外观'),
-    ];
-    await showModalBottomSheet<void>(
+    final picked = await showIOSActionSheet<ThemePreference>(
       context: context,
-      builder: (sheetCtx) {
-        final sheetColors = IOSColors.of(sheetCtx);
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: IOSSpacing.s16,
-                  horizontal: IOSSpacing.s24,
-                ),
-                child: Text(
-                  '深色模式',
-                  style: IOSTypography.title3(color: sheetColors.text),
-                ),
-              ),
-              for (final (mode, label, sub) in options)
-                ListTile(
-                  title: Text(label,
-                      style: IOSTypography.body(color: sheetColors.text)),
-                  subtitle: Text(sub,
-                      style: IOSTypography.caption1(
-                          color: sheetColors.text2)),
-                  trailing: mode == current
-                      ? Icon(Icons.check_circle,
-                          color: sheetColors.primary, size: 22)
-                      : Icon(Icons.circle_outlined,
-                          color: sheetColors.text3, size: 22),
-                  onTap: () async {
-                    Navigator.of(sheetCtx).pop();
-                    if (mode == current) return;
-                    await _saveTheme(config.copyWith(themePreference: mode));
-                  },
-                ),
-              const SizedBox(height: IOSSpacing.s8),
-            ],
-          ),
-        );
-      },
+      title: '深色模式',
+      selectedValue: current,
+      items: const [
+        IOSActionItem(
+          value: ThemePreference.system,
+          title: '跟随系统',
+          subtitle: '自动匹配系统深色模式',
+        ),
+        IOSActionItem(
+          value: ThemePreference.light,
+          title: '浅色',
+          subtitle: '始终使用浅色外观',
+        ),
+        IOSActionItem(
+          value: ThemePreference.dark,
+          title: '深色',
+          subtitle: '始终使用深色外观',
+        ),
+      ],
     );
+    if (picked == null || picked == current || !mounted) return;
+    await _saveTheme(config.copyWith(themePreference: picked));
   }
 
   void _pickExamDate(IOSColorScheme colors) async {
@@ -163,12 +148,12 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
     final init = _goal.examDate;
     final parsed = init == null ? null : DateTime.tryParse(init);
     if (parsed != null) picked = parsed;
-    await showModalBottomSheet<void>(
+    final schoolController = TextEditingController(text: _goal.school ?? '');
+    await showIOSModalSheet<void>(
       context: context,
       builder: (sheetCtx) {
         final sheetColors = IOSColors.of(sheetCtx);
-        return SafeArea(
-          child: Column(
+        return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
@@ -179,6 +164,21 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
                 child: Text('目标院校 · 考试日期',
                     style: IOSTypography.title3(color: sheetColors.text)),
               ),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: IOSSpacing.s20,
+                ),
+                child: TextField(
+                  controller: schoolController,
+                  textInputAction: TextInputAction.done,
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    prefixIcon: Icon(Icons.school_outlined, size: 20),
+                    hintText: '目标院校（如：陕西师范大学）',
+                  ),
+                ),
+              ),
+              const SizedBox(height: IOSSpacing.s8),
               SizedBox(
                 height: 220,
                 child: CupertinoDatePicker(
@@ -209,6 +209,7 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
                           final goal = StudyGoal(
                             examDate:
                                 '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
+                            school: schoolController.text.trim(),
                             dailyNew: _goal.dailyNew,
                             dailyReview: _goal.dailyReview,
                             enabled: _goal.enabled,
@@ -226,10 +227,10 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
                 ),
               ),
             ],
-          ),
         );
       },
     );
+    schoolController.dispose();
   }
 
   /// 每日目标编辑面板：启用开关 + 每日新题/复习步进器（步长 10，0~200）
@@ -237,13 +238,12 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
     var enabled = _goal.enabled;
     var dailyNew = _goal.dailyNew;
     var dailyReview = _goal.dailyReview;
-    await showModalBottomSheet<void>(
+    await showIOSModalSheet<void>(
       context: context,
       builder: (sheetCtx) {
         final sheetColors = IOSColors.of(sheetCtx);
         return StatefulBuilder(
-          builder: (ctx, setSheet) => SafeArea(
-            child: Column(
+          builder: (ctx, setSheet) => Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Padding(
@@ -294,6 +294,7 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
                           onPressed: () async {
                             final goal = StudyGoal(
                               examDate: _goal.examDate,
+                              school: _goal.school,
                               dailyNew: dailyNew,
                               dailyReview: dailyReview,
                               enabled: enabled,
@@ -315,7 +316,6 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
                 ),
               ],
             ),
-          ),
         );
       },
     );
@@ -375,13 +375,93 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
           .replaceAll(':', '-')
           .split('.')
           .first;
-      final path =
-          await exportToDownloadsBytes('quiz_archive_$stamp.zip', bytes);
+      final msg = await exportBackupFile(
+        'quiz_archive_$stamp.zip',
+        bytes,
+      );
       if (!mounted) return;
-      showAppToast(context, '已导出存档：$path');
+      showAppToast(context, msg);
     } catch (e) {
       if (!mounted) return;
       showAppToast(context, '导出失败：$e');
+    }
+  }
+
+  /// 导入存档：支持 .zip（v3）与 .json（v1/v2 旧备份）。
+  /// 解析预览 → iOS 弹层确认（含题库版本不匹配提示）→ 全量恢复用户状态（不动题库）。
+  Future<void> _importBackup() async {
+    try {
+      final file = await FilePicker.pickFile(
+        type: FileType.custom,
+        allowedExtensions: const ['zip', 'json'],
+        dialogTitle: '选择存档文件（.zip 或 .json）',
+      );
+      if (file == null) return;
+      final bytes = await file.readAsBytes();
+      if (!mounted) return;
+      final repo = await ref.read(quizRepositoryProvider);
+      final preview = await repo.parseArchive(bytes);
+      final mismatches = preview.bankMismatches;
+      if (!mounted) return;
+      final ok = await showIOSModalSheet<bool>(
+        context: context,
+        builder: (sheetCtx) {
+          final c = IOSColors.of(sheetCtx);
+          return Padding(
+            padding: const EdgeInsets.all(IOSSpacing.s20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('导入存档？', style: IOSTypography.headline(color: c.text)),
+                const SizedBox(height: IOSSpacing.s12),
+                Text(
+                  '将恢复存档中的全部用户状态（做题记录、复习进度、背题进度、'
+                  '错题本、模拟考记录、设置），题库以本机为准。不可撤销。',
+                  style: IOSTypography.footnote(color: c.text2)
+                      .copyWith(height: 1.5),
+                ),
+                if (mismatches.isNotEmpty) ...[
+                  const SizedBox(height: IOSSpacing.s12),
+                  Text("题库版本不一致：${mismatches.join('；')}",
+                      style: IOSTypography.footnote(color: c.warning)),
+                ],
+                const SizedBox(height: IOSSpacing.s16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: IOSButton(
+                        label: '取消',
+                        type: IOSButtonType.text,
+                        expand: true,
+                        onPressed: () => Navigator.of(sheetCtx).pop(false),
+                      ),
+                    ),
+                    const SizedBox(width: IOSSpacing.s12),
+                    Expanded(
+                      child: IOSButton(
+                        label: '导入并覆盖',
+                        type: IOSButtonType.danger,
+                        expand: true,
+                        onPressed: () => Navigator.of(sheetCtx).pop(true),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      );
+      if (ok != true) return;
+      final result = await repo.restoreArchive(bytes);
+      if (!mounted) return;
+      showAppToast(context, '已恢复：做题记录 ${result.restoredLogs} 条、复习卡 ${result.restoredCards} 张');
+      await _load();
+    } on FormatException catch (e) {
+      if (mounted) showAppToast(context, '存档文件无效：${e.message}');
+    } catch (e) {
+      if (mounted) showAppToast(context, '导入存档失败：$e');
     }
   }
 
@@ -480,7 +560,7 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
           title: Text('关于',
               style: IOSTypography.title3(color: dialogColors.text)),
           content: Text(
-            '考研刷题\n\nv3.0 · iOS 风格\n\n五科题库 4504 题 · 数据自动存档\n学习数据与进度仅保存在本机。',
+            '考研刷题\n\nv$kArchiveAppVersion · iOS 风格\n\n五科题库 · 数据自动存档\n学习数据与进度仅保存在本机。',
             style: IOSTypography.footnote(color: dialogColors.text2),
           ),
           actions: [
@@ -660,11 +740,27 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
           title: '数据',
           items: [
             IOSListItem(
+              title: '题库管理',
+              subtitle: '导入题库包 · 隐藏 / 删除 / 编辑题目',
+              leading: _circleIcon(colors.primary, Icons.library_books_outlined),
+              showChevron: true,
+              onTap: () => Navigator.of(context).push(
+                iosPageRoute<dynamic>((_) => const BankManageV3Page()),
+              ),
+            ),
+            IOSListItem(
               title: '导出与存档',
               subtitle: '自动存档 · 备份',
               leading: _circleIcon(colors.success, Icons.ios_share_outlined),
               showChevron: true,
               onTap: _exportBackup,
+            ),
+            IOSListItem(
+              title: '导入备份',
+              subtitle: '从 .zip / .json 存档恢复学习记录',
+              leading: _circleIcon(colors.primary, Icons.file_download_outlined),
+              showChevron: true,
+              onTap: _importBackup,
             ),
             IOSListItem(
               title: '数据统计',
@@ -695,7 +791,7 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
             ),
             IOSListItem(
               title: '关于',
-              subtitle: 'v3.0 · iOS',
+              subtitle: 'v$kArchiveAppVersion · iOS 风格',
               leading: _circleIcon(colors.success, Icons.info_outline),
               showChevron: true,
               onTap: () => _showAbout(colors),

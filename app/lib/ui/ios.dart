@@ -24,3 +24,4 @@ export 'widgets/floating_action_bar.dart';
 export 'widgets/ios_button.dart';
 export 'widgets/ios_card.dart';
 export 'widgets/ios_list_group.dart';
+export 'widgets/ios_action_sheet.dart';

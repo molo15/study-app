@@ -13,19 +13,22 @@ import 'responsive.dart';
 import 'theme/ios_tokens.dart';
 import 'widgets/ios_button.dart';
 import 'widgets/ios_card.dart';
+import 'theme/ios_page_route.dart';
+import 'pages/v3/bank_manage_v3_page.dart';
 import 'widgets/ios_list_group.dart';
 
 class BankHomePage extends ConsumerStatefulWidget {
   const BankHomePage({super.key});
 
   @override
-  ConsumerState<BankHomePage> createState() => _BankHomePageState();
+  ConsumerState<BankHomePage> createState() => BankHomePageState();
 }
 
-class _BankHomePageState extends ConsumerState<BankHomePage> {
+class BankHomePageState extends ConsumerState<BankHomePage> {
   List<BankInfo> _banks = const [];
   bool _loading = true;
   String? _error;
+  int _emptyRetry = 0; // 空库自动重试（等首页内置题库导入完成）
 
   @override
   void initState() {
@@ -33,10 +36,20 @@ class _BankHomePageState extends ConsumerState<BankHomePage> {
     _load();
   }
 
+  /// 外部刷新（切到题库 Tab 时调用，确保首页自动导入题库后能看到数据）
+  Future<void> refresh() => _load();
+
   Future<void> _load() async {
     try {
       final repo = await ref.read(quizRepositoryProvider);
-      final banks = await repo.banks();
+      var banks = await repo.banks();
+      // 空库时自动重试（首页正在异步导入内置题库，最多等 3 轮）
+      if (banks.isEmpty && _emptyRetry < 3) {
+        _emptyRetry++;
+        await Future.delayed(const Duration(milliseconds: 1500));
+        if (!mounted) return;
+        banks = await repo.banks();
+      }
       if (!mounted) return;
       setState(() {
         _banks = banks;
@@ -83,7 +96,19 @@ class _BankHomePageState extends ConsumerState<BankHomePage> {
             IOSFloatingBar.kTContentBottomInset,
           ),
           children: [
-            Text('题库', style: IOSTypography.largeTitle(color: colors.text)),
+            Row(
+              children: [
+                Text('题库', style: IOSTypography.largeTitle(color: colors.text)),
+                const Spacer(),
+                IconButton(
+                  onPressed: () => Navigator.of(context).push(
+                    iosPageRoute<dynamic>((_) => const BankManageV3Page()),
+                  ),
+                  icon: Icon(Icons.tune_outlined, color: colors.primary, size: 24),
+                  tooltip: '题库管理 · 导入',
+                ),
+              ],
+            ),
             const SizedBox(height: IOSSpacing.s8),
             // 综合模拟卷 Banner
             IOSCard(

@@ -24,3 +24,7 @@ Future<String> exportToDownloadsBytes(
   web.URL.revokeObjectURL(url);
   return '浏览器已开始下载 $fileName';
 }
+
+/// Web 端备份导出：与 [exportToDownloadsBytes] 相同，触发浏览器下载。
+Future<String> exportBackupFile(String fileName, Uint8List bytes) =>
+    exportToDownloadsBytes(fileName, bytes);

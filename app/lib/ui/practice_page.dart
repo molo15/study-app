@@ -21,6 +21,7 @@ import '../models/models.dart';
 import '../services/app_log.dart';
 import 'theme/ios_animations.dart';
 import 'theme/ios_tokens.dart';
+import 'widgets/ios_action_sheet.dart';
 
 import 'theme_controller.dart';
 
@@ -585,13 +586,8 @@ class _PracticePageState extends ConsumerState<PracticePage>
     final layout = appLayoutOf(context);
     // 手机：底部弹层（现状，体验稳定）
     if (layout == AppLayout.compact) {
-      showModalBottomSheet<void>(
+      showIOSModalSheet<void>(
         context: context,
-        isScrollControlled: true,
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
         builder: (_) => _AnswerSheet(
           queue: _queue,
           results: _results,

@@ -11,6 +11,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'ios_animations.dart';
 import 'ios_tokens.dart';
@@ -61,8 +62,10 @@ ThemeData buildIOSLightTheme() {
     ),
 
     // AppBar：透明、无 elevation、大标题风格
+    // 显式指定状态栏图标亮度：透明背景无法自动推断，浅色主题用黑色图标
     appBarTheme: AppBarTheme(
       backgroundColor: Colors.transparent,
+      systemOverlayStyle: SystemUiOverlayStyle.dark,
       foregroundColor: colors.text,
       elevation: 0,
       scrolledUnderElevation: 0,
@@ -309,8 +312,10 @@ ThemeData buildIOSDarkTheme() {
       outlineVariant: colors.cardBorder,
     ),
 
+    // 深色主题：状态栏图标用白色
     appBarTheme: AppBarTheme(
       backgroundColor: Colors.transparent,
+      systemOverlayStyle: SystemUiOverlayStyle.light,
       foregroundColor: colors.text,
       elevation: 0,
       scrolledUnderElevation: 0,

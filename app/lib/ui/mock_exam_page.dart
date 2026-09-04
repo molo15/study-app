@@ -16,6 +16,7 @@ import '../services/app_log.dart';
 import 'app_routes.dart';
 import 'theme/ios_tokens.dart';
 import 'widgets/ios_button.dart';
+import 'widgets/ios_action_sheet.dart';
 import 'widgets/circular_ring.dart';
 import 'mock_review_page.dart';
 import 'practice_page.dart' show typeColor, typeLabel;
@@ -490,14 +491,8 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
 
   void _showAnswerCard() {
     final colors = IOSColors.of(context);
-    showModalBottomSheet(
+    showIOSModalSheet(
       context: context,
-      // 弹窗内容含大量格子，需控制高度上限（审查修复：题多时溢出裁切）
-      isScrollControlled: true,
-      backgroundColor: colors.card,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(IOSRadius.lg)),
-      ),
       builder: (ctx) => DraggableScrollableSheet(
         initialChildSize: 0.6,
         maxChildSize: 0.85,
