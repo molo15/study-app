@@ -36,14 +36,8 @@ jobs:
       - name: Inject dummy Development Team and disable signing
         working-directory: app/ios
         run: |
-          # 1. Change to Manual signing style
           sed -i '' 's/CODE_SIGN_STYLE = Automatic;/CODE_SIGN_STYLE = Manual;/g' Runner.xcodeproj/project.pbxproj
-          # 2. Inject dummy DEVELOPMENT_TEAM so Flutter pre-flight check passes
-          python3 -c "
-with open('Runner.xcodeproj/project.pbxproj','r') as f: c=f.read()
-c=c.replace('PRODUCT_BUNDLE_IDENTIFIER = dev.kaoyan.quizApp;','PRODUCT_BUNDLE_IDENTIFIER = dev.kaoyan.quizApp;\n\t\t\tDEVELOPMENT_TEAM = 0000000000;')
-with open('Runner.xcodeproj/project.pbxproj','w') as f: f.write(c)
-"
+          perl -i -pe 's/PRODUCT_BUNDLE_IDENTIFIER = dev\.kaoyan\.quizApp;/PRODUCT_BUNDLE_IDENTIFIER = dev.kaoyan.quizApp;\n\t\t\tDEVELOPMENT_TEAM = 0000000000;/g' Runner.xcodeproj/project.pbxproj
           echo "--- DEVELOPMENT_TEAM lines ---"
           grep 'DEVELOPMENT_TEAM' Runner.xcodeproj/project.pbxproj | head -5
           echo "--- CODE_SIGN_STYLE lines ---"
