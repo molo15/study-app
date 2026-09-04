@@ -7,12 +7,14 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'widgets/app_card.dart';
 
 import '../data/grading.dart';
 import '../models/models.dart';
 import 'practice_page.dart' show typeColor, typeLabel;
-import 'glass_app_bar.dart';
+import 'responsive.dart';
+import 'theme/ios_tokens.dart';
+import 'widgets/ios_button.dart';
+import 'widgets/ios_card.dart';
 
 /// 题库 id → 学科名（综合卷跨科标签用）
 String mockBankLabel(String bankId) {
@@ -99,7 +101,7 @@ class _MockReviewPageState extends State<MockReviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final colors = IOSColors.of(context);
     final shown = _shown;
     // 统计
     var correct = 0, partial = 0, wrong = 0, skip = 0;
@@ -116,30 +118,41 @@ class _MockReviewPageState extends State<MockReviewPage> {
       }
     }
     return Scaffold(
-      appBar: GlassAppBar(title: const Text('逐题解析')),
+      backgroundColor: colors.bg,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        title: Text('逐题解析',
+            style: IOSTypography.title2(color: colors.text)),
+        leading: const BackButton(color: IOSSystemColors.blue),
+      ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            padding: const EdgeInsets.fromLTRB(
+                IOSSpacing.s16, IOSSpacing.s12, IOSSpacing.s16, IOSSpacing.s4),
             child: Row(
               children: [
                 Expanded(
                   child: Text(
                     '正确 $correct · 部分 $partial · 错误 $wrong · 未答 $skip',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+                    style: IOSTypography.callout(color: colors.text2),
                   ),
                 ),
                 // 全部 / 只看错题 切换（步骤3：本次错题专项复习）
                 TextButton(
                   onPressed: () => setState(() => _onlyWrong = !_onlyWrong),
-                  child: Text(_onlyWrong ? '全部' : '只看错题'),
+                  child: Text(
+                    _onlyWrong ? '全部' : '只看错题',
+                    style: IOSTypography.callout(color: colors.primary),
+                  ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1),
+          Divider(height: 1, color: colors.separator),
           if (shown.isEmpty)
             Expanded(
               child: Center(
@@ -149,19 +162,18 @@ class _MockReviewPageState extends State<MockReviewPage> {
                     Icon(
                       Icons.check_circle_outline,
                       size: 56,
-                      color: Colors.green.shade400,
+                      color: colors.success,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: IOSSpacing.s12),
                     Text(
                       _onlyWrong ? '本次没有错题' : '暂无题目',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: IOSTypography.title3(color: colors.text)
+                          .copyWith(fontWeight: FontWeight.w700),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: IOSSpacing.s4),
                     Text(
                       _onlyWrong ? '继续保持！' : '',
-                      style: theme.textTheme.bodySmall,
+                      style: IOSTypography.caption1(color: colors.text3),
                     ),
                   ],
                 ),
@@ -169,68 +181,77 @@ class _MockReviewPageState extends State<MockReviewPage> {
             )
           else
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: shown.length,
-                itemBuilder: (context, index) {
-                  final q = shown[index];
-                  final grade = _gradeOf(q);
-                  final (label, color) = switch (grade) {
-                    Grade.correct => ('对', Colors.green),
-                    Grade.partial => ('部分', Colors.orange),
-                    Grade.wrong => ('错', Colors.red),
-                    Grade.skip => ('未答', theme.colorScheme.outline),
-                  };
-                  final bank = mockBankLabel(q.bankId);
-                  final isFlagged = widget.flagged.contains(q.id);
-                  return AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      leading: Container(
-                        width: 40,
-                        height: 40,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.12),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          label,
-                          style: TextStyle(
-                            color: color,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints:
+                      BoxConstraints(maxWidth: effectiveContentWidth(context)),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(
+                        IOSSpacing.s16, IOSSpacing.s8, IOSSpacing.s16,
+                        IOSFloatingBar.kTContentBottomInset),
+                    itemCount: shown.length,
+                    itemBuilder: (context, index) {
+                      final q = shown[index];
+                      final grade = _gradeOf(q);
+                      final (label, color) = switch (grade) {
+                        Grade.correct =>
+                          ('对', IOSSystemColors.green),
+                        Grade.partial =>
+                          ('部分', IOSSystemColors.orange),
+                        Grade.wrong =>
+                          ('错', IOSSystemColors.red),
+                        Grade.skip => ('未答', colors.text3),
+                      };
+                      final bank = mockBankLabel(q.bankId);
+                      final isFlagged = widget.flagged.contains(q.id);
+                      return IOSCard(
+                        padding: EdgeInsets.zero,
+                        margin: const EdgeInsets.only(bottom: IOSSpacing.s8),
+                        onTap: () => _showDetail(context, index),
+                        child: ListTile(
+                          leading: Container(
+                            width: 40,
+                            height: 40,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: color.withValues(alpha: 0.12),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              label,
+                              style: IOSTypography.caption1(color: color)
+                                  .copyWith(fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                          title: Text(
+                            '${index + 1}. ${q.stem}',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: IOSTypography.body(color: colors.text),
+                          ),
+                          subtitle: Text(
+                            '${typeLabel(q.type)}'
+                            '${bank.isNotEmpty ? ' · $bank' : ''}'
+                            '${q.chapter.isNotEmpty ? ' · ${q.chapter}' : ''}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: IOSTypography.caption1(color: colors.text2),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (isFlagged)
+                                const Icon(Icons.diamond,
+                                    size: 18, color: Color(0xFFE0A13C)),
+                              const SizedBox(width: IOSSpacing.s4),
+                              Icon(Icons.chevron_right, color: colors.text3),
+                            ],
                           ),
                         ),
-                      ),
-                      title: Text(
-                        '${index + 1}. ${q.stem}',
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                      subtitle: Text(
-                        '${typeLabel(q.type)}'
-                        '${bank.isNotEmpty ? ' · $bank' : ''}'
-                        '${q.chapter.isNotEmpty ? ' · ${q.chapter}' : ''}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.outline,
-                        ),
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (isFlagged)
-                            const Icon(Icons.diamond, size: 18, color: Color(0xFFE0A13C)),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.chevron_right),
-                        ],
-                      ),
-                      onTap: () => _showDetail(context, index),
-                    ),
-                  );
-                },
+                      );
+                    },
+                  ),
+                ),
               ),
             ),
         ],
@@ -240,17 +261,21 @@ class _MockReviewPageState extends State<MockReviewPage> {
 
   void _showDetail(BuildContext context, int index) {
     final q = _shown[index];
-    final theme = Theme.of(context);
+    final colors = IOSColors.of(context);
     final grade = _gradeOf(q);
     final (label, color) = switch (grade) {
-      Grade.correct => ('正确', Colors.green),
-      Grade.partial => ('部分正确', Colors.orange),
-      Grade.wrong => ('错误', Colors.red),
-      Grade.skip => ('未作答', theme.colorScheme.outline),
+      Grade.correct => ('正确', IOSSystemColors.green),
+      Grade.partial => ('部分正确', IOSSystemColors.orange),
+      Grade.wrong => ('错误', IOSSystemColors.red),
+      Grade.skip => ('未作答', colors.text3),
     };
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: colors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(IOSRadius.lg)),
+      ),
       builder: (ctx) => DraggableScrollableSheet(
         initialChildSize: 0.7,
         maxChildSize: 0.92,
@@ -258,7 +283,7 @@ class _MockReviewPageState extends State<MockReviewPage> {
         expand: false,
         builder: (ctx, scrollController) => SingleChildScrollView(
           controller: scrollController,
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(IOSSpacing.s20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -266,74 +291,68 @@ class _MockReviewPageState extends State<MockReviewPage> {
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
+                      horizontal: IOSSpacing.s8,
+                      vertical: IOSSpacing.s4,
                     ),
                     decoration: BoxDecoration(
                       color: color.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(IOSRadius.tag),
                     ),
                     child: Text(
                       '第 ${index + 1} 题 · $label',
-                      style: TextStyle(
-                        color: color,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                      ),
+                      style: IOSTypography.caption1(color: color)
+                          .copyWith(fontWeight: FontWeight.w700),
                     ),
                   ),
                   const Spacer(),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
+                      horizontal: IOSSpacing.s8,
+                      vertical: IOSSpacing.s4,
                     ),
                     decoration: BoxDecoration(
                       color: typeColor(context, q.type).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(IOSRadius.tag),
                     ),
                     child: Text(
                       typeLabel(q.type),
-                      style: TextStyle(
-                        color: typeColor(context, q.type),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: IOSTypography.caption2(color: typeColor(context, q.type))
+                          .copyWith(fontWeight: FontWeight.w700),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: IOSSpacing.s16),
               Text(
                 q.stem,
-                style: theme.textTheme.titleMedium?.copyWith(height: 1.6),
+                style: IOSTypography.title3(color: colors.text).copyWith(height: 1.6),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: IOSSpacing.s20),
               _DetailBlock(
                 title: '我的答案',
                 content: _myAnswer(q),
-                color: theme.colorScheme.primary,
+                color: colors.primary,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: IOSSpacing.s12),
               _DetailBlock(
                 title: '参考要点',
                 content: _correctAnswer(q),
-                color: Colors.green.shade700,
+                color: colors.success,
               ),
               if (q.explanation.isNotEmpty) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: IOSSpacing.s12),
                 _DetailBlock(
                   title: '解析',
                   content: q.explanation,
-                  color: theme.colorScheme.tertiary,
+                  color: IOSSystemColors.purple,
                 ),
               ],
-              const SizedBox(height: 24),
+              const SizedBox(height: IOSSpacing.s24),
               SizedBox(
                 width: double.infinity,
-                child: FilledButton.tonal(
+                child: IOSButton(
+                  label: '关闭',
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('关闭'),
                 ),
               ),
             ],
@@ -357,13 +376,13 @@ class _DetailBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final colors = IOSColors.of(context);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(IOSSpacing.s16),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(IOSRadius.md),
         border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Column(
@@ -371,13 +390,14 @@ class _DetailBlock extends StatelessWidget {
         children: [
           Text(
             title,
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w700,
-            ),
+            style: IOSTypography.callout(color: color)
+                .copyWith(fontWeight: FontWeight.w700),
           ),
-          const SizedBox(height: 8),
-          Text(content, style: theme.textTheme.bodyMedium?.copyWith(height: 1.5)),
+          const SizedBox(height: IOSSpacing.s8),
+          Text(
+            content,
+            style: IOSTypography.body(color: colors.text).copyWith(height: 1.5),
+          ),
         ],
       ),
     );

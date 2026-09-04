@@ -1,20 +1,22 @@
-/// 错题本：答错自动归集，支持整批重刷与手动移出（设计方案 §3.5）
+/// 错题本：答错自动归集，支持整批重刷与手动移出（设计方案 §3.5 · V3 iOS 风格）
 ///
-/// 改版（阶段 B）：
+/// 改版（阶段 B + V3）：
 /// - 统一空态/错误态（图标 + 说明 + 可选行动），错误态提供重试；
 /// - 列表行视觉与首页/题库保持一致（图标容器 40dp、题量弱化）；
 /// - 不改错题归集/移出逻辑、不改 PracticePage 打开方式。
 library;
 
 import 'package:flutter/material.dart';
-import 'widgets/app_card.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/quiz_repository.dart';
 import '../models/models.dart';
 import 'practice_page.dart';
-import 'glass_app_bar.dart';
 import 'app_routes.dart';
+import 'responsive.dart';
+import 'theme/ios_tokens.dart';
+import 'widgets/ios_button.dart';
+import 'widgets/ios_card.dart';
 
 class WrongBookPage extends ConsumerStatefulWidget {
   const WrongBookPage({super.key, this.bankId});
@@ -81,15 +83,25 @@ class _WrongBookPageState extends ConsumerState<WrongBookPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final colors = IOSColors.of(context);
     return Scaffold(
-      appBar: GlassAppBar(title: const Text('错题本')),
-      body: _buildBody(theme),
+      backgroundColor: colors.bg,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        title: Text('错题本', style: IOSTypography.title2(color: colors.text)),
+        leading: const BackButton(color: IOSSystemColors.blue),
+      ),
+      body: _buildBody(colors),
     );
   }
 
-  Widget _buildBody(ThemeData theme) {
-    if (_loading) return const Center(child: CircularProgressIndicator());
+  Widget _buildBody(IOSColorScheme colors) {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
+    }
     if (_error != null) {
       return _ErrorView(
         message: _error!,
@@ -114,30 +126,29 @@ class _WrongBookPageState extends ConsumerState<WrongBookPage> {
                 width: 88,
                 height: 88,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  color: colors.primaryBg,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.task_alt,
                   size: 44,
-                  color: theme.colorScheme.primary,
+                  color: colors.primary,
                 ),
               ),
-              const SizedBox(height: 16),
-              Text('暂无错题', style: theme.textTheme.titleMedium),
-              const SizedBox(height: 4),
+              const SizedBox(height: IOSSpacing.s16),
+              Text('暂无错题', style: IOSTypography.title3(color: colors.text)),
+              const SizedBox(height: IOSSpacing.s4),
               Text(
                 '答错的题目会自动归集到这里，继续保持！',
                 textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                style: IOSTypography.callout(color: colors.text2),
               ),
-              const SizedBox(height: 20),
-              OutlinedButton.icon(
+              const SizedBox(height: IOSSpacing.s20),
+              IOSButton(
+                type: IOSButtonType.text,
+                label: '返回首页',
+                icon: Icons.arrow_back,
                 onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.arrow_back),
-                label: const Text('返回首页'),
               ),
             ],
           ),
@@ -147,61 +158,70 @@ class _WrongBookPageState extends ConsumerState<WrongBookPage> {
     return Column(
       children: [
         Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: _questions.length,
-            itemBuilder: (context, index) {
-              final q = _questions[index];
-              return AppCard(padding: EdgeInsets.zero, margin: const EdgeInsets.symmetric(vertical: 6), 
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
-                  leading: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.error.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
+          child: Center(
+            child: ConstrainedBox(
+              constraints:
+                  BoxConstraints(maxWidth: effectiveContentWidth(context)),
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(
+                    IOSSpacing.s16, IOSSpacing.s8, IOSSpacing.s16,
+                    IOSSpacing.s8),
+                itemCount: _questions.length,
+                itemBuilder: (context, index) {
+                  final q = _questions[index];
+                  return IOSCard(
+                    padding: EdgeInsets.zero,
+                    margin: const EdgeInsets.symmetric(vertical: IOSSpacing.s8),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: IOSSpacing.s16,
+                        vertical: IOSSpacing.s4,
+                      ),
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: colors.dangerBg,
+                          borderRadius: BorderRadius.circular(IOSRadius.xs),
+                        ),
+                        child: Icon(
+                          Icons.error_outline,
+                          color: colors.danger,
+                          size: 22,
+                        ),
+                      ),
+                      title: Text(
+                        q.stem,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: IOSTypography.body(color: colors.text),
+                      ),
+                      subtitle: Text(
+                        '${_bankNames[q.bankId] ?? q.bankId} · ${q.chapter} · ${typeLabel(q.type)}',
+                        style: IOSTypography.caption1(color: colors.text2),
+                      ),
+                      trailing: IconButton(
+                        icon: Icon(Icons.delete_outline, color: colors.text2),
+                        tooltip: '移出错题本',
+                        onPressed: () => _remove(q.id),
+                      ),
+                      onTap: _openPractice,
                     ),
-                    child: Icon(
-                      Icons.error_outline,
-                      color: theme.colorScheme.error,
-                      size: 22,
-                    ),
-                  ),
-                  title: Text(
-                    q.stem,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  subtitle: Text(
-                    '${_bankNames[q.bankId] ?? q.bankId} · ${q.chapter} · ${typeLabel(q.type)}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline),
-                    tooltip: '移出错题本',
-                    onPressed: () => _remove(q.id),
-                  ),
-                  onTap: _openPractice,
-                ),
-              );
-            },
+                  );
+                },
+              ),
+            ),
           ),
         ),
         SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(IOSSpacing.s16),
             child: SizedBox(
               width: double.infinity,
-              child: FilledButton.icon(
+              child: IOSButton(
+                label: '错题重刷（${_questions.length}）',
+                icon: Icons.replay,
                 onPressed: _openPractice,
-                icon: const Icon(Icons.replay),
-                label: Text('错题重刷（${_questions.length}）'),
               ),
             ),
           ),
@@ -220,7 +240,7 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final colors = IOSColors.of(context);
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -230,20 +250,16 @@ class _ErrorView extends StatelessWidget {
             Icon(
               Icons.cloud_off_outlined,
               size: 44,
-              color: theme.colorScheme.error,
+              color: colors.danger,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: IOSSpacing.s12),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium,
+              style: IOSTypography.body(color: colors.text2),
             ),
-            const SizedBox(height: 16),
-            FilledButton.tonalIcon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('重试'),
-            ),
+            const SizedBox(height: IOSSpacing.s16),
+            IOSButton(label: '重试', icon: Icons.refresh, onPressed: onRetry),
           ],
         ),
       ),

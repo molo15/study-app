@@ -14,7 +14,8 @@ import '../data/quiz_repository.dart';
 import '../models/models.dart';
 import '../services/app_log.dart';
 import 'app_routes.dart';
-import 'glass_app_bar.dart';
+import 'theme/ios_tokens.dart';
+import 'widgets/ios_button.dart';
 import 'widgets/circular_ring.dart';
 import 'mock_review_page.dart';
 import 'practice_page.dart' show typeColor, typeLabel;
@@ -202,7 +203,9 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
-        title: const Text('考试完成'),
+        backgroundColor: IOSColors.of(context).card,
+        title: Text('考试完成',
+            style: IOSTypography.title3(color: IOSColors.of(context).text)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,24 +216,18 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
                 progress: full == 0 ? 0 : (score / full).clamp(0.0, 1.0),
                 size: 128,
                 strokeWidth: 12,
-                color: Theme.of(context).colorScheme.primary,
+                color: IOSColors.of(context).primary,
                 center: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       '$score',
-                      style: TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.w800,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
+                      style: IOSTypography.title1(color: IOSColors.of(context).primary)
+                          .copyWith(fontWeight: FontWeight.w800),
                     ),
                     Text(
                       '/ $full',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
+                      style: IOSTypography.caption1(color: IOSColors.of(context).text3),
                     ),
                   ],
                 ),
@@ -240,11 +237,8 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
             Center(
               child: Text(
                 '得分：$score / $full',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
+                style: IOSTypography.body(color: IOSColors.of(context).text)
+                    .copyWith(fontWeight: FontWeight.w800),
               ),
             ),
             const SizedBox(height: 8),
@@ -252,6 +246,7 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
               child: Text(
                 '正确 $correct · 部分正确 $partial · 错误 $wrong · 未答 $skipped',
                 textAlign: TextAlign.center,
+                style: IOSTypography.caption1(color: IOSColors.of(context).text2),
               ),
             ),
           ],
@@ -270,14 +265,15 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
                 ),
               );
             },
-            child: const Text('查看逐题解析'),
+            child: Text('查看逐题解析',
+                style: IOSTypography.callout(color: IOSColors.of(context).primary)),
           ),
-          FilledButton(
+          IOSButton(
+            label: '完成',
             onPressed: () {
               Navigator.of(context).pop();
               Navigator.of(context).pop(); // 返回列表页
             },
-            child: const Text('完成'),
           ),
         ],
       ),
@@ -286,16 +282,35 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = IOSColors.of(context);
     if (_loading) {
       return Scaffold(
-        appBar: GlassAppBar(title: Text(widget.paper.name)),
-        body: const Center(child: CircularProgressIndicator()),
+        backgroundColor: colors.bg,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: true,
+          title: Text(widget.paper.name,
+              style: IOSTypography.title2(color: colors.text)),
+          leading: const BackButton(color: IOSSystemColors.blue),
+        ),
+        body: const Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
       );
     }
     if (_error != null) {
       return Scaffold(
-        appBar: GlassAppBar(title: Text(widget.paper.name)),
-        body: Center(child: Text(_error!)),
+        backgroundColor: colors.bg,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: true,
+          title: Text(widget.paper.name,
+              style: IOSTypography.title2(color: colors.text)),
+          leading: const BackButton(color: IOSSystemColors.blue),
+        ),
+        body: Center(
+            child: Text(_error!,
+                style: IOSTypography.callout(color: colors.danger))),
       );
     }
     final q = _questions[_index];
@@ -309,26 +324,29 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
     final answeredCount = _answers.length;
 
     return Scaffold(
-      appBar: GlassAppBar(
-        title: Text('${_index + 1}/${_questions.length}'),
+      backgroundColor: colors.bg,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        title: Text('${_index + 1}/${_questions.length}',
+            style: IOSTypography.title2(color: colors.text)),
+        leading: const BackButton(color: IOSSystemColors.blue),
         actions: [
           Center(
             child: Padding(
               padding: const EdgeInsets.only(right: 16),
               child: Text(
                 '$mm:$ss',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: _remaining.inMinutes < 5
-                      ? Theme.of(context).colorScheme.error
-                      : null,
-                ),
+                style: IOSTypography.title3(
+                        color: _remaining.inMinutes < 5 ? colors.danger : colors.text)
+                    .copyWith(fontWeight: FontWeight.w700),
               ),
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.grid_view_outlined),
+            icon: Icon(Icons.grid_view_outlined, color: colors.primary),
             tooltip: '答题卡',
             onPressed: _showAnswerCard,
           ),
@@ -339,29 +357,27 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
           // 桌面答题内容限宽 760 居中（P4 对齐原型 d-desktop 答题限宽）
           constraints: const BoxConstraints(maxWidth: 760),
           child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(
+            IOSSpacing.s16, IOSSpacing.s8, IOSSpacing.s16, IOSSpacing.s16),
         children: [
           Row(
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
+                  horizontal: IOSSpacing.s8,
+                  vertical: IOSSpacing.s4,
                 ),
                 decoration: BoxDecoration(
                   color: typeColor(context, q.type).withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(IOSRadius.tag),
                 ),
                 child: Text(
                   typeLabel(q.type),
-                  style: TextStyle(
-                    color: typeColor(context, q.type),
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
-                  ),
+                  style: IOSTypography.caption2(color: typeColor(context, q.type))
+                      .copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: IOSSpacing.s8),
               Expanded(
                 child: Text(
                   // 综合卷跨科标注：学科名 · 章节（P2-3）
@@ -370,9 +386,7 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
                       : [mockBankLabel(q.bankId), q.chapter]
                             .where((s) => s.isNotEmpty)
                             .join(' · '),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
+                  style: IOSTypography.caption1(color: colors.text3),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -389,21 +403,19 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
                     size: 18,
                     color: _flagged.contains(q.id)
                         ? const Color(0xFFE0A13C)
-                        : Theme.of(context).colorScheme.outline,
+                        : colors.text3,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: IOSSpacing.s16),
           Text(
             q.stem,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              height: 1.6,
-              fontWeight: FontWeight.w600,
-            ),
+            style: IOSTypography.title2(color: colors.text)
+                .copyWith(height: 1.6, fontWeight: FontWeight.w600),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: IOSSpacing.s16),
           if (isChoice)
             for (final option in q.options)
               _MockOptionTile(
@@ -423,33 +435,34 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
               isShortAnswer: q.type == QuestionType.shortAnswer,
               onSubmit: (text) => _onSelect(text),
             ),
-          const SizedBox(height: 24),
+          const SizedBox(height: IOSSpacing.s24),
           Row(
             children: [
               Expanded(
-                child: OutlinedButton(
+                child: IOSButton(
+                  type: IOSButtonType.text,
+                  label: '上一题',
                   onPressed: _index == 0
                       ? null
                       : () => setState(() => _index--),
-                  child: const Text('上一题'),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: IOSSpacing.s12),
               Expanded(
-                child: FilledButton(
+                child: IOSButton(
+                  label: '下一题',
                   onPressed: _index >= _questions.length - 1
                       ? null
                       : () => setState(() => _index++),
-                  child: const Text('下一题'),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: IOSSpacing.s8),
           Text(
             '已答 $answeredCount / ${_questions.length}',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall,
+            style: IOSTypography.caption1(color: colors.text2),
           ),
         ],
       ),
@@ -457,13 +470,13 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(IOSSpacing.s16),
           child: SizedBox(
             width: double.infinity,
-            child: FilledButton.tonalIcon(
+            child: IOSButton(
+              label: '交卷',
+              icon: Icons.flag_outlined,
               onPressed: _submitAll,
-              icon: const Icon(Icons.flag_outlined),
-              label: const Text('交卷'),
             ),
           ),
         ),
@@ -472,21 +485,30 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
   }
 
   void _showAnswerCard() {
+    final colors = IOSColors.of(context);
     showModalBottomSheet(
       context: context,
       // 弹窗内容含大量格子，需控制高度上限（审查修复：题多时溢出裁切）
       isScrollControlled: true,
+      backgroundColor: colors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(IOSRadius.lg)),
+      ),
       builder: (ctx) => DraggableScrollableSheet(
         initialChildSize: 0.6,
         maxChildSize: 0.85,
         minChildSize: 0.3,
         expand: false,
         builder: (ctx, scrollController) => Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(IOSSpacing.s16),
           child: Column(
             children: [
-              Text('答题卡（已答 ${_answers.length}/${_questions.length}）'),
-              const SizedBox(height: 12),
+              Text(
+                '答题卡（已答 ${_answers.length}/${_questions.length}）',
+                style: IOSTypography.title3(color: colors.text)
+                    .copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: IOSSpacing.s12),
               Expanded(
                 child: GridView.builder(
                   controller: scrollController,
@@ -512,10 +534,8 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
                             color: _answers.containsKey(_questions[i].id)
-                                ? Theme.of(context).colorScheme.primary
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .surfaceContainerHighest,
+                                ? colors.primary
+                                : colors.fill2,
                             shape: BoxShape.circle,
                             border: _flagged.contains(_questions[i].id)
                                 ? Border.all(
@@ -527,11 +547,11 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
                           ),
                           child: Text(
                             '${i + 1}',
-                            style: TextStyle(
-                              color: _answers.containsKey(_questions[i].id)
-                                  ? Colors.white
-                                  : null,
-                            ),
+                            style: IOSTypography.caption1(
+                                    color: _answers.containsKey(_questions[i].id)
+                                        ? Colors.white
+                                        : colors.text)
+                                .copyWith(fontWeight: FontWeight.w600),
                           ),
                         ),
                       ),
@@ -539,16 +559,16 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: IOSSpacing.s16),
               SizedBox(
                 width: double.infinity,
-                child: FilledButton.icon(
+                child: IOSButton(
+                  label: '交卷',
+                  icon: Icons.flag_outlined,
                   onPressed: () {
                     Navigator.pop(ctx);
                     _submitAll();
                   },
-                  icon: const Icon(Icons.flag_outlined),
-                  label: const Text('交卷'),
                 ),
               ),
             ],
@@ -574,35 +594,30 @@ class _MockOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final colors = IOSColors.of(context);
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 5),
+      margin: const EdgeInsets.symmetric(vertical: IOSSpacing.s4),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(IOSRadius.md),
         border: Border.all(
-          color: selected
-              ? theme.colorScheme.primary
-              : theme.colorScheme.outlineVariant,
+          color: selected ? colors.primary : colors.separator,
           width: selected ? 1.8 : 1,
         ),
       ),
       child: Material(
-        color: selected
-            ? theme.colorScheme.primary.withValues(alpha: 0.08)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(13),
+        color: selected ? colors.primaryBg : Colors.transparent,
+        borderRadius: BorderRadius.circular(IOSRadius.md),
         child: ListTile(
           leading: Icon(
             selected ? Icons.check_circle_outlined : Icons.circle_outlined,
-            color: selected
-                ? theme.colorScheme.primary
-                : theme.colorScheme.outline,
+            color: selected ? colors.primary : colors.text3,
           ),
           // 判断题显示「正确/错误」不带 key 前缀（修复：避免"正确. 正确"）
           title: Text(
             question.type == QuestionType.trueFalse
                 ? option.text
                 : '${option.key}. ${option.text}',
+            style: IOSTypography.body(color: colors.text),
           ),
           onTap: onTap,
         ),
@@ -643,7 +658,7 @@ class _MockFreeAnswerState extends State<_MockFreeAnswer> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final colors = IOSColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -653,10 +668,25 @@ class _MockFreeAnswerState extends State<_MockFreeAnswer> {
           maxLines: widget.isShortAnswer ? 5 : 1,
           decoration: InputDecoration(
             hintText: widget.isShortAnswer ? '简答作答' : '填写答案',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            hintStyle: IOSTypography.caption1(color: colors.text3),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(IOSRadius.md),
+              borderSide: BorderSide(color: colors.separator),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(IOSRadius.md),
+              borderSide: BorderSide(color: colors.separator),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(IOSRadius.md),
+              borderSide: BorderSide(color: colors.primary, width: 1.5),
+            ),
             filled: true,
-            fillColor: theme.colorScheme.surfaceContainerHighest,
+            fillColor: colors.fill,
+            contentPadding: const EdgeInsets.symmetric(
+                horizontal: IOSSpacing.s12, vertical: IOSSpacing.s12),
           ),
+          style: IOSTypography.body(color: colors.text),
           onChanged: (v) => widget.onSubmit(v.trim()),
         ),
       ],

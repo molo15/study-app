@@ -1,4 +1,4 @@
-/// 章节知识概览列表页（P2）
+/// 章节知识概览列表页（P2 · V3 iOS 风格）
 ///
 /// 题库 → 独立「章节知识概览」入口：列出全库各章的知识概览卡片
 /// （章名 + 知识点数 + 题数 + 章节摘要），点击进入单章 ChapterOverviewPage
@@ -6,14 +6,14 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'widgets/app_card.dart';
-import 'responsive.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../data/quiz_repository.dart';
 import '../models/models.dart';
-import 'glass_app_bar.dart';
+import 'responsive.dart';
+import 'theme/ios_tokens.dart';
+import 'widgets/ios_card.dart';
 
 class ChapterOverviewListPage extends ConsumerStatefulWidget {
   const ChapterOverviewListPage({
@@ -66,12 +66,25 @@ class _ChapterOverviewListPageState
 
   @override
   Widget build(BuildContext context) {
+    final colors = IOSColors.of(context);
     return Scaffold(
-      appBar: GlassAppBar(title: const Text('章节知识概览'), centerTitle: true),
+      backgroundColor: colors.bg,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        title: Text('章节知识概览',
+            style: IOSTypography.title2(color: colors.text)),
+        leading: const BackButton(color: IOSSystemColors.blue),
+      ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.5))
           : _error != null
-              ? Center(child: Text(_error!))
+              ? Center(
+                  child: Text(_error!,
+                      style: IOSTypography.callout(color: colors.danger)),
+                )
               : _overviews.isEmpty
                   ? const Center(
                       child: Padding(
@@ -79,31 +92,43 @@ class _ChapterOverviewListPageState
                         child: Text('暂无章节概览（需要 v4 题库包）'),
                       ),
                     )
-                  : ListView(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-                      children: [
-                        if (isWideScreen(context))
-                          // 宽屏（平板/桌面）章节两列（P3 对齐原型 chaps）
-                          Wrap(
-                            spacing: 12,
-                            runSpacing: 12,
-                            children: [
-                              for (final ov in _overviews)
-                                SizedBox(
-                                  width: (effectiveContentWidth(context) - 32 - 12) / 2,
-                                  child: _ChapterOverviewCard(
-                                    overview: ov,
-                                    onTap: () => _openChapter(ov),
-                                  ),
-                                ),
-                            ],
-                          )
-                        else
-                          for (final ov in _overviews) ...[
-                            _ChapterOverviewCard(overview: ov, onTap: () => _openChapter(ov)),
-                            const SizedBox(height: 10),
+                  : Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                            maxWidth: effectiveContentWidth(context)),
+                        child: ListView(
+                          padding: const EdgeInsets.fromLTRB(
+                              IOSSpacing.s16,
+                              IOSSpacing.s8,
+                              IOSSpacing.s16,
+                              IOSFloatingBar.kTContentBottomInset),
+                          children: [
+                            if (isWideScreen(context))
+                              // 宽屏（平板/桌面）章节两列（P3 对齐原型 chaps）
+                              Wrap(
+                                spacing: 12,
+                                runSpacing: 12,
+                                children: [
+                                  for (final ov in _overviews)
+                                    SizedBox(
+                                      width:
+                                          (effectiveContentWidth(context) - 32 - 12) / 2,
+                                      child: _ChapterOverviewCard(
+                                        overview: ov,
+                                        onTap: () => _openChapter(ov),
+                                      ),
+                                    ),
+                                ],
+                              )
+                            else
+                              for (final ov in _overviews) ...[
+                                _ChapterOverviewCard(
+                                    overview: ov, onTap: () => _openChapter(ov)),
+                                const SizedBox(height: IOSSpacing.s12),
+                              ],
                           ],
-                      ],
+                        ),
+                      ),
                     ),
     );
   }
@@ -118,69 +143,57 @@ class _ChapterOverviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return AppCard(
-      padding: EdgeInsets.zero,
-      margin: EdgeInsets.zero,
+    final colors = IOSColors.of(context);
+    return IOSCard(
+      padding: const EdgeInsets.all(IOSSpacing.s16),
       onTap: onTap,
-      child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.account_tree_outlined,
-                  color: theme.colorScheme.primary,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      overview.chapter,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${overview.knowledgeCount} 个知识点 · ${overview.questionCount} 题',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                    if (overview.summary.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        overview.summary,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.outline,
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Icon(
-                Icons.chevron_right,
-                color: theme.colorScheme.outline,
-              ),
-            ],
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(IOSSpacing.s8),
+            decoration: BoxDecoration(
+              color: colors.primaryBg,
+              borderRadius: BorderRadius.circular(IOSRadius.xs),
+            ),
+            child: Icon(
+              Icons.account_tree_outlined,
+              color: colors.primary,
+              size: 22,
+            ),
           ),
-        ),
+          const SizedBox(width: IOSSpacing.s12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  overview.chapter,
+                  style: IOSTypography.body(color: colors.text)
+                      .copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: IOSSpacing.s4),
+                Text(
+                  '${overview.knowledgeCount} 个知识点 · ${overview.questionCount} 题',
+                  style: IOSTypography.caption1(color: colors.primary),
+                ),
+                if (overview.summary.isNotEmpty) ...[
+                  const SizedBox(height: IOSSpacing.s4),
+                  Text(
+                    overview.summary,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: IOSTypography.caption1(color: colors.text3)
+                        .copyWith(height: 1.4),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: IOSSpacing.s8),
+          Icon(Icons.chevron_right, color: colors.text3),
+        ],
+      ),
     );
   }
 }
