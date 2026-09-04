@@ -1,4 +1,4 @@
-/// 题库主页（V3 iOS 风格）：综合模拟卷 Banner + 五科列表。
+﻿/// 题库主页（V3 iOS 风格）：综合模拟卷 Banner + 五科列表。
 ///
 /// 入口：底部导航「题库」。点科目进章节树，点模拟卷进模拟卷列表。
 /// V3 化：大标题 + IOSCard Banner + IOSListItem 科目列表 + IOSSubjectColors 渐变。
@@ -101,9 +101,10 @@ class BankHomePageState extends ConsumerState<BankHomePage> {
                 Text('题库', style: IOSTypography.largeTitle(color: colors.text)),
                 const Spacer(),
                 IconButton(
-                  onPressed: () => Navigator.of(context).push(
-                    iosPageRoute<dynamic>((_) => const BankManageV3Page()),
-                  ),
+                  onPressed: () => Navigator.of(context)
+                      .push(iosPageRoute<dynamic>(
+                          (_) => const BankManageV3Page()))
+                      .then((_) => _load()),
                   icon: Icon(Icons.tune_outlined, color: colors.primary, size: 24),
                   tooltip: '题库管理 · 导入',
                 ),
@@ -154,20 +155,46 @@ class BankHomePageState extends ConsumerState<BankHomePage> {
               ),
             ),
             const SizedBox(height: IOSSpacing.s24),
-            // 五科列表
-            IOSListGroup(
-              title: '五科题库',
-              items: [
-                for (final b in _banks)
-                  IOSListItem(
-                    title: b.name,
-                    subtitle: '${b.active} 题 · ${b.version}',
-                    leading: _subjectAvatar(b),
-                    showChevron: true,
-                    onTap: () => context.go('/bank/${b.bankId}/chapters'),
-                  ),
-              ],
-            ),
+            // 五科列表（空状态显示导入引导）
+            if (_banks.isEmpty)
+              IOSCard(
+                padding: const EdgeInsets.all(IOSSpacing.s20),
+                child: Column(
+                  children: [
+                    Icon(Icons.inbox_outlined, size: 40, color: colors.text3),
+                    const SizedBox(height: IOSSpacing.s12),
+                    Text('还没有导入题库',
+                        style: IOSTypography.callout(color: colors.text2)),
+                    const SizedBox(height: IOSSpacing.s4),
+                    Text('点击下方按钮导入 .json 或 .zip 题库包',
+                        style: IOSTypography.footnote(color: colors.text3)),
+                    const SizedBox(height: IOSSpacing.s16),
+                    IOSButton(
+                      label: '导入题库包',
+                      icon: Icons.file_upload_outlined,
+                      expand: true,
+                      onPressed: () => Navigator.of(context)
+                          .push(iosPageRoute<dynamic>(
+                              (_) => const BankManageV3Page()))
+                          .then((_) => _load()),
+                    ),
+                  ],
+                ),
+              )
+            else
+              IOSListGroup(
+                title: '五科题库',
+                items: [
+                  for (final b in _banks)
+                    IOSListItem(
+                      title: b.name,
+                      subtitle: '${b.active} 题 · ${b.version}',
+                      leading: _subjectAvatar(b),
+                      showChevron: true,
+                      onTap: () => context.go('/bank/${b.bankId}/chapters'),
+                    ),
+                ],
+              ),
           ],
         ),
       ),
