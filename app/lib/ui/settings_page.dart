@@ -669,7 +669,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final iosBanner = iosInstallGuideBanner();
+    final iosBanner = iosInstallGuideBanner(context);
     // 标题居中（需求）；保留状态栏 inset，避免标题顶到打孔摄像头区域
     return Scaffold(
       appBar: GlassAppBar(title: const Text('我的'), centerTitle: true),

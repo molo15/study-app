@@ -23,6 +23,7 @@ import '../../responsive.dart';
 import '../../theme/ios_animations.dart';
 import '../../theme/ios_page_route.dart';
 import '../../theme/ios_tokens.dart';
+import 'settings_v3_page.dart';
 import '../../widgets/circular_ring.dart';
 import '../../widgets/ios_button.dart';
 import '../../widgets/ios_card.dart';
@@ -494,7 +495,7 @@ class HomeV3PageState extends ConsumerState<HomeV3Page> {
     final goal = _studyGoal!;
     final days = goal.daysUntilExam(DateTime.now());
     return IOSCard(
-      onTap: () => _push(const SettingsPagePlaceholder()),
+      onTap: () => _push(const SettingsV3Page()),
       child: Row(
         children: [
           Container(
@@ -573,20 +574,3 @@ class HomeV3PageState extends ConsumerState<HomeV3Page> {
   }
 }
 
-/// 临时占位：学习目标编辑入口（阶段3 接入设置页 V3 后替换）
-class SettingsPagePlaceholder extends StatelessWidget {
-  const SettingsPagePlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = IOSColors.of(context);
-    return Scaffold(
-      backgroundColor: colors.bg,
-      appBar: AppBar(
-        backgroundColor: colors.bg,
-        title: const Text('设置'),
-      ),
-      body: const Center(child: Text('阶段3 接入')),
-    );
-  }
-}
