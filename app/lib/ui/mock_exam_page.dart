@@ -7,6 +7,7 @@ library;
 
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -203,83 +204,89 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
             (acc, q) =>
                 acc + (widget.pointsByType![q.type] ?? 1),
           );
-    showDialog(
+    final colors = IOSColors.of(context);
+    showIOSModalSheet<void>(
       context: context,
+      isScrollControlled: false,
+      maxHeightFactor: 0.7,
       barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        backgroundColor: IOSColors.of(context).card,
-        title: Text('考试完成',
-            style: IOSTypography.title3(color: IOSColors.of(context).text)),
-        content: Column(
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(IOSSpacing.s16),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 分数环（UI v2）：得分 / 满分 + 生长动画
+            Text('考试完成',
+                style: IOSTypography.title3(color: colors.text)),
+            const SizedBox(height: IOSSpacing.s16),
             Center(
               child: CircularRing(
                 progress: full == 0 ? 0 : (score / full).clamp(0.0, 1.0),
                 size: 128,
                 strokeWidth: 12,
-                color: IOSColors.of(context).primary,
+                color: colors.primary,
                 center: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       '$score',
-                      style: IOSTypography.title1(color: IOSColors.of(context).primary)
+                      style: IOSTypography.title1(color: colors.primary)
                           .copyWith(fontWeight: FontWeight.w800),
                     ),
                     Text(
                       '/ $full',
-                      style: IOSTypography.caption1(color: IOSColors.of(context).text3),
+                      style: IOSTypography.caption1(color: colors.text3),
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 12),
-            Center(
-              child: Text(
-                '得分：$score / $full',
-                style: IOSTypography.body(color: IOSColors.of(context).text)
-                    .copyWith(fontWeight: FontWeight.w800),
-              ),
+            const SizedBox(height: IOSSpacing.s12),
+            Text(
+              '得分：$score / $full',
+              style: IOSTypography.body(color: colors.text)
+                  .copyWith(fontWeight: FontWeight.w800),
             ),
-            const SizedBox(height: 8),
-            Center(
-              child: Text(
-                '正确 $correct · 部分正确 $partial · 错误 $wrong · 未答 $skipped',
-                textAlign: TextAlign.center,
-                style: IOSTypography.caption1(color: IOSColors.of(context).text2),
-              ),
+            const SizedBox(height: IOSSpacing.s8),
+            Text(
+              '正确 $correct · 部分正确 $partial · 错误 $wrong · 未答 $skipped',
+              textAlign: TextAlign.center,
+              style: IOSTypography.caption1(color: colors.text2),
+            ),
+            const SizedBox(height: IOSSpacing.s16),
+            Row(
+              children: [
+                Expanded(
+                  child: IOSButton(
+                    label: '查看逐题解析',
+                    type: IOSButtonType.text,
+                    onPressed: () {
+                      Navigator.of(context).pop(); // 关结果弹窗
+                      Navigator.of(context).push(
+                        AppPageRoute(
+                          builder: (_) => MockReviewPage(
+                            questions: _questions,
+                            answers: _answers,
+                            flagged: _flagged,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: IOSSpacing.s12),
+                Expanded(
+                  child: IOSButton(
+                    label: '完成',
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).pop(); // 返回列表页
+                    },
+                  ),
+                ),
+              ],
             ),
           ],
         ),
-        actions: [
-          IOSButton(
-            label: '查看逐题解析',
-            type: IOSButtonType.text,
-            onPressed: () {
-              Navigator.of(context).pop(); // 关结果弹窗
-              Navigator.of(context).push(
-                AppPageRoute(
-                  builder: (_) => MockReviewPage(
-                    questions: _questions,
-                    answers: _answers,
-                    flagged: _flagged,
-                  ),
-                ),
-              );
-            },
-          ),
-          IOSButton(
-            label: '完成',
-            onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pop(); // 返回列表页
-            },
-          ),
-        ],
       ),
     );
   }
@@ -298,7 +305,7 @@ class _MockExamPageState extends ConsumerState<MockExamPage> {
               style: IOSTypography.title2(color: colors.text)),
           leading: const BackButton(color: IOSSystemColors.blue),
         ),
-        body: const Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
+        body: const Center(child: CupertinoActivityIndicator(radius: 14)),
       );
     }
     if (_error != null) {
@@ -596,31 +603,37 @@ class _MockOptionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = IOSColors.of(context);
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: IOSSpacing.s4),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(IOSRadius.md),
-        border: Border.all(
-          color: selected ? colors.primary : colors.separator,
-          width: selected ? 1.8 : 1,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: IOSSpacing.s4),
+        padding: const EdgeInsets.symmetric(
+            horizontal: IOSSpacing.s16, vertical: IOSSpacing.s12),
+        decoration: BoxDecoration(
+          color: selected ? colors.primaryBg : Colors.transparent,
+          borderRadius: BorderRadius.circular(IOSRadius.md),
+          border: Border.all(
+            color: selected ? colors.primary : colors.separator,
+            width: selected ? 1.8 : 1,
+          ),
         ),
-      ),
-      child: Material(
-        color: selected ? colors.primaryBg : Colors.transparent,
-        borderRadius: BorderRadius.circular(IOSRadius.md),
-        child: ListTile(
-          leading: Icon(
-            selected ? Icons.check_circle_outlined : Icons.circle_outlined,
-            color: selected ? colors.primary : colors.text3,
-          ),
-          // 判断题显示「正确/错误」不带 key 前缀（修复：避免"正确. 正确"）
-          title: Text(
-            question.type == QuestionType.trueFalse
-                ? option.text
-                : '${option.key}. ${option.text}',
-            style: IOSTypography.body(color: colors.text),
-          ),
-          onTap: onTap,
+        child: Row(
+          children: [
+            Icon(
+              selected ? Icons.check_circle_outlined : Icons.circle_outlined,
+              color: selected ? colors.primary : colors.text3,
+            ),
+            const SizedBox(width: IOSSpacing.s12),
+            Expanded(
+              // 判断题显示「正确/错误」不带 key 前缀（修复：避免"正确. 正确"）
+              child: Text(
+                question.type == QuestionType.trueFalse
+                    ? option.text
+                    : '${option.key}. ${option.text}',
+                style: IOSTypography.body(color: colors.text),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -663,29 +676,17 @@ class _MockFreeAnswerState extends State<_MockFreeAnswer> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextField(
+        CupertinoTextField(
           controller: _controller,
-          minLines: widget.isShortAnswer ? 3 : 1,
           maxLines: widget.isShortAnswer ? 5 : 1,
-          decoration: InputDecoration(
-            hintText: widget.isShortAnswer ? '简答作答' : '填写答案',
-            hintStyle: IOSTypography.caption1(color: colors.text3),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(IOSRadius.md),
-              borderSide: BorderSide(color: colors.separator),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(IOSRadius.md),
-              borderSide: BorderSide(color: colors.separator),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(IOSRadius.md),
-              borderSide: BorderSide(color: colors.primary, width: 1.5),
-            ),
-            filled: true,
-            fillColor: colors.fill,
-            contentPadding: const EdgeInsets.symmetric(
-                horizontal: IOSSpacing.s12, vertical: IOSSpacing.s12),
+          placeholder: widget.isShortAnswer ? '简答作答' : '填写答案',
+          placeholderStyle: IOSTypography.caption1(color: colors.text3),
+          padding: const EdgeInsets.symmetric(
+              horizontal: IOSSpacing.s12, vertical: IOSSpacing.s12),
+          decoration: BoxDecoration(
+            color: colors.fill,
+            borderRadius: BorderRadius.circular(IOSRadius.md),
+            border: Border.all(color: colors.separator),
           ),
           style: IOSTypography.body(color: colors.text),
           onChanged: (v) => widget.onSubmit(v.trim()),

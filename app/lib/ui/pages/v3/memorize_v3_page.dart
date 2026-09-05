@@ -10,6 +10,7 @@
 /// 旧 V2 MemorizeHomePage 保留（lib/ui/memorize_home_page.dart）。
 library;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -17,6 +18,7 @@ import 'package:go_router/go_router.dart';
 import '../../../data/quiz_repository.dart';
 import '../../responsive.dart';
 import '../../theme/ios_tokens.dart';
+import '../../widgets/ios_button.dart';
 import '../../widgets/ios_card.dart';
 import '../../widgets/ios_list_group.dart';
 
@@ -30,6 +32,7 @@ class MemorizeV3Page extends ConsumerStatefulWidget {
 class MemorizeV3PageState extends ConsumerState<MemorizeV3Page> {
   List<BankInfo> _banks = const [];
   bool _loading = true;
+  bool _error = false;
 
   @override
   void initState() {
@@ -51,7 +54,10 @@ class MemorizeV3PageState extends ConsumerState<MemorizeV3Page> {
       });
     } catch (_) {
       if (!mounted) return;
-      setState(() => _loading = false);
+      setState(() {
+        _loading = false;
+        _error = true;
+      });
     }
   }
 
@@ -67,7 +73,30 @@ class MemorizeV3PageState extends ConsumerState<MemorizeV3Page> {
   Widget build(BuildContext context) {
     final colors = IOSColors.of(context);
     if (_loading) {
-      return const Center(child: CircularProgressIndicator(strokeWidth: 2.5));
+      return const Center(child: CupertinoActivityIndicator(radius: 14));
+    }
+    if (_error) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.cloud_off_outlined, size: 48, color: colors.text3),
+            const SizedBox(height: IOSSpacing.s12),
+            Text('加载失败', style: IOSTypography.body(color: colors.text2)),
+            const SizedBox(height: IOSSpacing.s16),
+            IOSButton(
+              label: '重试',
+              onPressed: () {
+                setState(() {
+                  _error = false;
+                  _loading = true;
+                });
+                _load();
+              },
+            ),
+          ],
+        ),
+      );
     }
     return Center(
       child: ConstrainedBox(

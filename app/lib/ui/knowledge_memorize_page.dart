@@ -9,6 +9,7 @@
 /// - 卡片底部展示该知识点关联的基础题数，可一键跳到「题目背诵」。
 library;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -205,10 +206,9 @@ class _KnowledgeMemorizePageState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = IOSColors.of(context);
     final Widget body;
     if (_loading) {
-      body = Center(child: CircularProgressIndicator(color: colors.primary));
+      body = const Center(child: CupertinoActivityIndicator(radius: 14));
     } else {
       body = _finished ? _buildSummary(theme) : _buildCard(theme);
     }

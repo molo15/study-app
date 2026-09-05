@@ -57,7 +57,7 @@ Future<T?> showIOSActionSheet<T>({
     backgroundColor: Colors.transparent,
     barrierColor: Colors.black.withValues(alpha: 0.35),
     elevation: 0,
-    isScrollControlled: true,
+    isScrollControlled: false,
     builder: (ctx) => _IOSActionSheetView<T>(
       title: title,
       items: items,
@@ -76,6 +76,7 @@ Future<T?> showIOSModalSheet<T>({
   required WidgetBuilder builder,
   bool isScrollControlled = true,
   double maxHeightFactor = 0.82,
+  bool barrierDismissible = true,
 }) {
   return showModalBottomSheet<T>(
     context: context,
@@ -83,6 +84,7 @@ Future<T?> showIOSModalSheet<T>({
     barrierColor: Colors.black.withValues(alpha: 0.35),
     elevation: 0,
     isScrollControlled: isScrollControlled,
+    isDismissible: barrierDismissible,
     builder: (ctx) {
       final mq = MediaQuery.of(ctx);
       return SafeArea(
@@ -107,10 +109,11 @@ Future<T?> showIOSModalSheet<T>({
                 constraints: BoxConstraints(
                   maxHeight: mq.size.height * maxHeightFactor,
                 ),
-                // Material 透明层：内部 ListTile/TextField 等需要 Material 祖先
-                child: Material(
-                  color: Colors.transparent,
-                  child: builder(ctx),
+                child: SingleChildScrollView(
+                  child: Material(
+                    color: Colors.transparent,
+                    child: builder(ctx),
+                  ),
                 ),
               ),
             ),

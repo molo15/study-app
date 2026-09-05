@@ -11,6 +11,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fsrs/fsrs.dart' show Rating;
@@ -46,16 +47,6 @@ String typeLabel(QuestionType type) => switch (type) {
   QuestionType.trueFalse => '判断',
 };
 
-/// 语义色集中定义（practice_answer_sheet.dart 引用，勿删）
-/// 深色模式用亮色变体保证对比度
-const _kSuccessDark = Color(0xFF81C784);
-const _kWarning = Color(0xFFB2780A);
-const _kWarningDark = Color(0xFFE2B93B);
-const _kErrorDark = Color(0xFFF2B8B5);
-
-Color _semantic(BuildContext context, Color light, Color dark) =>
-    Theme.of(context).brightness == Brightness.dark ? dark : light;
-
 /// 题型颜色（V3 令牌化：用 iOS 系统色）
 Color typeColor(BuildContext context, QuestionType type) {
   return switch (type) {
@@ -63,7 +54,7 @@ Color typeColor(BuildContext context, QuestionType type) {
     QuestionType.multiChoice => IOSSystemColors.purple,
     QuestionType.blank => IOSSystemColors.indigo,
     QuestionType.shortAnswer => IOSSystemColors.green,
-    QuestionType.trueFalse => _semantic(context, _kWarning, _kWarningDark),
+    QuestionType.trueFalse => IOSColors.of(context).warning,
   };
 }
 
@@ -424,7 +415,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
       return;
     }
     if (!mounted) return;
-    final comment = await showDialog<String>(
+    final comment = await showIOSModalSheet<String>(
       context: context,
       builder: (dialogCtx) => _FlagDialog(questionId: _current.id),
     );
@@ -758,7 +749,7 @@ class _PracticePageState extends ConsumerState<PracticePage>
     if (_loading) {
       return Scaffold(
         appBar: _V3PracticeAppBar(title: _modeLabel),
-        body: const Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
+        body: const Center(child: CupertinoActivityIndicator(radius: 14)),
       );
     }
     if (_error != null) {
@@ -929,11 +920,16 @@ class _V3PracticeAppBar extends StatelessWidget implements PreferredSizeWidget {
                   tween: Tween(begin: progress, end: progress),
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeOutCubic,
-                  builder: (context, value, _) => LinearProgressIndicator(
-                    value: value.clamp(0.0, 1.0),
-                    minHeight: 3,
-                    backgroundColor: colors.fill2,
-                    color: colors.primary,
+                  builder: (context, value, _) => Container(
+                    height: 3,
+                    color: colors.fill2,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: FractionallySizedBox(
+                        widthFactor: value.clamp(0.0, 1.0),
+                        child: Container(color: colors.primary),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -967,41 +963,53 @@ class _FlagDialogState extends State<_FlagDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return AlertDialog(
-      title: const Text('标记为待修改'),
-      content: Column(
+    final colors = IOSColors.of(context);
+    return Padding(
+      padding: const EdgeInsets.all(IOSSpacing.s16),
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text('标记为待修改',
+              style: IOSTypography.title3(color: colors.text)),
+          const SizedBox(height: IOSSpacing.s12),
           Text(
             '题目：${widget.questionId}',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.outline,
-              fontFamily: 'monospace',
-            ),
+            style: IOSTypography.caption1(color: colors.text3)
+                .copyWith(fontFamily: 'monospace'),
           ),
-          const SizedBox(height: 12),
-          TextField(
+          const SizedBox(height: IOSSpacing.s12),
+          CupertinoTextField(
             controller: _controller,
             maxLines: 3,
-            decoration: const InputDecoration(
-              hintText: '备注（可选）：如"答案错误"、"题干歧义"、"重复题"…',
-              border: OutlineInputBorder(),
+            placeholder: '备注（可选）：如"答案错误"、"题干歧义"、"重复题"…',
+            padding: const EdgeInsets.all(IOSSpacing.s12),
+            decoration: BoxDecoration(
+              color: colors.fill2,
+              borderRadius: BorderRadius.circular(IOSRadius.sm),
             ),
+          ),
+          const SizedBox(height: IOSSpacing.s16),
+          Row(
+            children: [
+              Expanded(
+                child: IOSButton(
+                  label: '取消',
+                  type: IOSButtonType.text,
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+              const SizedBox(width: IOSSpacing.s12),
+              Expanded(
+                child: IOSButton(
+                  label: '标记',
+                  onPressed: () => Navigator.pop(context, _controller.text),
+                ),
+              ),
+            ],
           ),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('取消'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, _controller.text),
-          child: const Text('标记'),
-        ),
-      ],
     );
   }
 }

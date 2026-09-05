@@ -14,6 +14,7 @@ library;
 import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -195,12 +196,15 @@ class _BankManageV3PageState extends ConsumerState<BankManageV3Page> {
                       .copyWith(height: 1.5),
                 ),
                 const SizedBox(height: IOSSpacing.s12),
-                TextField(
+                CupertinoTextField(
                   autofocus: true,
                   onChanged: (v) => setSheet(() => typed = v.trim()),
-                  decoration: InputDecoration(
-                    hintText: '输入「${bank.name}」以确认',
-                    isDense: true,
+                  placeholder: '输入「${bank.name}」以确认',
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: IOSSpacing.s12, vertical: IOSSpacing.s8),
+                  decoration: BoxDecoration(
+                    color: c.fill2,
+                    borderRadius: BorderRadius.circular(IOSRadius.sm),
                   ),
                 ),
                 const SizedBox(height: IOSSpacing.s16),
@@ -257,7 +261,7 @@ class _BankManageV3PageState extends ConsumerState<BankManageV3Page> {
         leading: const BackButton(color: IOSSystemColors.blue),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.5))
+          ? const Center(child: CupertinoActivityIndicator(radius: 14))
           : Center(
               child: ConstrainedBox(
                 constraints:

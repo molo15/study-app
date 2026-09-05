@@ -7,6 +7,9 @@ library;
 
 import 'package:flutter/material.dart';
 
+import 'theme/ios_animations.dart';
+import 'theme/ios_tokens.dart';
+
 OverlayEntry? _toastEntry;
 
 void showAppToast(BuildContext context, String message, {Duration? duration}) {
@@ -48,14 +51,14 @@ class _IOSToastViewState extends State<_IOSToastView>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 220),
+    duration: IOSDuration.standard,
   );
 
   @override
   void initState() {
     super.initState();
     _controller.forward();
-    Future.delayed(widget.duration + const Duration(milliseconds: 220), () {
+    Future.delayed(widget.duration + IOSDuration.standard, () {
       if (mounted) {
         _controller.reverse().then((_) => widget.onDismiss());
       }
@@ -71,6 +74,7 @@ class _IOSToastViewState extends State<_IOSToastView>
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).padding.bottom;
+    final isDark = MediaQuery.platformBrightnessOf(context) == Brightness.dark;
     return Positioned(
       left: 0,
       right: 0,
@@ -97,11 +101,11 @@ class _IOSToastViewState extends State<_IOSToastView>
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.72),
-                  borderRadius: BorderRadius.circular(999),
+                  color: Colors.black.withValues(alpha: isDark ? 0.85 : 0.72),
+                  borderRadius: BorderRadius.circular(IOSRadius.pill),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.18),
+                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.18),
                       blurRadius: 20,
                       offset: const Offset(0, 6),
                     ),
@@ -110,11 +114,8 @@ class _IOSToastViewState extends State<_IOSToastView>
                 child: Text(
                   widget.message,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: IOSTypography.subheadline(color: Colors.white)
+                      .copyWith(fontWeight: FontWeight.w500),
                 ),
               ),
             ),

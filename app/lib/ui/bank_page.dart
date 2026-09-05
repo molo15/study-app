@@ -13,6 +13,7 @@
 /// - 加载失败给出重试按钮，无章节时给出轻量空态。
 library;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -153,7 +154,7 @@ class _BankPageState extends ConsumerState<BankPage> {
         leading: const BackButton(color: IOSSystemColors.blue),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.5))
+          ? const Center(child: CupertinoActivityIndicator(radius: 14))
           : _error != null
           ? _ErrorView(
               message: _error!,
@@ -266,24 +267,13 @@ class _BankPageState extends ConsumerState<BankPage> {
           ),
         ),
       ),
-      child: ListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: IOSSpacing.s16, vertical: IOSSpacing.s8),
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: colors.primary,
-            borderRadius: BorderRadius.circular(IOSRadius.xs),
-          ),
-          child: Icon(Icons.star, color: Colors.white, size: 22),
-        ),
-        title: Text('重点题目',
-            style: IOSTypography.body(color: colors.text)
-                .copyWith(fontWeight: FontWeight.w700)),
-        subtitle: Text('$_keyQuestionCount 题 · 按考点热门章节抽取',
-            style: IOSTypography.caption1(color: colors.text2)),
-        trailing: Icon(Icons.chevron_right, color: colors.text3),
+      child: _BankEntryRow(
+        icon: Icons.star,
+        iconBg: colors.primary,
+        iconColor: Colors.white,
+        title: '重点题目',
+        titleWeight: FontWeight.w700,
+        subtitle: '$_keyQuestionCount 题 · 按考点热门章节抽取',
       ),
     );
   }
@@ -294,28 +284,12 @@ class _BankPageState extends ConsumerState<BankPage> {
     return IOSCard(
       padding: EdgeInsets.zero,
       onTap: _pickRandomCount,
-      child: ListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: IOSSpacing.s16, vertical: IOSSpacing.s8),
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: colors.primaryBg,
-            borderRadius: BorderRadius.circular(IOSRadius.xs),
-          ),
-          child: Icon(
-            Icons.shuffle,
-            color: colors.primary,
-            size: 22,
-          ),
-        ),
-        title: Text('整本随机刷',
-            style: IOSTypography.body(color: colors.text)
-                .copyWith(fontWeight: FontWeight.w600)),
-        subtitle: Text('选 50 / 100 / 150 题 · 按题型顺序',
-            style: IOSTypography.caption1(color: colors.text2)),
-        trailing: Icon(Icons.chevron_right, color: colors.text3),
+      child: _BankEntryRow(
+        icon: Icons.shuffle,
+        iconBg: colors.primaryBg,
+        iconColor: colors.primary,
+        title: '整本随机刷',
+        subtitle: '选 50 / 100 / 150 题 · 按题型顺序',
       ),
     );
   }
@@ -326,28 +300,12 @@ class _BankPageState extends ConsumerState<BankPage> {
     return IOSCard(
       padding: EdgeInsets.zero,
       onTap: () => context.go('/bank/${widget.bankId}/chapters'),
-      child: ListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: IOSSpacing.s16, vertical: IOSSpacing.s8),
-        leading: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: colors.primaryBg,
-            borderRadius: BorderRadius.circular(IOSRadius.xs),
-          ),
-          child: Icon(
-            Icons.account_tree_outlined,
-            color: colors.primary,
-            size: 22,
-          ),
-        ),
-        title: Text('章节知识概览',
-            style: IOSTypography.body(color: colors.text)
-                .copyWith(fontWeight: FontWeight.w600)),
-        subtitle: Text('按章节浏览知识点 · 直达刷题/背题',
-            style: IOSTypography.caption1(color: colors.text2)),
-        trailing: Icon(Icons.chevron_right, color: colors.text3),
+      child: _BankEntryRow(
+        icon: Icons.account_tree_outlined,
+        iconBg: colors.primaryBg,
+        iconColor: colors.primary,
+        title: '章节知识概览',
+        subtitle: '按章节浏览知识点 · 直达刷题/背题',
       ),
     );
   }
@@ -373,27 +331,13 @@ class _BankPageState extends ConsumerState<BankPage> {
             ),
           ),
         ),
-        child: ListTile(
-          contentPadding: const EdgeInsets.fromLTRB(IOSSpacing.s20, IOSSpacing.s8, IOSSpacing.s16, IOSSpacing.s8),
-          leading: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: colors.primaryBg,
-              borderRadius: BorderRadius.circular(IOSRadius.xs),
-            ),
-            child: Icon(
-              Icons.forum_outlined,
-              color: colors.primary,
-              size: 22,
-            ),
-          ),
-          title: Text('论述题专题',
-              style: IOSTypography.body(color: colors.text)
-                  .copyWith(fontWeight: FontWeight.w600)),
-          subtitle: Text('${_chapterCounts['论述题专题'] ?? 0} 题 · 历年真题论述题',
-              style: IOSTypography.caption1(color: colors.text2)),
-          trailing: Icon(Icons.chevron_right, color: colors.text3),
+        child: _BankEntryRow(
+          icon: Icons.forum_outlined,
+          iconBg: colors.primaryBg,
+          iconColor: colors.primary,
+          title: '论述题专题',
+          subtitle: '${_chapterCounts['论述题专题'] ?? 0} 题 · 历年真题论述题',
+          padding: const EdgeInsets.fromLTRB(IOSSpacing.s20, IOSSpacing.s8, IOSSpacing.s16, IOSSpacing.s8),
         ),
       ),
     );
@@ -566,24 +510,32 @@ class _ChapterTile extends StatelessWidget {
 
     // 无分类数据的章节（旧包）：整行可点，尾显总题数
     if (!hasSplit) {
-      return ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: IOSSpacing.s16),
-        leading: Icon(Icons.description_outlined,
-            size: 20, color: colors.text2),
-        title: Hero(
-          tag: 'chapter-title:$bankId:$chapter',
-          child: Text(
-            chapter,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: IOSTypography.body(color: colors.text),
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _go(context),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+              horizontal: IOSSpacing.s16, vertical: IOSSpacing.s12),
+          child: Row(
+            children: [
+              Icon(Icons.description_outlined, size: 20, color: colors.text2),
+              const SizedBox(width: IOSSpacing.s12),
+              Expanded(
+                child: Hero(
+                  tag: 'chapter-title:$bankId:$chapter',
+                  child: Text(
+                    chapter,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: IOSTypography.body(color: colors.text),
+                  ),
+                ),
+              ),
+              Text('$total 题',
+                  style: IOSTypography.caption1(color: colors.text3)),
+            ],
           ),
         ),
-        trailing: Text(
-          '$total 题',
-          style: IOSTypography.caption1(color: colors.text3),
-        ),
-        onTap: () => _go(context),
       );
     }
 
@@ -606,63 +558,151 @@ class _ChapterTile extends StatelessWidget {
       ),
       children: [
         if (hasKnowledge)
-          ListTile(
-            dense: true,
-            leading:
-                Icon(Icons.account_tree_outlined, size: 18, color: colors.primary),
-            title: Text('本章知识概览',
-                style: IOSTypography.body(color: colors.text)),
-            subtitle: Text(
-              '知识点树 · 直达刷题/背题',
-              style: IOSTypography.caption1(color: colors.text2),
-            ),
-            trailing: Icon(Icons.chevron_right, size: 18, color: colors.text3),
+          _ChapterActionRow(
+            icon: Icons.account_tree_outlined,
+            iconColor: colors.primary,
+            title: '本章知识概览',
+            subtitle: '知识点树 · 直达刷题/背题',
             onTap: () => _goOverview(context),
           ),
         if (basicCount > 0)
-          ListTile(
-            dense: true,
-            leading:
-                Icon(Icons.lightbulb_outline, size: 18, color: colors.warning),
-            title: Text('基础题',
-                style: IOSTypography.body(color: colors.text)),
-            subtitle: Text(
-              basicCount > 1 ? '$basicCount 题 · 单选题/填空题为主' : '$basicCount 题',
-              style: IOSTypography.caption1(color: colors.text2),
-            ),
-            trailing: Icon(Icons.chevron_right, size: 18, color: colors.text3),
+          _ChapterActionRow(
+            icon: Icons.lightbulb_outline,
+            iconColor: colors.warning,
+            title: '基础题',
+            subtitle: basicCount > 1
+                ? '$basicCount 题 · 单选题/填空题为主'
+                : '$basicCount 题',
             onTap: () => _go(context, purpose: 'basic'),
           ),
         if (testCount > 0)
-          ListTile(
-            dense: true,
-            leading:
-                Icon(Icons.rate_review_outlined,
-                    size: 18, color: IOSSystemColors.purple),
-            title: Text('测试题',
-                style: IOSTypography.body(color: colors.text)),
-            subtitle: Text(
-              testCount > 1 ? '$testCount 题 · 简答/名解/论述为主' : '$testCount 题',
-              style: IOSTypography.caption1(color: colors.text2),
-            ),
-            trailing: Icon(Icons.chevron_right, size: 18, color: colors.text3),
+          _ChapterActionRow(
+            icon: Icons.rate_review_outlined,
+            iconColor: IOSSystemColors.purple,
+            title: '测试题',
+            subtitle: testCount > 1
+                ? '$testCount 题 · 简答/名解/论述为主'
+                : '$testCount 题',
             onTap: () => _go(context, purpose: 'test'),
           ),
         // 整章刷全部入口：始终提供（基础+测试+未分区一并刷，统一 3 级导航行为）
-        ListTile(
-          dense: true,
-          leading: Icon(Icons.all_inclusive, size: 18, color: colors.success),
-          title: Text('全部', style: IOSTypography.body(color: colors.text)),
-          subtitle: Text(
-            otherCount > 0
-                ? '$total 题 · 基础+测试+未分区'
-                : '$total 题 · 基础+测试整章刷',
-            style: IOSTypography.caption1(color: colors.text2),
-          ),
-          trailing: Icon(Icons.chevron_right, size: 18, color: colors.text3),
+        _ChapterActionRow(
+          icon: Icons.all_inclusive,
+          iconColor: colors.success,
+          title: '全部',
+          subtitle: otherCount > 0
+              ? '$total 题 · 基础+测试+未分区'
+              : '$total 题 · 基础+测试整章刷',
           onTap: () => _go(context),
         ),
       ],
+    );
+  }
+}
+
+
+/// V3 风格章节子项行：替代 ExpansionTile 内的 Material ListTile（dense），无 InkWell。
+class _ChapterActionRow extends StatelessWidget {
+  const _ChapterActionRow({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = IOSColors.of(context);
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+            horizontal: IOSSpacing.s16, vertical: IOSSpacing.s8),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: iconColor),
+            const SizedBox(width: IOSSpacing.s12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: IOSTypography.body(color: colors.text)),
+                  const SizedBox(height: 2),
+                  Text(subtitle,
+                      style: IOSTypography.caption1(color: colors.text2)),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, size: 18, color: colors.text3),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// V3 风格题库入口行：替代 Material ListTile，无 InkWell 水波纹。
+class _BankEntryRow extends StatelessWidget {
+  const _BankEntryRow({
+    required this.icon,
+    required this.iconBg,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    this.titleWeight = FontWeight.w600,
+    this.padding = const EdgeInsets.symmetric(
+        horizontal: IOSSpacing.s16, vertical: IOSSpacing.s8),
+  });
+
+  final IconData icon;
+  final Color iconBg;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final FontWeight titleWeight;
+  final EdgeInsets padding;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = IOSColors.of(context);
+    return Padding(
+      padding: padding,
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: iconBg,
+              borderRadius: BorderRadius.circular(IOSRadius.xs),
+            ),
+            child: Icon(icon, color: iconColor, size: 22),
+          ),
+          const SizedBox(width: IOSSpacing.s12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: IOSTypography.body(color: colors.text)
+                        .copyWith(fontWeight: titleWeight)),
+                const SizedBox(height: 2),
+                Text(subtitle,
+                    style: IOSTypography.caption1(color: colors.text2)),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right, color: colors.text3),
+        ],
+      ),
     );
   }
 }

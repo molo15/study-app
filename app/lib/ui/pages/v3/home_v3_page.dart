@@ -11,6 +11,7 @@
 /// 旧 V2 HomePage 保留（lib/ui/home_page.dart），本页为 V3 替代实现。
 library;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -176,7 +177,7 @@ class HomeV3PageState extends ConsumerState<HomeV3Page> {
     final colors = IOSColors.of(context);
     if (_loading) {
       return const Center(
-        child: CircularProgressIndicator(strokeWidth: 2.5),
+        child: CupertinoActivityIndicator(radius: 14),
       );
     }
     if (_error != null) {

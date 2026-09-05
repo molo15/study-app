@@ -353,12 +353,11 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
               style: IOSTypography.body(
                   color: enabled ? colors.text : colors.text3)),
           const Spacer(),
-          IconButton(
-            icon: Icon(Icons.remove_circle_outline,
-                color: enabled ? colors.primary : colors.text3, size: 28),
-            onPressed: enabled && value > 0
-                ? () => onChanged(max(0, value - 10))
-                : null,
+          _StepperButton(
+            icon: Icons.remove_circle_outline,
+            color: enabled ? colors.primary : colors.text3,
+            enabled: enabled && value > 0,
+            onPressed: () => onChanged(max(0, value - 10)),
           ),
           SizedBox(
             width: 48,
@@ -367,12 +366,11 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
                 style: IOSTypography.title3(
                     color: enabled ? colors.text : colors.text3)),
           ),
-          IconButton(
-            icon: Icon(Icons.add_circle_outline,
-                color: enabled ? colors.primary : colors.text3, size: 28),
-            onPressed: enabled
-                ? () => onChanged(min(200, value + 10))
-                : null,
+          _StepperButton(
+            icon: Icons.add_circle_outline,
+            color: enabled ? colors.primary : colors.text3,
+            enabled: enabled,
+            onPressed: () => onChanged(min(200, value + 10)),
           ),
         ],
       ),
@@ -665,7 +663,7 @@ class _SettingsV3PageState extends ConsumerState<SettingsV3Page> {
     final themeConfig = ref.watch(themeControllerProvider).value;
 
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CupertinoActivityIndicator(radius: 14));
     }
 
     final pref = themeConfig?.themePreference ?? ThemePreference.system;
@@ -974,6 +972,45 @@ class _Badge extends StatelessWidget {
           style: IOSTypography.caption1(color: fg).copyWith(
             fontWeight: FontWeight.w600,
           )),
+    );
+  }
+}
+
+/// V3 风格步进器按钮：GestureDetector + AnimatedScale 按压反馈（无 InkWell 水波纹）。
+class _StepperButton extends StatefulWidget {
+  const _StepperButton({
+    required this.icon,
+    required this.color,
+    required this.onPressed,
+    required this.enabled,
+  });
+
+  final IconData icon;
+  final Color color;
+  final VoidCallback? onPressed;
+  final bool enabled;
+
+  @override
+  State<_StepperButton> createState() => _StepperButtonState();
+}
+
+class _StepperButtonState extends State<_StepperButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: widget.enabled ? (_) => setState(() => _pressed = true) : null,
+      onTapUp: widget.enabled ? (_) => setState(() => _pressed = false) : null,
+      onTapCancel: widget.enabled ? () => setState(() => _pressed = false) : null,
+      onTap: widget.enabled ? widget.onPressed : null,
+      child: AnimatedScale(
+        scale: _pressed ? 0.9 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+        child: Icon(widget.icon, color: widget.color, size: 28),
+      ),
     );
   }
 }

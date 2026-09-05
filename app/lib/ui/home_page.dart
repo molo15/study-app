@@ -27,6 +27,7 @@ import 'settings_page.dart';
 import 'app_routes.dart';
 import 'widgets/app_card.dart';
 import 'widgets/circular_ring.dart';
+import 'widgets/ios_action_sheet.dart';
 import 'widgets/staggered_item.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -626,29 +627,18 @@ class HomePageState extends ConsumerState<HomePage> {
 
   /// 背题入口：弹出题库选择，选科后跳转到该科章节列表（用户选章进入背题）
   Future<void> _showBankPickerForMem() async {
-    final theme = Theme.of(context);
-    final picked = await showModalBottomSheet<String>(
+    final picked = await showIOSActionSheet<String>(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text('选择科目开始背题', style: theme.textTheme.titleMedium),
-            ),
-            for (final bank in _banks)
-              ListTile(
-                leading: const Icon(Icons.menu_book_outlined),
-                title: Text(bank.name),
-                subtitle: Text('${bank.active} 题'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.pop(ctx, bank.bankId),
-              ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
+      title: '选择科目开始背题',
+      items: [
+        for (final bank in _banks)
+          IOSActionItem<String>(
+            value: bank.bankId,
+            title: bank.name,
+            subtitle: '${bank.active} 题',
+            icon: Icons.menu_book_outlined,
+          ),
+      ],
     );
     if (picked != null && mounted) {
       _goRoute('/bank/$picked');

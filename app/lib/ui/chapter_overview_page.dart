@@ -5,6 +5,7 @@
 /// 旧包（无知识点树）时概览页提供降级入口：直接整章刷题。
 library;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -194,7 +195,7 @@ class _ChapterOverviewPageState extends ConsumerState<ChapterOverviewPage> {
         leading: const BackButton(color: IOSSystemColors.blue),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.5))
+          ? const Center(child: CupertinoActivityIndicator(radius: 14))
           : _error != null
               ? _ErrorView(
                   message: _error!,
@@ -459,11 +460,16 @@ class _KnowledgeCardState extends State<_KnowledgeCard> {
                   Expanded(
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(3),
-                      child: LinearProgressIndicator(
-                        value: ratio,
-                        minHeight: 4,
-                        color: colors.primary,
-                        backgroundColor: colors.fill2,
+                      child: Container(
+                        height: 4,
+                        color: colors.fill2,
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: FractionallySizedBox(
+                            widthFactor: ratio.clamp(0.0, 1.0),
+                            child: Container(color: colors.primary),
+                          ),
+                        ),
                       ),
                     ),
                   ),

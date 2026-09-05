@@ -5,6 +5,7 @@
 /// （知识点树 + 直达刷题/背题）。
 library;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -80,7 +81,7 @@ class _ChapterOverviewListPageState
         leading: const BackButton(color: IOSSystemColors.blue),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(strokeWidth: 2.5))
+          ? const Center(child: CupertinoActivityIndicator(radius: 14))
           : _error != null
               ? Center(
                   child: Text(_error!,

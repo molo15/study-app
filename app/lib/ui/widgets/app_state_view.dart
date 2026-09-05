@@ -5,8 +5,8 @@
 /// - [AppStateView.error]：出错，图标 + 说明 + 重试按钮（[onRetry] 为空时不显示按钮）；
 /// - [AppStateView.empty]：空数据，图标 + 标题 + 说明 + 可选行动按钮。
 ///
-/// 使用 Material 3 组件（CircularProgressIndicator / FilledButton 等）实现，
-/// 颜色取自 ColorScheme 语义色，浅色 / 深色模式自动适配，无需额外传色。
+/// 使用 V3 iOS 组件（CupertinoActivityIndicator / IOSButton 等）实现，
+/// 颜色取自 IOSColors 语义令牌，浅色 / 深色模式自动适配。
 ///
 /// 用法：
 /// ```dart
@@ -22,9 +22,12 @@
 /// ```
 library;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../theme/ios_tokens.dart';
 import '../theme_controller.dart' show AppSpacing;
+import 'ios_button.dart';
 
 // 公开命名参数(message/onRetry/icon/...)→私有字段(_message/_onRetry/...) 的必要映射，
 // 无法用 initializing formal 表达，豁免 prefer_initializing_formals 提示。
@@ -86,12 +89,10 @@ class AppStateView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CupertinoActivityIndicator(radius: 14));
     }
 
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
+    final colors = IOSColors.of(context);
 
     // 错误态固定：出错图标 + 标题 + 重试按钮；空态按传入参数展示
     final String title;
@@ -102,13 +103,13 @@ class AppStateView extends StatelessWidget {
     if (_isError) {
       title = '出错了';
       icon = Icons.error_outline;
-      iconColor = colorScheme.error;
+      iconColor = colors.danger;
       buttonLabel = '重试';
       onPressed = _onRetry;
     } else {
       title = _title ?? '';
       icon = _icon ?? Icons.inbox_outlined;
-      iconColor = colorScheme.onSurfaceVariant;
+      iconColor = colors.text3;
       buttonLabel = _actionLabel;
       onPressed = _onAction;
     }
@@ -129,34 +130,30 @@ class AppStateView extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                height: 1.3,
-              ),
+              style: IOSTypography.title3(color: colors.text)
+                  .copyWith(fontWeight: FontWeight.w700, height: 1.3),
             ),
             if (message != null && message.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.space2),
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  height: 1.5,
-                ),
+                style: IOSTypography.body(color: colors.text2)
+                    .copyWith(height: 1.5),
               ),
             ],
             if (buttonLabel != null && onPressed != null) ...[
               const SizedBox(height: AppSpacing.space6),
               if (_isError)
-                FilledButton.tonalIcon(
+                IOSButton(
+                  label: buttonLabel,
+                  icon: Icons.refresh,
                   onPressed: onPressed,
-                  icon: const Icon(Icons.refresh),
-                  label: Text(buttonLabel),
                 )
               else
-                FilledButton.tonal(
+                IOSButton(
+                  label: buttonLabel,
                   onPressed: onPressed,
-                  child: Text(buttonLabel),
                 ),
             ],
           ],

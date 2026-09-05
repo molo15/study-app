@@ -152,7 +152,7 @@ void main() {
       expect(s.partialCount, 1);
       expect(s.wrongCount, 1);
       expect(s.totalTimeMs, 3500);
-      expect(s.accuracy, closeTo(100 / 3, 0.01));
+      expect(s.accuracy, closeTo(50.0, 0.01), reason: 'accuracy=(correct+0.5*partial)/total=(1+0.5)/3=50%');
       // 章节分布
       expect(s.byChapter, isNotEmpty);
       final english = s.byChapter.firstWhere((c) => c.chapter == '考研英语');

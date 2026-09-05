@@ -11,6 +11,7 @@
 /// 旧 V2 StatsPage 保留（lib/ui/stats_page.dart）。
 library;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -72,8 +73,8 @@ class StatsV3PageState extends ConsumerState<StatsV3Page> {
   Widget build(BuildContext context) {
     final colors = IOSColors.of(context);
     if (_loading) {
-      return Center(
-        child: CircularProgressIndicator(strokeWidth: 2.5, color: colors.primary),
+      return const Center(
+        child: CupertinoActivityIndicator(radius: 14),
       );
     }
     if (_error != null) {

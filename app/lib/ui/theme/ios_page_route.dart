@@ -254,3 +254,29 @@ IOSPageRoute<T> iosPageRoute<T>(
       fullscreenDialog: fullscreenDialog,
       gestureWidthRatio: gestureWidthRatio,
     );
+
+/// go_router 用的自定义 Page：createRoute 返回 IOSPageRoute，统一全屏右滑返回。
+///
+/// 替代 CupertinoPage（左边缘返回），使 go_router 路由与 AppPageRoute/iosPageRoute
+/// 的全屏返回手势一致（gestureWidthRatio=0.4，左侧 40% 屏宽可触发）。
+class IOSCustomPage<T> extends Page<T> {
+  const IOSCustomPage({
+    required this.child,
+    this.gestureWidthRatio = 0.4,
+    super.key,
+    super.name,
+    super.arguments,
+  });
+
+  final Widget child;
+  final double gestureWidthRatio;
+
+  @override
+  Route<T> createRoute(BuildContext context) {
+    return IOSPageRoute<T>(
+      builder: (_) => child,
+      settings: this,
+      gestureWidthRatio: gestureWidthRatio,
+    );
+  }
+}

@@ -1,7 +1,8 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import 'theme/ios_page_route.dart';
 
 import '../data/quiz_repository.dart';
 import 'bank_page.dart';
@@ -35,13 +36,13 @@ final appRouter = GoRouter(
       routes: [
         GoRoute(
           path: 'bank/:bankId',
-          pageBuilder: (_, s) => CupertinoPage(
+          pageBuilder: (_, s) => IOSCustomPage(
             child: BankPage(bankId: s.pathParameters['bankId']!),
           ),
           routes: [
             GoRoute(
               path: 'chapters',
-              pageBuilder: (_, s) => CupertinoPage(
+              pageBuilder: (_, s) => IOSCustomPage(
                 child: ChapterOverviewListPage(
                   bankId: s.pathParameters['bankId']!,
                 ),
@@ -49,7 +50,7 @@ final appRouter = GoRouter(
             ),
             GoRoute(
               path: 'chapter/:chapterId',
-              pageBuilder: (_, s) => CupertinoPage(
+              pageBuilder: (_, s) => IOSCustomPage(
                 child: ChapterOverviewPage(
                   bankId: s.pathParameters['bankId']!,
                   // chapter 参数即章名（String）；go_router 已自动解码 path 参数，
@@ -62,7 +63,7 @@ final appRouter = GoRouter(
         ),
         GoRoute(
           path: 'mock',
-          pageBuilder: (_, s) => CupertinoPage(
+          pageBuilder: (_, s) => IOSCustomPage(
             child: MockExamListPage(
               bankId: s.uri.queryParameters['bank'],
             ),
@@ -70,7 +71,7 @@ final appRouter = GoRouter(
         ),
         GoRoute(
           path: 'wrongbook',
-          pageBuilder: (_, s) => CupertinoPage(
+          pageBuilder: (_, s) => IOSCustomPage(
             child: WrongBookPage(
               bankId: s.uri.queryParameters['bank'],
             ),
@@ -78,7 +79,7 @@ final appRouter = GoRouter(
         ),
         GoRoute(
           path: 'me/questions/:bankId',
-          pageBuilder: (_, s) => CupertinoPage(
+          pageBuilder: (_, s) => IOSCustomPage(
             child: QuestionManageDeepLinkPage(
               bankId: s.pathParameters['bankId']!,
             ),

@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/quiz_repository.dart';
 import '../theme/ios_tokens.dart';
 import 'app_card.dart';
+import 'ios_action_sheet.dart';
+import 'ios_button.dart';
 
 /// 是否 iOS Web（Safari）。
 ///
@@ -30,10 +32,10 @@ Future<void> maybeShowIosInstallGuide(
     if (seen == '1') return;
     await repo.setSetting(_kSeenKey, '1');
     if (!context.mounted) return;
-    await showDialog<void>(
+    await showIOSModalSheet<void>(
       context: context,
-      barrierDismissible: true,
-      barrierColor: Colors.black38,
+      isScrollControlled: false,
+      maxHeightFactor: 0.7,
       builder: (_) => const IosInstallGuideDialog(),
     );
   } catch (_) {
@@ -59,16 +61,17 @@ Widget? iosInstallGuideBanner(BuildContext context) {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'iOS 数据保护：请添加到主屏幕',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5),
+                  style: IOSTypography.footnote(color: colors.text)
+                      .copyWith(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Safari 会清理长期未访问的网页数据（含刷题进度）。'
                   '点底部「分享」→「添加到主屏幕」后数据不再被清理，且全屏无地址栏。',
-                  style: TextStyle(
-                      fontSize: 12.5, color: colors.text2, height: 1.5),
+                  style: IOSTypography.caption1(color: colors.text2)
+                      .copyWith(height: 1.5),
                 ),
               ],
             ),
@@ -86,64 +89,53 @@ class IosInstallGuideDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = IOSColors.of(context);
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding:
-          const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-      child: AppCard(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: colors.primary.withValues(alpha: .12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(Icons.install_mobile,
-                      color: colors.primary, size: 22),
+    return Padding(
+      padding: const EdgeInsets.all(IOSSpacing.s20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: colors.primaryBg,
+                  borderRadius: BorderRadius.circular(IOSRadius.sm),
                 ),
-                const SizedBox(width: 10),
-                const Expanded(
-                  child: Text(
-                    '添加到主屏幕，数据更安全',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Text(
-              'iOS 的 Safari 会清理长时间未访问的网页数据，包括你的刷题进度、错题与存档。'
-              '添加到主屏幕后，数据将不再被清理，并享受全屏无地址栏的原生体验。',
-              style:
-                  TextStyle(fontSize: 13, height: 1.6, color: colors.text2),
-            ),
-            const SizedBox(height: 14),
-            _StepLine(n: '1', text: '点 Safari 底部「分享」按钮', color: colors.primary),
-            const SizedBox(height: 8),
-            _StepLine(n: '2', text: '选择「添加到主屏幕」', color: colors.primary),
-            const SizedBox(height: 8),
-            _StepLine(n: '3', text: '从桌面图标打开本应用', color: colors.primary),
-            const SizedBox(height: 18),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: colors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('知道了', style: TextStyle(fontSize: 14.5)),
+                child: Icon(Icons.install_mobile,
+                    color: colors.primary, size: 22),
               ),
-            ),
-          ],
-        ),
+              SizedBox(width: IOSSpacing.s8),
+              Expanded(
+                child: Text(
+                  '添加到主屏幕，数据更安全',
+                  style: IOSTypography.callout(color: colors.text)
+                      .copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: IOSSpacing.s16),
+          Text(
+            'iOS 的 Safari 会清理长时间未访问的网页数据，包括你的刷题进度、错题与存档。'
+            '添加到主屏幕后，数据将不再被清理，并享受全屏无地址栏的原生体验。',
+            style: IOSTypography.footnote(color: colors.text2)
+                .copyWith(height: 1.6),
+          ),
+          SizedBox(height: IOSSpacing.s16),
+          _StepLine(n: '1', text: '点 Safari 底部「分享」按钮', color: colors.primary),
+          SizedBox(height: IOSSpacing.s8),
+          _StepLine(n: '2', text: '选择「添加到主屏幕」', color: colors.primary),
+          SizedBox(height: IOSSpacing.s8),
+          _StepLine(n: '3', text: '从桌面图标打开本应用', color: colors.primary),
+          SizedBox(height: IOSSpacing.s16),
+          IOSButton(
+            label: '知道了',
+            expand: true,
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
       ),
     );
   }
@@ -172,7 +164,7 @@ class _StepLine extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        Expanded(child: Text(text, style: const TextStyle(fontSize: 13.5))),
+        Expanded(child: Text(text, style: IOSTypography.footnote(color: IOSColors.of(context).text))),
       ],
     );
   }

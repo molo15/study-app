@@ -10,6 +10,7 @@
 /// 支持 loading 状态、禁用状态。
 library;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/ios_animations.dart';
@@ -161,14 +162,7 @@ class _IOSButtonState extends State<IOSButton>
 
     Widget content;
     if (widget.loading) {
-      content = SizedBox(
-        width: 20,
-        height: 20,
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation<Color>(effectiveFg),
-        ),
-      );
+      content = CupertinoActivityIndicator(radius: 10, color: effectiveFg);
     } else if (widget.type == IOSButtonType.icon) {
       content = Icon(widget.icon, size: 22, color: effectiveFg);
     } else {

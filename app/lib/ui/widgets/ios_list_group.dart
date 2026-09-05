@@ -95,11 +95,12 @@ class IOSListGroup extends StatelessWidget {
                   else
                     items[i],
                   if (i < items.length - 1)
-                    Divider(
-                      height: IOSGlass.borderWidth,
-                      thickness: IOSGlass.borderWidth,
-                      color: colors.separator,
-                      indent: IOSSpacing.s16,
+                    Padding(
+                      padding: const EdgeInsets.only(left: IOSSpacing.s16),
+                      child: Container(
+                        height: IOSGlass.borderWidth,
+                        color: colors.separator,
+                      ),
                     ),
                 ],
               ],
